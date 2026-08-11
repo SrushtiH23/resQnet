@@ -14,14 +14,14 @@ try:
 except ImportError:
     from backend.main import app as raw_app
 
-# ASGI wrapper to handle Vercel path rewrites cleanly
 async def app(scope, receive, send):
     if scope["type"] in ("http", "websocket"):
         path = scope.get("path", "")
-        if path.startswith("/api/index.py"):
-            new_path = path[13:]
-            scope["path"] = new_path if new_path else "/"
-        elif path.startswith("/api/index"):
-            new_path = path[10:]
-            scope["path"] = new_path if new_path else "/"
+        for prefix in ["/api/index.py", "/api/index"]:
+            if path.startswith(prefix):
+                path = path[len(prefix):]
+                break
+        if not path.startswith("/"):
+            path = "/" + path
+        scope["path"] = path
     await raw_app(scope, receive, send)
