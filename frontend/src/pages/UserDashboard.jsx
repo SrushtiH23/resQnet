@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { DashboardTriageChatbot } from '../components/DashboardTriageChatbot';
@@ -69,7 +69,7 @@ export const UserDashboard = () => {
     };
   }, [activeEmergency?.id]);
 
-  const fetchActiveEmergency = async () => {
+  const fetchActiveEmergency = useCallback(async () => {
     try {
       const res = await api.get('/emergency/active');
       if (res.data && res.data.length > 0) {
@@ -80,7 +80,7 @@ export const UserDashboard = () => {
     } catch (err) {
       console.error('Error fetching active emergency:', err);
     }
-  };
+  }, []);
 
   const handleOpenSosModal = () => {
     setShowSosModal(true);

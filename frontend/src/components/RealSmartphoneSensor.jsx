@@ -23,6 +23,11 @@ export const RealSmartphoneSensor = ({ userId = 1, onFallDetected }) => {
   const activeFallLockRef = useRef(false);
   const hasDispatchedEmergencyRef = useRef(false);
 
+  const onFallDetectedRef = useRef(onFallDetected);
+  useEffect(() => {
+    onFallDetectedRef.current = onFallDetected;
+  }, [onFallDetected]);
+
   // Refs for 200ms streaming loop
   const accelRef = useRef(accel);
   const gyroRef = useRef(gyro);
@@ -47,8 +52,8 @@ export const RealSmartphoneSensor = ({ userId = 1, onFallDetected }) => {
     }
     hasDispatchedEmergencyRef.current = true;
 
-    if (onFallDetected) {
-      onFallDetected(fallData || lastAnalysis);
+    if (onFallDetectedRef.current) {
+      onFallDetectedRef.current(fallData || lastAnalysis);
     }
 
     // Dispatch single emergency alert on confirmed fall
@@ -165,7 +170,7 @@ export const RealSmartphoneSensor = ({ userId = 1, onFallDetected }) => {
     }
 
     return () => clearInterval(interval);
-  }, [streamActive, userId, onFallDetected]);
+  }, [streamActive, userId]);
 
   const handleStartStream = async () => {
     setStreamError(null);
