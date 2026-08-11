@@ -45,7 +45,10 @@ export const FamilyDashboard = () => {
 
   useEffect(() => {
     if (!activeEmergency) return;
-    const ws = new WebSocket(`ws://127.0.0.1:8001/ws/live-tracking/${activeEmergency.id}`);
+    const baseUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8001';
+    const wsProtocol = baseUrl.startsWith('https') ? 'wss:' : 'ws:';
+    const host = baseUrl.replace(/^https?:\/\//, '').replace(/^http:\/\//, '').replace(/\/$/, '');
+    const ws = new WebSocket(`${wsProtocol}//${host}/ws/live-tracking/${activeEmergency.id}`);
 
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
