@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from '../context/AuthContext';
-import { Activity, Lock, Mail, ArrowRight, ShieldCheck } from 'lucide-react';
+import { Activity, Lock, Mail, ArrowRight, ShieldCheck, KeyRound, User, Stethoscope, Building2 } from 'lucide-react';
 
 export const Login = () => {
   const [email, setEmail] = useState('user@resqnet.com');
@@ -13,7 +13,8 @@ export const Login = () => {
 
   React.useEffect(() => {
     if (user && role) {
-      navigate(`/${role}-dashboard`, { replace: true });
+      if (role === 'admin') navigate('/admin-dashboard', { replace: true });
+      else navigate(`/${role}-dashboard`, { replace: true });
     }
   }, [user, role, navigate]);
 
@@ -21,9 +22,14 @@ export const Login = () => {
     e.preventDefault();
     setError('');
     setLoading(true);
+
     try {
       const data = await login(email, password);
-      navigate(`/${data.role}-dashboard`);
+      if (data.role === 'admin') {
+        navigate('/admin-dashboard');
+      } else {
+        navigate(`/${data.role}-dashboard`);
+      }
     } catch (err) {
       const detail = err.response?.data?.detail;
       if (typeof detail === 'string') {
@@ -40,29 +46,32 @@ export const Login = () => {
     }
   };
 
-  const handleQuickDemo = async (roleEmail) => {
-    setEmail(roleEmail);
-    setPassword('password123');
-    try {
-      const data = await login(roleEmail, 'password123');
-      navigate(`/${data.role}-dashboard`);
-    } catch (err) {
-      setError('Demo login failed');
-    }
-  };
-
   return (
     <div className="min-h-[85vh] flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md space-y-6">
-        <div className="text-center space-y-2">
-          <div className="inline-flex p-3 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-500 mb-2">
-            <Activity className="w-8 h-8 animate-pulse" />
-          </div>
-          <h2 className="text-3xl font-extrabold tracking-tight text-white">Welcome Back</h2>
-          <p className="text-sm text-slate-400">Sign in to access ResQNet Emergency Intelligence</p>
+
+        {/* Top Navigation Row */}
+        <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+          <span className="text-xs text-slate-400 font-medium">Public Authentication Portal</span>
+          <Link
+            to="/admin-login"
+            className="px-3 py-1.5 bg-purple-500/10 border border-purple-500/30 text-purple-300 hover:bg-purple-500/20 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5"
+          >
+            <KeyRound className="w-3.5 h-3.5" /> Admin Login
+          </Link>
         </div>
 
-        <form onSubmit={handleSubmit} className="glass-panel p-6 rounded-2xl space-y-4 shadow-2xl">
+        {/* Brand Header */}
+        <div className="text-center space-y-2">
+          <div className="inline-flex p-3 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-500 mb-1">
+            <Activity className="w-8 h-8 animate-pulse" />
+          </div>
+          <h2 className="text-3xl font-extrabold tracking-tight text-white">Sign In</h2>
+          <p className="text-xs text-slate-400">Access ResQNet Emergency Intelligence Portal</p>
+        </div>
+
+        {/* Clean Production Login Form */}
+        <form onSubmit={handleSubmit} className="glass-panel p-6 rounded-3xl space-y-4 shadow-2xl border border-slate-800">
           {error && (
             <div className="p-3 text-xs bg-rose-500/10 border border-rose-500/30 text-rose-400 rounded-xl font-medium">
               {error}
@@ -102,36 +111,12 @@ export const Login = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-500 hover:to-amber-500 text-white font-bold rounded-xl shadow-lg shadow-rose-600/25 flex items-center justify-center gap-2 transition-all hover:scale-[1.01]"
+            className="w-full py-3.5 bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-500 hover:to-amber-500 text-white font-bold rounded-xl shadow-lg shadow-rose-600/25 flex items-center justify-center gap-2 transition-all cursor-pointer"
           >
             {loading ? 'Authenticating...' : 'Sign In'}
             <ArrowRight className="w-4 h-4" />
           </button>
         </form>
-
-        {/* Quick Demo Login Preset Buttons */}
-        <div className="glass-card p-4 rounded-xl border border-slate-800 space-y-2">
-          <p className="text-xs font-semibold text-slate-400 flex items-center gap-1">
-            <ShieldCheck className="w-4 h-4 text-emerald-400" /> One-Click Role Demos (Preset Accounts):
-          </p>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
-            <button onClick={() => handleQuickDemo('user@resqnet.com')} className="p-2 bg-slate-800/80 hover:bg-rose-950/40 border border-slate-700 hover:border-rose-500/40 rounded-lg text-slate-200 text-left font-medium">
-              🙋 Patient (User)
-            </button>
-            <button onClick={() => handleQuickDemo('family@resqnet.com')} className="p-2 bg-slate-800/80 hover:bg-amber-950/40 border border-slate-700 hover:border-amber-500/40 rounded-lg text-slate-200 text-left font-medium">
-              👨‍👩‍👧 Family
-            </button>
-            <button onClick={() => handleQuickDemo('doctor@resqnet.com')} className="p-2 bg-slate-800/80 hover:bg-cyan-950/40 border border-slate-700 hover:border-cyan-500/40 rounded-lg text-slate-200 text-left font-medium">
-              👨‍⚕️ Doctor
-            </button>
-            <button onClick={() => handleQuickDemo('hospital@resqnet.com')} className="p-2 bg-slate-800/80 hover:bg-indigo-950/40 border border-slate-700 hover:border-indigo-500/40 rounded-lg text-slate-200 text-left font-medium">
-              🏥 Hospital
-            </button>
-            <button onClick={() => handleQuickDemo('admin@resqnet.com')} className="p-2 bg-slate-800/80 hover:bg-purple-950/40 border border-slate-700 hover:border-purple-500/40 rounded-lg text-slate-200 text-left font-medium col-span-2 sm:col-span-1">
-              ⚙️ Admin
-            </button>
-          </div>
-        </div>
 
         <p className="text-center text-xs text-slate-400">
           Don't have an account?{' '}

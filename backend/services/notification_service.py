@@ -5,7 +5,7 @@ from datetime import datetime
 from typing import Optional, Dict, Any
 from sqlalchemy.orm import Session
 
-from models import NotificationLog, EmergencyAcknowledgement, EmergencyLog, AuditLog, User, EmergencyEvent, FamilyContact
+from models import NotificationLog, EmergencyAcknowledgement, EmergencyLog, AuditLog, User, EmergencyEvent, FamilyContact, MedicalProfile
 
 def get_location_url(lat: Optional[float], lon: Optional[float]) -> str:
     if lat is None or lon is None or (lat == 0.0 and lon == 0.0):
@@ -34,8 +34,8 @@ def normalize_indian_phone(phone: str) -> str:
 
 class EmergencyNotificationService:
     """
-    Production Emergency Notification Service using official Twilio SDK.
-    Supports real Twilio SMS and Voice Calls, Google Maps location URLs,
+    Production Emergency Notification Service using official TextBee / Twilio APIs.
+    Supports real SMS and Voice Calls, Google Maps location URLs,
     and granular provider status logging.
     """
 
@@ -66,34 +66,41 @@ class EmergencyNotificationService:
 
         dest_phone = normalize_indian_phone(contact.phone)
         loc_url = get_location_url(emergency.latitude, emergency.longitude)
-        risk_level = calculate_risk_level(emergency.confidence_score)
         time_str = emergency.created_at.strftime("%Y-%m-%d %H:%M:%S UTC") if emergency.created_at else datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
 
-        # Format SMS body based on trigger type
-        if emergency.trigger_source in ["MANUAL_SOS", "SOS Button"]:
-            message_body = (
-                f"🚨 RESQNET EMERGENCY ALERT\n\n"
-                f"{user_name} has manually triggered an emergency SOS.\n\n"
-                f"Severity: CRITICAL\n\n"
-                f"Location:\n"
-                f"{loc_url}\n\n"
-                f"Time:\n"
-                f"{time_str}\n\n"
-                f"Please respond immediately."
-            )
-        else:
-            message_body = (
-                f"RESQNET EMERGENCY ALERT\n\n"
-                f"Name: {user_name}\n"
-                f"Emergency Type: {emergency.trigger_source}\n"
-                f"Severity: {risk_level.upper()}\n"
-                f"Confidence: {emergency.confidence_score:.0f}%\n\n"
-                f"Current Location:\n"
-                f"{loc_url}\n\n"
-                f"Time:\n"
-                f"{time_str}\n\n"
-                f"Please respond immediately."
-            )
+        # Retrieve Medical Profile for user to include stored medical info in SMS
+        med_prof = db.query(MedicalProfile).filter(MedicalProfile.user_id == emergency.user_id).first()
+        med_parts = []
+        if med_prof:
+            if med_prof.blood_group:
+                med_parts.append(f"Blood Group: {med_prof.blood_group}")
+            if med_prof.allergies:
+                med_parts.append(f"Allergies: {med_prof.allergies}")
+            if med_prof.diseases:
+                med_parts.append(f"Conditions: {med_prof.diseases}")
+            if med_prof.medications:
+                med_parts.append(f"Medications: {med_prof.medications}")
+            if med_prof.emergency_notes:
+                med_parts.append(f"Notes: {med_prof.emergency_notes}")
+
+        med_info_str = "\n".join(med_parts) if med_parts else "None specified"
+        display_name = user_name if user_name else "User"
+        trigger_display = "Manual SOS" if emergency.trigger_source in ["MANUAL_SOS", "SOS Button"] else emergency.trigger_source
+
+        message_body = (
+            f"🚨 RESQNET EMERGENCY ALERT\n\n"
+            f"[{display_name}] may need immediate assistance.\n\n"
+            f"Trigger: {trigger_display}\n"
+            f"Confidence: {emergency.confidence_score:.0f}%\n\n"
+            f"Current location:\n"
+            f"{loc_url}\n\n"
+            f"Medical information:\n"
+            f"{med_info_str}\n\n"
+            f"Time:\n"
+            f"{time_str}\n\n"
+            f"Please check on them immediately.\n\n"
+            f"This is an automated emergency notification from ResQNet."
+        )
 
         provider_name = "textbee" if (provider_mode == "textbee" or textbee_api_key) else ("twilio" if provider_mode == "twilio" else "none")
 
@@ -117,8 +124,8 @@ class EmergencyNotificationService:
         if provider_mode == "textbee" or (textbee_api_key and textbee_device_id):
             if not textbee_api_key or not textbee_device_id:
                 print("TextBee provider not configured. Missing TEXTBEE_API_KEY or TEXTBEE_DEVICE_ID in backend/.env")
-                notif_log.status = "FAILED"
-                notif_log.error_message = "TextBee provider not configured"
+                notif_log.status = "PROVIDER_NOT_CONFIGURED"
+                notif_log.error_message = "SMS provider is not configured."
             else:
                 print("Attempting TextBee SMS Gateway dispatch...")
                 print(f"Device ID: {textbee_device_id[:6]}... (configured)")
@@ -174,8 +181,10 @@ class EmergencyNotificationService:
                 notif_log.error_message = str(err)
         else:
             print("TextBee provider not configured. Missing credentials in backend/.env")
-            notif_log.status = "FAILED"
-            notif_log.error_message = "TextBee provider not configured"
+            notif_log.status = "PROVIDER_NOT_CONFIGURED"
+            notif_log.error_message = "SMS provider is not configured."
+
+        print("==================================================")
 
         print("==================================================")
 

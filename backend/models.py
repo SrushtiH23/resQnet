@@ -113,6 +113,7 @@ class EmergencyEvent(Base):
     escalation_step = Column(Integer, default=0)
     created_at = Column(DateTime, default=datetime.utcnow)
     resolved_at = Column(DateTime, nullable=True)
+    is_demo = Column(Boolean, default=False, nullable=True)
 
     user = relationship("User", back_populates="emergency_events")
     logs = relationship("EmergencyLog", back_populates="emergency_event", cascade="all, delete-orphan")

@@ -2,11 +2,9 @@ import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { DashboardTriageChatbot } from '../components/DashboardTriageChatbot';
-import { InteractiveLiveMap } from '../components/InteractiveLiveMap';
-import { EmergencyEscalationCard } from '../components/EmergencyEscalationCard';
+import { SimpleEmergencyStatusCard } from '../components/SimpleEmergencyStatusCard';
 import {
-  ShieldCheck, AlertTriangle, Radio, Navigation, Flame, CheckCircle,
-  XCircle, Clock, ShieldAlert, Heart, Activity, MapPin, RefreshCw
+  Navigation, Flame, ShieldAlert, MapPin
 } from 'lucide-react';
 
 export const UserDashboard = () => {
@@ -20,10 +18,9 @@ export const UserDashboard = () => {
     available: false
   });
 
-  // SOS Countdown Modal State
+  // SOS Modal & Trigger State
   const [showSosModal, setShowSosModal] = useState(false);
-  const [sosCountdown, setSosCountdown] = useState(5);
-  const [sosTimerId, setSosTimerId] = useState(null);
+  const [sendingSos, setSendingSos] = useState(false);
 
   useEffect(() => {
     fetchActiveEmergency();
@@ -71,28 +68,6 @@ export const UserDashboard = () => {
     };
   }, [activeEmergency?.id]);
 
-  // SOS Countdown Timer Effect
-  useEffect(() => {
-    let timer;
-    if (showSosModal) {
-      setSosCountdown(5);
-      timer = setInterval(() => {
-        setSosCountdown((prev) => {
-          if (prev <= 1) {
-            clearInterval(timer);
-            executeRealSosTrigger();
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-      setSosTimerId(timer);
-    } else if (sosTimerId) {
-      clearInterval(sosTimerId);
-    }
-    return () => clearInterval(timer);
-  }, [showSosModal]);
-
   const fetchActiveEmergency = async () => {
     try {
       const res = await api.get('/emergency/active');
@@ -111,18 +86,32 @@ export const UserDashboard = () => {
   };
 
   const handleCancelSos = () => {
-    if (sosTimerId) clearInterval(sosTimerId);
     setShowSosModal(false);
   };
 
   const executeRealSosTrigger = async () => {
-    if (sosTimerId) clearInterval(sosTimerId);
-    setShowSosModal(false);
+    setSendingSos(true);
+    let lat = gpsData.available ? gpsData.latitude : 0.0;
+    let lon = gpsData.available ? gpsData.longitude : 0.0;
+
+    // Attempt browser Geolocation API first
+    if ('geolocation' in navigator) {
+      try {
+        const position = await new Promise((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: true,
+            timeout: 5000,
+            maximumAge: 0
+          });
+        });
+        lat = position.coords.latitude;
+        lon = position.coords.longitude;
+      } catch (geoErr) {
+        console.warn('Geolocation capture before SOS dispatch notice:', geoErr);
+      }
+    }
 
     try {
-      const lat = gpsData.available ? gpsData.latitude : 0.0;
-      const lon = gpsData.available ? gpsData.longitude : 0.0;
-
       const res = await api.post('/emergency/create', {
         trigger_source: 'MANUAL_SOS',
         latitude: lat,
@@ -132,8 +121,11 @@ export const UserDashboard = () => {
         network_status: '5G'
       });
       setActiveEmergency(res.data);
+      setShowSosModal(false);
     } catch (err) {
-      alert('Failed to trigger SOS emergency.');
+      alert('Failed to trigger SOS emergency alert.');
+    } finally {
+      setSendingSos(false);
     }
   };
 
@@ -168,82 +160,23 @@ export const UserDashboard = () => {
         </div>
       </div>
 
-      {/* 2. DYNAMIC ACTIVE EMERGENCY PANEL (If Active Emergency Exists) */}
+      {/* 2. DYNAMIC ACTIVE EMERGENCY STATUS CARD (When active emergency exists) */}
       {activeEmergency && (
-        <div className="space-y-6 animate-fade-in">
-          <div className="p-6 bg-rose-950/80 border-2 border-rose-500 rounded-3xl space-y-4 shadow-2xl shadow-rose-950/90">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-rose-800/60 pb-4">
-              <div className="flex items-center gap-3">
-                <div className="p-3 bg-rose-500/20 text-rose-400 rounded-2xl border border-rose-500/40 animate-bounce">
-                  <AlertTriangle className="w-7 h-7" />
-                </div>
-                <div>
-                  <h2 className="text-xl font-black text-white uppercase tracking-wider flex items-center gap-2">
-                    🚨 EMERGENCY ACTIVE
-                  </h2>
-                  <p className="text-xs text-rose-200 font-medium">
-                    Trigger Source: <span className="font-bold underline">{activeEmergency.trigger_source}</span>
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <span className="px-3.5 py-1.5 bg-rose-600 text-white font-mono text-xs font-extrabold rounded-xl uppercase tracking-wider">
-                  Severity: {activeEmergency.confidence_score >= 80 ? 'CRITICAL' : 'HIGH'}
-                </span>
-                <span className="px-3.5 py-1.5 bg-slate-900 border border-rose-500/40 text-rose-300 font-mono text-xs font-bold rounded-xl">
-                  Confidence: {activeEmergency.confidence_score}%
-                </span>
-              </div>
-            </div>
-
-            {/* Live Map Section */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-xs text-rose-200">
-                <span className="font-extrabold uppercase tracking-wider flex items-center gap-1.5">
-                  <MapPin className="w-4 h-4 text-rose-400" /> Live Location Tracking
-                </span>
-                {gpsData.available ? (
-                  <span className="font-mono text-[11px] text-slate-300">
-                    Lat: {gpsData.latitude.toFixed(4)}, Lon: {gpsData.longitude.toFixed(4)} | Accuracy: ±{gpsData.accuracy}m | Updated: {gpsData.lastUpdated}
-                  </span>
-                ) : (
-                  <span className="font-bold text-amber-400">LOCATION UNAVAILABLE</span>
-                )}
-              </div>
-
-              {gpsData.available ? (
-                <InteractiveLiveMap
-                  userLat={gpsData.latitude}
-                  userLon={gpsData.longitude}
-                  isEmergency={true}
-                />
-              ) : (
-                <div className="p-8 bg-slate-900/90 rounded-2xl border border-slate-800 text-center space-y-2">
-                  <AlertTriangle className="w-8 h-8 text-amber-400 mx-auto animate-pulse" />
-                  <p className="text-sm font-bold text-white">LOCATION UNAVAILABLE</p>
-                  <p className="text-xs text-slate-400">Device GPS permissions disabled or signal unavailable.</p>
-                </div>
-              )}
-            </div>
-
-            {/* Notification Status & Escalation Card */}
-            <EmergencyEscalationCard
-              emergency={activeEmergency}
-              onStatusChange={fetchActiveEmergency}
-            />
-          </div>
-        </div>
+        <SimpleEmergencyStatusCard
+          emergency={activeEmergency}
+          onStatusChange={fetchActiveEmergency}
+          gpsData={gpsData}
+        />
       )}
 
-      {/* 3. PROMINENT LARGE SOS BUTTON CENTERPIECE (ALWAYS DISPLAYED) */}
+      {/* 3. PROMINENT SOS BUTTON CENTERPIECE */}
       <div className="glass-panel p-8 rounded-3xl border border-slate-800 text-center space-y-6 shadow-2xl relative overflow-hidden">
         <div className="space-y-1">
           <h2 className="text-xl md:text-2xl font-black text-white uppercase tracking-wider">
             Emergency SOS Assistance
           </h2>
           <p className="text-xs text-slate-400">
-            Press the button below to instantly trigger emergency notifications and share your location.
+            Press the button below to send an emergency alert and share your location.
           </p>
         </div>
 
@@ -261,7 +194,7 @@ export const UserDashboard = () => {
         </div>
 
         <p className="text-xs text-slate-400 italic">
-          Pressing SOS initiates immediate priority contact escalation & location tracking.
+          Pressing SOS opens an alert confirmation dialog before sending notifications.
         </p>
       </div>
 
@@ -271,42 +204,57 @@ export const UserDashboard = () => {
         onRequestEmergency={handleOpenSosModal}
       />
 
-      {/* SOS VERIFICATION & COUNTDOWN MODAL */}
+      {/* STEP 1 — SOS CONFIRMATION MODAL */}
       {showSosModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-xl animate-fade-in">
-          <div className="glass-panel p-8 rounded-3xl max-w-md w-full border-2 border-rose-500 bg-rose-950/60 text-center space-y-6 shadow-2xl shadow-rose-950/90">
+          <div className="glass-panel p-8 rounded-3xl max-w-md w-full border-2 border-rose-500 bg-rose-950/80 text-center space-y-6 shadow-2xl shadow-rose-950/90">
             <div className="mx-auto w-20 h-20 bg-rose-500/20 text-rose-400 rounded-3xl border border-rose-500/50 flex items-center justify-center animate-bounce">
               <ShieldAlert className="w-10 h-10" />
             </div>
 
             <div className="space-y-2">
               <h3 className="text-2xl font-black text-white tracking-tight flex items-center justify-center gap-2">
-                🚨 EMERGENCY ASSISTANCE
+                🚨 EMERGENCY SOS
               </h3>
-              <p className="text-xs text-rose-200 font-semibold leading-relaxed">
-                You are about to notify your emergency contacts and share your current location. Are you sure you need emergency assistance?
+              <p className="text-sm font-bold text-white leading-relaxed">
+                Are you sure you want to send an emergency alert?
               </p>
             </div>
 
-            <div className="p-4 bg-slate-900/90 rounded-2xl border border-rose-500/40 space-y-1">
-              <span className="text-[10px] font-bold text-rose-400 uppercase tracking-widest block">
-                Auto-Confirmation Countdown
+            <div className="p-4 bg-slate-900/90 rounded-2xl border border-rose-500/30 text-left space-y-2 text-xs">
+              <span className="font-extrabold text-slate-300 uppercase tracking-wider block">
+                Your emergency contacts will receive:
               </span>
-              <span className="text-5xl font-black text-white font-mono">{sosCountdown}s</span>
+              <ul className="space-y-1.5 text-slate-300 font-medium">
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-rose-400" /> Emergency alert
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-rose-400" /> Your current location
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-rose-400" /> Your medical emergency information
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-rose-400" /> Time of emergency
+                </li>
+              </ul>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <button
                 onClick={handleCancelSos}
-                className="py-3.5 px-4 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold rounded-2xl text-xs border border-slate-700 transition-all"
+                disabled={sendingSos}
+                className="py-3.5 px-4 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold rounded-2xl text-xs border border-slate-700 transition-all cursor-pointer"
               >
                 CANCEL
               </button>
               <button
                 onClick={executeRealSosTrigger}
-                className="py-3.5 px-4 bg-rose-600 hover:bg-rose-500 text-white font-extrabold rounded-2xl text-xs shadow-xl shadow-rose-600/40 transition-all hover:scale-105 uppercase tracking-wider"
+                disabled={sendingSos}
+                className="py-3.5 px-4 bg-rose-600 hover:bg-rose-500 text-white font-extrabold rounded-2xl text-xs shadow-xl shadow-rose-600/40 transition-all hover:scale-105 uppercase tracking-wider cursor-pointer flex items-center justify-center gap-2"
               >
-                CONFIRM SOS
+                {sendingSos ? 'SENDING...' : 'YES, SEND SOS'}
               </button>
             </div>
           </div>
@@ -315,4 +263,3 @@ export const UserDashboard = () => {
     </div>
   );
 };
-

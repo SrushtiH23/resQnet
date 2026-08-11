@@ -98,6 +98,11 @@ export const HospitalDashboard = () => {
                         <span className="px-2.5 py-0.5 bg-rose-600 text-white font-black rounded text-[10px] uppercase font-mono">
                           Case #{em.id}
                         </span>
+                        {em.is_demo && (
+                          <span className="px-2 py-0.5 bg-purple-500/20 text-purple-300 border border-purple-500/40 text-[10px] font-mono font-bold rounded uppercase">
+                            🧪 TEST MODE / DEMO DATA
+                          </span>
+                        )}
                         <h4 className="font-bold text-white text-sm">
                           Trigger: {em.trigger_source}
                         </h4>

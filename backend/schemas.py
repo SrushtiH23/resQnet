@@ -80,6 +80,37 @@ class MedicalProfileResponse(MedicalProfileSchema):
     class Config:
         from_attributes = True
 
+# --- Role Specific Onboarding Schemas ---
+class DoctorProfileSchema(BaseModel):
+    registration_number: str
+    specialization: str
+    qualification: str
+    experience_years: int
+    hospital_name: str
+    department: str
+    city: str
+    address: str
+    working_hours: Optional[str] = "24/7 ER"
+
+class HospitalProfileSchema(BaseModel):
+    hospital_name: str
+    registration_number: str
+    phone: str
+    email: Optional[str] = None
+    address: str
+    city: str
+    emergency_dept_available: bool = True
+    ambulance_available: bool = True
+    departments: str
+    bed_capacity: int = 10
+
+class FamilyProfileSchema(BaseModel):
+    contact_name: str
+    phone: str
+    relationship_type: str
+    email: Optional[str] = None
+    notification_preference: str = "SMS + Call"
+
 # --- Family Contact Schemas ---
 class FamilyContactCreate(BaseModel):
     contact_name: str
@@ -189,6 +220,11 @@ class EmergencyResponse(BaseModel):
     escalation_step: int
     created_at: datetime
     resolved_at: Optional[datetime] = None
+    sms_status: Optional[str] = None
+    sms_error: Optional[str] = None
+    sms_provider: Optional[str] = None
+    location_url: Optional[str] = None
+    is_demo: Optional[bool] = False
 
     class Config:
         from_attributes = True

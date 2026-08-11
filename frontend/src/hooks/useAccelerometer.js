@@ -2,19 +2,20 @@ import { useState, useEffect, useCallback } from 'react';
 
 /**
  * useAccelerometer React Hook
- * Captures real smartphone Accelerometer readings via DeviceMotionEvent.
- * Returns: { ax, ay, az, total_accel, timestamp, isSupported, permissionGranted, requestPermission }
+ * Captures smartphone Accelerometer readings via DeviceMotionEvent.
+ * Eliminates all hardcoded 9.81 m/s² defaults and returns truthful sensorState.
  */
 export const useAccelerometer = () => {
   const [data, setData] = useState({
-    ax: 0,
-    ay: 9.81,
-    az: 0,
-    total_accel: 9.81,
-    timestamp: Date.now(),
+    ax: null,
+    ay: null,
+    az: null,
+    total_accel: null,
+    timestamp: null,
   });
   const [isSupported, setIsSupported] = useState(false);
   const [permissionGranted, setPermissionGranted] = useState(false);
+  const [hasEmittedData, setHasEmittedData] = useState(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && 'DeviceMotionEvent' in window) {
@@ -23,6 +24,8 @@ export const useAccelerometer = () => {
       if (typeof DeviceMotionEvent.requestPermission !== 'function') {
         setPermissionGranted(true);
       }
+    } else {
+      setIsSupported(false);
     }
   }, []);
 
@@ -30,18 +33,21 @@ export const useAccelerometer = () => {
     const acc = event.accelerationIncludingGravity || event.acceleration;
     if (!acc) return;
 
-    const ax = acc.x !== null && acc.x !== undefined ? acc.x : 0;
-    const ay = acc.y !== null && acc.y !== undefined ? acc.y : 9.81;
-    const az = acc.z !== null && acc.z !== undefined ? acc.z : 0;
-    const total_accel = Math.sqrt(ax * ax + ay * ay + az * az);
+    if (acc.x !== null && acc.x !== undefined && acc.y !== null && acc.y !== undefined && acc.z !== null && acc.z !== undefined) {
+      const ax = Number(acc.x);
+      const ay = Number(acc.y);
+      const az = Number(acc.z);
+      const total_accel = Math.sqrt(ax * ax + ay * ay + az * az);
 
-    setData({
-      ax: +ax.toFixed(2),
-      ay: +ay.toFixed(2),
-      az: +az.toFixed(2),
-      total_accel: +total_accel.toFixed(2),
-      timestamp: Date.now(),
-    });
+      setData({
+        ax: +ax.toFixed(2),
+        ay: +ay.toFixed(2),
+        az: +az.toFixed(2),
+        total_accel: +total_accel.toFixed(2),
+        timestamp: Date.now(),
+      });
+      setHasEmittedData(true);
+    }
   }, []);
 
   const requestPermission = useCallback(async () => {
@@ -77,10 +83,20 @@ export const useAccelerometer = () => {
     };
   }, [isSupported, permissionGranted, handleMotion]);
 
+  const sensorState = !isSupported
+    ? 'NOT_AVAILABLE'
+    : !permissionGranted
+    ? 'WAITING_FOR_PERMISSION'
+    : hasEmittedData
+    ? 'ACTIVE'
+    : 'NOT_AVAILABLE';
+
   return {
     ...data,
     isSupported,
     permissionGranted,
+    sensorState,
+    hasEmittedData,
     requestPermission,
   };
 };

@@ -95,6 +95,12 @@ def root():
 # ==========================================
 @app.post("/api/auth/register", response_model=schemas.UserResponse)
 def register_user(user_in: schemas.UserRegister, db: Session = Depends(get_db)):
+    requested_role = user_in.role.lower()
+    if requested_role in ["admin", "family"]:
+        raise HTTPException(status_code=400, detail="Public registration for this role is restricted.")
+    if requested_role not in ["user", "doctor", "hospital"]:
+        raise HTTPException(status_code=400, detail="Invalid role specified for registration.")
+
     existing = db.query(User).filter(User.email == user_in.email).first()
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
@@ -104,7 +110,7 @@ def register_user(user_in: schemas.UserRegister, db: Session = Depends(get_db)):
         email=user_in.email,
         hashed_password=get_password_hash(user_in.password),
         phone=user_in.phone,
-        role=user_in.role.lower()
+        role=requested_role
     )
     db.add(user)
     db.commit()
@@ -189,6 +195,71 @@ def add_family_contact(contact_in: schemas.FamilyContactCreate, current_user: Us
     db.refresh(contact)
     return contact
 
+@app.put("/api/doctor/profile")
+def update_doctor_profile(profile_in: schemas.DoctorProfileSchema, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    NotificationAndAuditService.record_audit(
+        db, current_user.id, "DOCTOR_PROFILE_ONBOARDED",
+        f"Reg #{profile_in.registration_number}, Spec: {profile_in.specialization}, Hosp: {profile_in.hospital_name}"
+    )
+    return {"status": "success", "message": "Doctor professional profile updated successfully"}
+
+@app.put("/api/hospital/profile")
+def update_hospital_profile(profile_in: schemas.HospitalProfileSchema, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    NotificationAndAuditService.record_audit(
+        db, current_user.id, "HOSPITAL_PROFILE_ONBOARDED",
+        f"Lic #{profile_in.registration_number}, Beds: {profile_in.bed_capacity}, ER: {profile_in.emergency_dept_available}"
+    )
+    return {"status": "success", "message": "Hospital facility profile updated successfully"}
+
+@app.get("/api/admin/overview")
+def get_admin_overview(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    total_users = db.query(User).filter(User.role == "user").count()
+    total_doctors = db.query(User).filter(User.role == "doctor").count()
+    total_hospitals = db.query(User).filter(User.role == "hospital").count()
+    total_emergencies = db.query(EmergencyEvent).count()
+    active_emergencies = db.query(EmergencyEvent).filter(EmergencyEvent.status.notin_(["Resolved", "False Alarm", "Cancelled"])).count()
+
+    confirmed_emergencies = db.query(EmergencyEvent).filter(EmergencyEvent.status.in_(["Confirmed", "Hospital Dispatched", "Ambulance Dispatched"])).count()
+    false_alarms = db.query(EmergencyEvent).filter(EmergencyEvent.status == "False Alarm").count()
+    cancelled_emergencies = db.query(EmergencyEvent).filter(EmergencyEvent.status == "Cancelled").count()
+
+    resolved_events = db.query(EmergencyEvent).filter(EmergencyEvent.resolved_at != None).all()
+    valid_durations = []
+    for e in resolved_events:
+        if e.resolved_at and e.created_at:
+            dur = (e.resolved_at - e.created_at).total_seconds()
+            if 0 < dur <= 3600:
+                valid_durations.append(dur)
+
+    if valid_durations:
+        avg_response_seconds = int(sum(valid_durations) / len(valid_durations))
+    else:
+        avg_response_seconds = None
+
+    users_list = db.query(User).filter(User.role == "user").order_by(User.id.desc()).all()
+    doctors_list = db.query(User).filter(User.role == "doctor").order_by(User.id.desc()).all()
+    hospitals_list = db.query(User).filter(User.role == "hospital").order_by(User.id.desc()).all()
+    audit_logs = db.query(AuditLog).order_by(AuditLog.timestamp.desc()).limit(100).all()
+
+    return {
+        "total_users": total_users,
+        "total_doctors": total_doctors,
+        "total_hospitals": total_hospitals,
+        "total_emergencies": total_emergencies,
+        "active_emergencies_count": active_emergencies,
+        "confirmed_emergencies": confirmed_emergencies,
+        "false_alarms": false_alarms,
+        "cancelled_emergencies": cancelled_emergencies,
+        "avg_response_seconds": avg_response_seconds,
+        "users": [{"id": u.id, "full_name": u.full_name, "email": u.email, "phone": u.phone, "created_at": u.created_at.isoformat() if u.created_at else None} for u in users_list],
+        "doctors": [{"id": u.id, "full_name": u.full_name, "email": u.email, "phone": u.phone, "created_at": u.created_at.isoformat() if u.created_at else None} for u in doctors_list],
+        "hospitals": [{"id": u.id, "full_name": u.full_name, "email": u.email, "phone": u.phone, "created_at": u.created_at.isoformat() if u.created_at else None} for u in hospitals_list],
+        "audit_logs": [{"id": a.id, "action": a.action, "details": a.details, "timestamp": a.timestamp.isoformat() if a.timestamp else None} for a in audit_logs]
+    }
+
 # ==========================================
 # MODULE 3: Privacy QR Card APIs
 # ==========================================
@@ -231,6 +302,13 @@ def scan_qr(scan_in: schemas.QRScanRequest, current_user: User = Depends(require
 # ==========================================
 @app.post("/api/sensor/sliding-window-analyze", response_model=schemas.FallDetectionResult)
 def analyze_sensor_frames(req: schemas.FallSimulationRequest, db: Session = Depends(get_db)):
+    print(f"========== SENSOR TELEMETRY FRAME RECEIVED ==========")
+    print(f"Timestamp: {datetime.utcnow().isoformat()}")
+    print(f"Frames Received Count: {len(req.frames)}")
+    for idx, f in enumerate(req.frames[:5]):
+        print(f"  Frame #{idx+1}: Accel(x={f.ax:.2f}, y={f.ay:.2f}, z={f.az:.2f}) | Gyro(gx={f.gx:.2f}, gy={f.gy:.2f}, gz={f.gz:.2f})")
+    print("=====================================================")
+
     for f in req.frames:
         sample = sliding_buffer.push(f.ax, f.ay, f.az, f.gx, f.gy, f.gz)
         # Store summarized event sample
@@ -381,7 +459,7 @@ def create_emergency(req: schemas.EmergencyCreate, current_user: User = Depends(
         EmergencyEscalationEngine.run_full_escalation(db, emergency.id)
         print("Escalation completed")
 
-        return emergency
+        return populate_emergency_sms_metadata(db, emergency)
     except Exception as err:
         import traceback
         print("==================================================")
@@ -502,16 +580,86 @@ def acknowledge_emergency(req: schemas.EmergencyAcknowledgementRequest, db: Sess
 
     return ack
 
+def populate_emergency_sms_metadata(db: Session, emergency: EmergencyEvent) -> EmergencyEvent:
+    if not emergency:
+        return emergency
+
+    logs = db.query(NotificationLog).filter(
+        NotificationLog.emergency_event_id == emergency.id,
+        NotificationLog.channel == "SMS"
+    ).order_by(NotificationLog.created_at.desc()).all()
+
+    if logs:
+        sent_log = next((l for l in logs if l.status in ["SENT", "DELIVERED", "ACKNOWLEDGED"]), None)
+        if sent_log:
+            emergency.sms_status = "SENT"
+            emergency.sms_error = None
+            emergency.sms_provider = sent_log.provider
+        else:
+            latest = logs[0]
+            if latest.status == "PROVIDER_NOT_CONFIGURED" or (latest.error_message and "not configured" in latest.error_message.lower()):
+                emergency.sms_status = "PROVIDER_NOT_CONFIGURED"
+                emergency.sms_error = "SMS provider is not configured."
+                emergency.sms_provider = latest.provider
+            else:
+                emergency.sms_status = "FAILED"
+                emergency.sms_error = latest.error_message or "SMS provider could not send the notification."
+                emergency.sms_provider = latest.provider
+    else:
+        tb_key = os.getenv("TEXTBEE_API_KEY", "").strip()
+        tb_dev = os.getenv("TEXTBEE_DEVICE_ID", "").strip()
+        tw_sid = os.getenv("TWILIO_ACCOUNT_SID", "").strip()
+        if not (tb_key and tb_dev) and not tw_sid:
+            emergency.sms_status = "PROVIDER_NOT_CONFIGURED"
+            emergency.sms_error = "SMS provider is not configured."
+            emergency.sms_provider = "none"
+        else:
+            emergency.sms_status = "PENDING"
+            emergency.sms_error = None
+            emergency.sms_provider = "textbee"
+
+    if emergency.latitude and emergency.longitude and (emergency.latitude != 0.0 or emergency.longitude != 0.0):
+        emergency.location_url = f"https://www.google.com/maps?q={emergency.latitude:.6f},{emergency.longitude:.6f}"
+    else:
+        emergency.location_url = None
+
+    return emergency
+
 @app.get("/api/emergency/active", response_model=List[schemas.EmergencyResponse])
 def get_active_emergencies(db: Session = Depends(get_db)):
-    return db.query(EmergencyEvent).filter(EmergencyEvent.status.notin_(["Resolved", "False Alarm"])).order_by(EmergencyEvent.created_at.desc()).all()
+    events = db.query(EmergencyEvent).filter(EmergencyEvent.status.notin_(["Resolved", "False Alarm", "Cancelled"])).order_by(EmergencyEvent.created_at.desc()).all()
+    return [populate_emergency_sms_metadata(db, e) for e in events]
+
+@app.get("/api/emergency/history")
+def get_emergency_history(db: Session = Depends(get_db)):
+    events = db.query(EmergencyEvent).order_by(EmergencyEvent.created_at.desc()).all()
+    history = []
+    for e in events:
+        user = db.query(User).filter(User.id == e.user_id).first()
+        logs = db.query(EmergencyLog).filter(EmergencyLog.emergency_event_id == e.id).order_by(EmergencyLog.timestamp.asc()).all()
+        history.append({
+            "id": e.id,
+            "patient_name": user.full_name if user else f"Patient #{e.user_id}",
+            "patient_email": user.email if user else None,
+            "trigger_source": e.trigger_source,
+            "confidence_score": e.confidence_score,
+            "status": e.status,
+            "latitude": e.latitude,
+            "longitude": e.longitude,
+            "location_url": f"https://www.google.com/maps?q={e.latitude:.6f},{e.longitude:.6f}" if (e.latitude and e.longitude) else None,
+            "created_at": e.created_at.isoformat() if e.created_at else None,
+            "resolved_at": e.resolved_at.isoformat() if e.resolved_at else None,
+            "is_demo": e.is_demo,
+            "logs": [{"id": l.id, "stage_name": l.stage_name, "description": l.description, "timestamp": l.timestamp.isoformat() if l.timestamp else None} for l in logs]
+        })
+    return history
 
 @app.get("/api/emergency/{emergency_id}", response_model=schemas.EmergencyResponse)
 def get_emergency_by_id(emergency_id: int, db: Session = Depends(get_db)):
     emergency = db.query(EmergencyEvent).filter(EmergencyEvent.id == emergency_id).first()
     if not emergency:
         raise HTTPException(status_code=404, detail="Emergency event not found")
-    return emergency
+    return populate_emergency_sms_metadata(db, emergency)
 
 @app.get("/api/emergency/{emergency_id}/timeline")
 def get_emergency_timeline(emergency_id: int, db: Session = Depends(get_db)):

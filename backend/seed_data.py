@@ -17,7 +17,7 @@ def seed_database():
 
         print("Seeding ResQNet Database...")
 
-        # 1. Create Default Users for all 5 Roles
+        # 1. Create Default Users for Roles
         # Patient / User
         patient = User(
             full_name="Alex Mercer",
@@ -25,14 +25,6 @@ def seed_database():
             hashed_password=get_password_hash("password123"),
             phone="+919876543210",
             role="user"
-        )
-        # Family Contact
-        family_user = User(
-            full_name="Sarah Mercer (Mother)",
-            email="family@resqnet.com",
-            hashed_password=get_password_hash("password123"),
-            phone="+919876543211",
-            role="family"
         )
         # Doctor
         doctor_user = User(
@@ -53,18 +45,17 @@ def seed_database():
         # System Admin
         admin_user = User(
             full_name="ResQNet Administrator",
-            email="admin@resqnet.com",
-            hashed_password=get_password_hash("password123"),
+            email="admin@gmail.com",
+            hashed_password=get_password_hash("admin@321"),
             phone="+919876543214",
             role="admin"
         )
 
-        db.add_all([patient, family_user, doctor_user, hospital_user, admin_user])
+        db.add_all([patient, doctor_user, hospital_user, admin_user])
         db.commit()
 
         # Refresh to get IDs
         db.refresh(patient)
-        db.refresh(family_user)
         db.refresh(doctor_user)
         db.refresh(hospital_user)
 
@@ -151,7 +142,9 @@ def seed_database():
             assigned_hospital_id=h1.id,
             assigned_ambulance_id=a1.id,
             escalation_step=4,
-            created_at=datetime.utcnow() - timedelta(days=1)
+            created_at=datetime.utcnow() - timedelta(minutes=15),
+            resolved_at=datetime.utcnow() - timedelta(minutes=10),
+            is_demo=True
         )
         db.add(emergency)
         db.commit()

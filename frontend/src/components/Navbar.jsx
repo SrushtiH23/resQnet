@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from '../context/AuthContext';
 import {
   Activity, LogOut, Smartphone, LineChart, Cpu, Zap, History, Layout,
-  Heart, PhoneCall, QrCode, ShieldAlert, Stethoscope, Building2, LayoutDashboard
+  Heart, PhoneCall, QrCode, ShieldAlert, Stethoscope, Building2, LayoutDashboard, Users, User
 } from 'lucide-react';
 
 export const Navbar = () => {
@@ -15,6 +15,10 @@ export const Navbar = () => {
     logout();
     navigate('/login');
   };
+
+  if (role === 'admin') {
+    return null;
+  }
 
   const roleDashboardPath = role ? `/${role}-dashboard` : '/login';
 
@@ -32,17 +36,12 @@ export const Navbar = () => {
           { label: 'Emergency History', path: '/emergency-history', icon: <History className="w-3.5 h-3.5" /> },
           { label: 'Medical Profile', path: '/medical-profile', icon: <Heart className="w-3.5 h-3.5" /> },
         ];
-      case 'family':
-        return [
-          { label: 'Family Dashboard', path: '/family-dashboard', icon: <ShieldAlert className="w-3.5 h-3.5" /> },
-          { label: 'Live Monitoring', path: '/live-monitoring', icon: <Smartphone className="w-3.5 h-3.5" /> },
-          { label: 'Emergency History', path: '/emergency-history', icon: <History className="w-3.5 h-3.5" /> },
-        ];
       case 'doctor':
         return [
           { label: 'Doctor Dashboard', path: '/doctor-dashboard', icon: <Stethoscope className="w-3.5 h-3.5" /> },
-          { label: 'Emergency Analysis', path: '/emergency-analysis', icon: <Cpu className="w-3.5 h-3.5" /> },
+          { label: 'Active Emergencies', path: '/active-emergencies', icon: <ShieldAlert className="w-3.5 h-3.5" /> },
           { label: 'Emergency History', path: '/emergency-history', icon: <History className="w-3.5 h-3.5" /> },
+          { label: 'My Profile', path: '/doctor-profile', icon: <User className="w-3.5 h-3.5" /> },
         ];
       case 'hospital':
         return [
@@ -53,12 +52,13 @@ export const Navbar = () => {
         ];
       case 'admin':
         return [
-          { label: 'Admin Dashboard', path: '/admin-dashboard', icon: <LayoutDashboard className="w-3.5 h-3.5" /> },
-          { label: 'Live Monitoring', path: '/live-monitoring', icon: <Smartphone className="w-3.5 h-3.5" /> },
-          { label: 'Sensor Analytics', path: '/sensor-analytics', icon: <LineChart className="w-3.5 h-3.5" /> },
-          { label: 'Emergency Analysis', path: '/emergency-analysis', icon: <Cpu className="w-3.5 h-3.5" /> },
-          { label: 'AI Decision Engine', path: '/ai-decision-engine', icon: <Zap className="w-3.5 h-3.5" /> },
+          { label: 'Admin Console', path: '/admin-dashboard', icon: <LayoutDashboard className="w-3.5 h-3.5" /> },
+          { label: 'Active Emergencies', path: '/admin-dashboard#active-emergencies', icon: <ShieldAlert className="w-3.5 h-3.5" /> },
+          { label: 'Users', path: '/admin-dashboard#users', icon: <Users className="w-3.5 h-3.5" /> },
+          { label: 'Doctors', path: '/admin-dashboard#doctors', icon: <Stethoscope className="w-3.5 h-3.5" /> },
+          { label: 'Hospitals', path: '/admin-dashboard#hospitals', icon: <Building2 className="w-3.5 h-3.5" /> },
           { label: 'Emergency History', path: '/emergency-history', icon: <History className="w-3.5 h-3.5" /> },
+          { label: 'Audit Logs', path: '/admin-dashboard#audit-logs', icon: <Activity className="w-3.5 h-3.5" /> },
         ];
       default:
         return [];
@@ -98,7 +98,7 @@ export const Navbar = () => {
               </div>
               <button
                 onClick={handleLogout}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors border border-transparent hover:border-rose-500/20"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors border border-transparent hover:border-rose-500/20 cursor-pointer"
                 title="Logout"
               >
                 <LogOut className="w-4 h-4" />
@@ -118,6 +118,12 @@ export const Navbar = () => {
                 className="px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-semibold shadow-lg shadow-rose-600/20 transition-all"
               >
                 Register
+              </Link>
+              <Link
+                to="/admin-login"
+                className="px-3.5 py-2 rounded-lg bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 font-bold border border-purple-500/40 transition-all"
+              >
+                Admin Login
               </Link>
             </div>
           )}

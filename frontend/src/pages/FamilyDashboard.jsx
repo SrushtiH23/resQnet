@@ -148,7 +148,15 @@ export const FamilyDashboard = () => {
 
           {/* Real Emergency Escalation & Live Provider Notification Status */}
           {activeEmergency && (
-            <EmergencyEscalationCard emergency={activeEmergency} onStatusChange={fetchActiveEmergency} />
+            <div className="space-y-2">
+              {activeEmergency.is_demo && (
+                <div className="p-3 bg-purple-950/80 border border-purple-500/50 rounded-2xl flex items-center justify-between text-purple-300 text-xs font-mono font-bold">
+                  <span>🧪 TEST MODE / SEEDED DEMO DATA</span>
+                  <span className="text-[10px] text-purple-400">Historical Seed Event #{activeEmergency.id}</span>
+                </div>
+              )}
+              <EmergencyEscalationCard emergency={activeEmergency} onStatusChange={fetchActiveEmergency} />
+            </div>
           )}
 
           {/* Time-Stamped Step Timeline */}
