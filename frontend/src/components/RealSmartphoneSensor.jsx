@@ -16,6 +16,12 @@ export const RealSmartphoneSensor = ({ userId = 1, onFallDetected }) => {
 
   const [lastAnalysis, setLastAnalysis] = useState(null);
 
+  // 5-Second Verification Modal State
+  const [showFallModal, setShowFallModal] = useState(false);
+  const [countdown, setCountdown] = useState(5);
+  const countdownTimerRef = useRef(null);
+  const activeFallLockRef = useRef(false);
+
   // Refs for 200ms streaming loop
   const accelRef = useRef(accel);
   const gyroRef = useRef(gyro);
@@ -27,6 +33,60 @@ export const RealSmartphoneSensor = ({ userId = 1, onFallDetected }) => {
   useEffect(() => {
     gyroRef.current = gyro;
   }, [gyro]);
+
+  const executeEmergencyDispatch = (fallData) => {
+    if (countdownTimerRef.current) {
+      clearInterval(countdownTimerRef.current);
+    }
+    setShowFallModal(false);
+
+    if (onFallDetected) {
+      onFallDetected(fallData || lastAnalysis);
+    }
+
+    // Dispatch emergency alert on confirmed fall after 5s timeout or user click
+    api.post('/emergency/create', {
+      trigger_source: 'Fall Detection',
+      latitude: 37.7749,
+      longitude: -122.4194,
+      speed: 0.0,
+      battery_level: 95,
+      network_status: '5G'
+    }).catch((err) => console.warn('Fall detection emergency trigger notice:', err));
+
+    setTimeout(() => {
+      activeFallLockRef.current = false;
+    }, 15000);
+  };
+
+  const triggerFallVerificationModal = (fallData) => {
+    setShowFallModal(true);
+    setCountdown(5);
+
+    if (countdownTimerRef.current) {
+      clearInterval(countdownTimerRef.current);
+    }
+
+    let timer = 5;
+    countdownTimerRef.current = setInterval(() => {
+      timer -= 1;
+      setCountdown(timer);
+      if (timer <= 0) {
+        clearInterval(countdownTimerRef.current);
+        executeEmergencyDispatch(fallData);
+      }
+    }, 1000);
+  };
+
+  const handleUserSaysOkay = () => {
+    if (countdownTimerRef.current) {
+      clearInterval(countdownTimerRef.current);
+    }
+    setShowFallModal(false);
+    setTimeout(() => {
+      activeFallLockRef.current = false;
+    }, 15000);
+  };
 
   // Auto-start streaming as soon as hardware motion sensors emit active telemetry
   useEffect(() => {
@@ -87,19 +147,9 @@ export const RealSmartphoneSensor = ({ userId = 1, onFallDetected }) => {
             setLastAnalysis(res.data);
           }
 
-          if (res.data?.is_fall_detected) {
-            if (onFallDetected) {
-              onFallDetected(res.data);
-            }
-            // Dispatch emergency alert on confirmed fall
-            api.post('/emergency/create', {
-              trigger_source: 'Fall Detection',
-              latitude: 37.7749,
-              longitude: -122.4194,
-              speed: 0.0,
-              battery_level: 95,
-              network_status: '5G'
-            }).catch((err) => console.warn('Fall detection emergency trigger notice:', err));
+          if (res.data?.is_fall_detected && !activeFallLockRef.current) {
+            activeFallLockRef.current = true;
+            triggerFallVerificationModal(res.data);
           }
         } catch (err) {
           console.warn('Sensor 200ms frame stream error:', err);
@@ -294,6 +344,51 @@ export const RealSmartphoneSensor = ({ userId = 1, onFallDetected }) => {
           Frames Transmitted: <strong className="text-cyan-400">{frameCount}</strong> {lastStreamTime && `| Last: ${lastStreamTime}`}
         </span>
       </div>
+
+      {/* 5-SECOND FALL VERIFICATION MODAL POPUP */}
+      {showFallModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-xl animate-fade-in">
+          <div className="glass-panel p-8 rounded-3xl max-w-lg w-full border-2 border-rose-500 bg-rose-950/90 text-center space-y-6 shadow-2xl shadow-rose-950/90">
+            {/* Animated Red Ring & Large Countdown Digit */}
+            <div className="relative mx-auto w-24 h-24 flex items-center justify-center">
+              <div className="absolute inset-0 rounded-full border-4 border-rose-500/40 animate-ping" />
+              <div className="w-24 h-24 rounded-full bg-rose-600/30 border-4 border-rose-500 flex items-center justify-center text-white font-black text-4xl font-mono shadow-inner">
+                {countdown}s
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <h3 className="text-2xl md:text-3xl font-black text-white tracking-tight flex items-center justify-center gap-2">
+                🚨 FALL DETECTED!
+              </h3>
+              <p className="text-sm font-bold text-rose-200 uppercase tracking-wider">
+                Are you okay?
+              </p>
+              <p className="text-xs text-slate-300 leading-relaxed font-medium">
+                An emergency alert and SMS will automatically be sent to your emergency contacts in <strong className="text-rose-400 font-mono text-sm">{countdown} seconds</strong> unless you respond.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+              <button
+                onClick={handleUserSaysOkay}
+                className="py-4 px-5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black rounded-2xl text-xs md:text-sm border border-emerald-400/50 shadow-xl shadow-emerald-950/60 transition-all hover:scale-105 uppercase tracking-wider cursor-pointer flex items-center justify-center gap-2"
+              >
+                <ShieldCheck className="w-5 h-5 text-emerald-200" />
+                I'M OKAY (CANCEL ALERT)
+              </button>
+
+              <button
+                onClick={() => executeEmergencyDispatch(lastAnalysis)}
+                className="py-4 px-5 bg-gradient-to-r from-rose-700 to-red-600 hover:from-rose-600 hover:to-red-500 text-white font-black rounded-2xl text-xs md:text-sm border border-rose-400/50 shadow-xl shadow-rose-950/60 transition-all hover:scale-105 uppercase tracking-wider cursor-pointer flex items-center justify-center gap-2"
+              >
+                <AlertTriangle className="w-5 h-5 text-rose-200" />
+                NEED HELP NOW (SEND SOS)
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
