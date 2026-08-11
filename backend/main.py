@@ -85,6 +85,7 @@ app.add_middleware(
 sliding_buffer = SlidingWindowBuffer(capacity=100)
 
 @app.get("/")
+@app.get("")
 def root():
     return {
         "platform": "ResQNet Intelligence Platform",
@@ -98,6 +99,7 @@ def favicon():
     return Response(content=b"", media_type="image/x-icon")
 
 @app.get("/api")
+@app.get("/api/")
 def api_root():
     return {
         "platform": "ResQNet Intelligence API",
