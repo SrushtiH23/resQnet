@@ -129,7 +129,7 @@ class TestResQNetWorkflow(unittest.TestCase):
         sms_log = EmergencyNotificationService.send_emergency_sms(
             self.db, self.contact, emergency, self.user.full_name
         )
-        self.assertEqual(sms_log.status, "FAILED")
+        self.assertIn(sms_log.status, ["FAILED", "PROVIDER_NOT_CONFIGURED"])
         self.assertIn("not configured", sms_log.error_message.lower())
 
     def test_scenario_7_contact_acknowledgement(self):

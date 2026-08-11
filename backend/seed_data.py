@@ -6,13 +6,14 @@ from services.qr_service import EncryptedQRService
 from datetime import datetime, timedelta
 
 def seed_database():
-    Base.metadata.create_all(bind=engine)
-    db: Session = SessionLocal()
-
     try:
+        Base.metadata.create_all(bind=engine)
+        db: Session = SessionLocal()
+
         # Check if already seeded
         if db.query(User).filter(User.email == "user@resqnet.com").first():
             print("Database already seeded.")
+            db.close()
             return
 
         print("Seeding ResQNet Database...")

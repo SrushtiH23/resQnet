@@ -30,12 +30,12 @@ from services.notification_service import NotificationAndAuditService, normalize
 from websocket_manager import ws_manager
 from seed_data import seed_database
 
-# Create DB tables and seed initial data
-Base.metadata.create_all(bind=engine)
+# Create DB tables and seed initial data safely
 try:
+    Base.metadata.create_all(bind=engine)
     seed_database()
 except Exception as err:
-    print(f"Database auto-seed notice: {err}")
+    print(f"Database setup/auto-seed notice: {err}")
 
 # Print SMS Provider Configuration Status at Startup
 textbee_key = os.getenv("TEXTBEE_API_KEY", "").strip()
@@ -90,6 +90,18 @@ def root():
         "platform": "ResQNet Intelligence Platform",
         "status": "Operational",
         "timestamp": datetime.utcnow().isoformat()
+    }
+
+@app.get("/favicon.ico", include_in_schema=False)
+def favicon():
+    from fastapi.responses import Response
+    return Response(content=b"", media_type="image/x-icon")
+
+@app.get("/api")
+def api_root():
+    return {
+        "platform": "ResQNet Intelligence API",
+        "status": "Operational"
     }
 
 # ==========================================
