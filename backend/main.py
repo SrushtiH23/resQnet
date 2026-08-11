@@ -351,6 +351,9 @@ def analyze_sensor_frames(req: schemas.FallSimulationRequest, db: Session = Depe
     samples = sliding_buffer.get_samples()
     result = IntelligentFallDetector.analyze_window(samples)
 
+    if result.get("is_fall"):
+        sliding_buffer.clear()
+
     return {
         "is_fall_detected": result["is_fall"],
         "status_label": result.get("status_label", "NORMAL"),
@@ -416,6 +419,16 @@ def create_emergency(req: schemas.EmergencyCreate, current_user: User = Depends(
     print(f"Request Coordinates: ({req.latitude}, {req.longitude})")
 
     try:
+        # Deduplication: Check if user already has an active emergency event
+        existing_active = db.query(EmergencyEvent).filter(
+            EmergencyEvent.user_id == current_user.id,
+            EmergencyEvent.status.in_(["Family Notified", "Hospital Dispatched", "Ambulance En-Route", "En-Route", "PENDING", "ACTIVE", "DISPATCHED"])
+        ).order_by(EmergencyEvent.created_at.desc()).first()
+
+        if existing_active:
+            print(f"[SOS DEDUPLICATION] Active emergency #{existing_active.id} already active for User #{current_user.id}. Preventing duplicate SMS dispatch.")
+            return existing_active
+
         is_manual_sos = req.trigger_source in ["MANUAL_SOS", "SOS Button"]
         trigger_type = "MANUAL_SOS" if is_manual_sos else req.trigger_source
         initial_conf = 95.0 if is_manual_sos else (85.0 if req.trigger_source == "Fall Detection" else 50.0)

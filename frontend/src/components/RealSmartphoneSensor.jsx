@@ -21,6 +21,7 @@ export const RealSmartphoneSensor = ({ userId = 1, onFallDetected }) => {
   const [countdown, setCountdown] = useState(5);
   const countdownTimerRef = useRef(null);
   const activeFallLockRef = useRef(false);
+  const hasDispatchedEmergencyRef = useRef(false);
 
   // Refs for 200ms streaming loop
   const accelRef = useRef(accel);
@@ -40,11 +41,17 @@ export const RealSmartphoneSensor = ({ userId = 1, onFallDetected }) => {
     }
     setShowFallModal(false);
 
+    if (hasDispatchedEmergencyRef.current) {
+      console.log('[SENSOR DISPATCH LOCK] Emergency alert already dispatched for this fall event. Skipping duplicate POST.');
+      return;
+    }
+    hasDispatchedEmergencyRef.current = true;
+
     if (onFallDetected) {
       onFallDetected(fallData || lastAnalysis);
     }
 
-    // Dispatch emergency alert on confirmed fall after 5s timeout or user click
+    // Dispatch single emergency alert on confirmed fall
     api.post('/emergency/create', {
       trigger_source: 'Fall Detection',
       latitude: 37.7749,
@@ -53,10 +60,6 @@ export const RealSmartphoneSensor = ({ userId = 1, onFallDetected }) => {
       battery_level: 95,
       network_status: '5G'
     }).catch((err) => console.warn('Fall detection emergency trigger notice:', err));
-
-    setTimeout(() => {
-      activeFallLockRef.current = false;
-    }, 15000);
   };
 
   const triggerFallVerificationModal = (fallData) => {
