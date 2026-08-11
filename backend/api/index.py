@@ -21,7 +21,9 @@ async def app(scope, receive, send):
             if path.startswith(prefix):
                 path = path[len(prefix):]
                 break
-        if not path.startswith("/"):
+        if not path or path == "//":
+            path = "/"
+        elif not path.startswith("/"):
             path = "/" + path
         scope["path"] = path
     await raw_app(scope, receive, send)
