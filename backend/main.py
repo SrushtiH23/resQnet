@@ -108,6 +108,7 @@ def api_root():
 # MODULE 1: Auth & User Management APIs
 # ==========================================
 @app.post("/api/auth/register", response_model=schemas.UserResponse)
+@app.post("/auth/register", response_model=schemas.UserResponse)
 def register_user(user_in: schemas.UserRegister, db: Session = Depends(get_db)):
     requested_role = user_in.role.lower()
     if requested_role in ["admin", "family"]:
@@ -144,6 +145,7 @@ def register_user(user_in: schemas.UserRegister, db: Session = Depends(get_db)):
     return user
 
 @app.post("/api/auth/login", response_model=schemas.Token)
+@app.post("/auth/login", response_model=schemas.Token)
 def login(login_in: schemas.UserLogin, db: Session = Depends(get_db)):
     clean_email = login_in.email.strip().lower() if login_in.email else ""
     clean_password = login_in.password.strip() if login_in.password else ""
@@ -166,6 +168,7 @@ def login(login_in: schemas.UserLogin, db: Session = Depends(get_db)):
     }
 
 @app.get("/api/auth/me", response_model=schemas.UserResponse)
+@app.get("/auth/me", response_model=schemas.UserResponse)
 def get_me(current_user: User = Depends(get_current_user)):
     return current_user
 
