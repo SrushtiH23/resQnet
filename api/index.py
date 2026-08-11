@@ -16,14 +16,24 @@ except ImportError:
 
 async def app(scope, receive, send):
     if scope["type"] in ("http", "websocket"):
+        headers = dict(scope.get("headers", []))
+        original_uri = headers.get(b"x-forwarded-uri", b"").decode("utf-8")
+        if not original_uri:
+            original_uri = headers.get(b"x-matched-path", b"").decode("utf-8")
+
         path = scope.get("path", "")
-        for prefix in ["/api/index.py", "/api/index"]:
-            if path.startswith(prefix):
-                path = path[len(prefix):]
-                break
+        if original_uri:
+            path = original_uri.split("?")[0]
+        else:
+            for prefix in ["/api/index.py", "/api/index"]:
+                if path.startswith(prefix):
+                    path = path[len(prefix):]
+                    break
+
         if not path or path == "//":
             path = "/"
         elif not path.startswith("/"):
             path = "/" + path
+
         scope["path"] = path
     await raw_app(scope, receive, send)
