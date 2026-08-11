@@ -3,6 +3,7 @@ import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { DashboardTriageChatbot } from '../components/DashboardTriageChatbot';
 import { SimpleEmergencyStatusCard } from '../components/SimpleEmergencyStatusCard';
+import { RealSmartphoneSensor } from '../components/RealSmartphoneSensor';
 import {
   Navigation, Flame, ShieldAlert, MapPin
 } from 'lucide-react';
@@ -198,7 +199,10 @@ export const UserDashboard = () => {
         </p>
       </div>
 
-      {/* 4. EMERGENCY TRIAGE CHATBOT */}
+      {/* 4. REAL SMARTPHONE HARDWARE SENSOR & FALL DETECTION ENGINE */}
+      <RealSmartphoneSensor onFallDetected={fetchActiveEmergency} />
+
+      {/* 5. EMERGENCY TRIAGE CHATBOT */}
       <DashboardTriageChatbot
         activeEmergency={activeEmergency}
         onRequestEmergency={handleOpenSosModal}

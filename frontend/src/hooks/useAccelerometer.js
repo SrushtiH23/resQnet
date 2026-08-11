@@ -1,9 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 /**
  * useAccelerometer React Hook
  * Captures smartphone Accelerometer readings via DeviceMotionEvent.
  * Eliminates all hardcoded 9.81 m/s² defaults and returns truthful sensorState.
+ * Maintains an internal frame buffer so high-frequency peak impacts are preserved.
  */
 export const useAccelerometer = () => {
   const [data, setData] = useState({
@@ -16,6 +17,8 @@ export const useAccelerometer = () => {
   const [isSupported, setIsSupported] = useState(false);
   const [permissionGranted, setPermissionGranted] = useState(false);
   const [hasEmittedData, setHasEmittedData] = useState(false);
+
+  const frameBufferRef = useRef([]);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && 'DeviceMotionEvent' in window) {
@@ -39,15 +42,28 @@ export const useAccelerometer = () => {
       const az = Number(acc.z);
       const total_accel = Math.sqrt(ax * ax + ay * ay + az * az);
 
-      setData({
+      const sample = {
         ax: +ax.toFixed(2),
         ay: +ay.toFixed(2),
         az: +az.toFixed(2),
         total_accel: +total_accel.toFixed(2),
         timestamp: Date.now(),
-      });
+      };
+
+      frameBufferRef.current.push(sample);
+      if (frameBufferRef.current.length > 200) {
+        frameBufferRef.current.shift();
+      }
+
+      setData(sample);
       setHasEmittedData(true);
     }
+  }, []);
+
+  const getAndClearBuffer = useCallback(() => {
+    const samples = [...frameBufferRef.current];
+    frameBufferRef.current = [];
+    return samples;
   }, []);
 
   const requestPermission = useCallback(async () => {
@@ -98,5 +114,7 @@ export const useAccelerometer = () => {
     sensorState,
     hasEmittedData,
     requestPermission,
+    getAndClearBuffer,
   };
 };
+

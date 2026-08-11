@@ -148,6 +148,7 @@ class FallSimulationRequest(BaseModel):
 
 class FallDetectionResult(BaseModel):
     is_fall_detected: bool
+    status_label: Optional[str] = "NORMAL"
     detected_stage: str
     free_fall: bool
     impact: bool

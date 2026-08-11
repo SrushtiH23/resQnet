@@ -14,6 +14,8 @@ export const RealSmartphoneSensor = ({ userId = 1, onFallDetected }) => {
   const [streamStatus, setStreamStatus] = useState('IDLE'); // IDLE | CONNECTED | DISCONNECTED
   const [streamError, setStreamError] = useState(null);
 
+  const [lastAnalysis, setLastAnalysis] = useState(null);
+
   // Refs for 200ms streaming loop
   const accelRef = useRef(accel);
   const gyroRef = useRef(gyro);
@@ -25,6 +27,13 @@ export const RealSmartphoneSensor = ({ userId = 1, onFallDetected }) => {
   useEffect(() => {
     gyroRef.current = gyro;
   }, [gyro]);
+
+  // Auto-start streaming as soon as hardware motion sensors emit active telemetry
+  useEffect(() => {
+    if ((accel.sensorState === 'ACTIVE' || accel.hasEmittedData) && !streamActive) {
+      setStreamActive(true);
+    }
+  }, [accel.sensorState, accel.hasEmittedData, streamActive]);
 
   // 200ms Frame Streaming Loop to FastAPI
   useEffect(() => {
@@ -41,31 +50,56 @@ export const RealSmartphoneSensor = ({ userId = 1, onFallDetected }) => {
           return;
         }
 
-        const frame = {
-          ax: a.ax !== null ? a.ax : 0.0,
-          ay: a.ay !== null ? a.ay : 0.0,
-          az: a.az !== null ? a.az : 0.0,
-          gx: g.gx !== null ? g.gx : 0.0,
-          gy: g.gy !== null ? g.gy : 0.0,
-          gz: g.gz !== null ? g.gz : 0.0,
-          timestamp: Date.now(),
-        };
+        // Retrieve all high-frequency frames accumulated during the 200ms interval
+        const bufferedSamples = a.getAndClearBuffer ? a.getAndClearBuffer() : [];
+
+        const framesToSend = bufferedSamples.length > 0
+          ? bufferedSamples.map((s) => ({
+              ax: s.ax, ay: s.ay, az: s.az,
+              gx: g.gx !== null ? g.gx : 0.0,
+              gy: g.gy !== null ? g.gy : 0.0,
+              gz: g.gz !== null ? g.gz : 0.0,
+              timestamp: s.timestamp,
+            }))
+          : [{
+              ax: a.ax !== null ? a.ax : 0.0,
+              ay: a.ay !== null ? a.ay : 0.0,
+              az: a.az !== null ? a.az : 0.0,
+              gx: g.gx !== null ? g.gx : 0.0,
+              gy: g.gy !== null ? g.gy : 0.0,
+              gz: g.gz !== null ? g.gz : 0.0,
+              timestamp: Date.now(),
+            }];
 
         try {
           const res = await api.post('/sensor/sliding-window-analyze', {
-            frames: [frame],
+            frames: framesToSend,
             user_id: userId,
             latitude: 37.7749,
             longitude: -122.4194,
           });
 
-          setFrameCount((prev) => prev + 1);
+          setFrameCount((prev) => prev + framesToSend.length);
           setLastStreamTime(new Date().toLocaleTimeString());
           setStreamStatus('CONNECTED');
           setStreamError(null);
+          if (res.data) {
+            setLastAnalysis(res.data);
+          }
 
-          if (res.data?.is_fall_detected && onFallDetected) {
-            onFallDetected(res.data);
+          if (res.data?.is_fall_detected) {
+            if (onFallDetected) {
+              onFallDetected(res.data);
+            }
+            // Dispatch emergency alert on confirmed fall
+            api.post('/emergency/create', {
+              trigger_source: 'Fall Detection',
+              latitude: 37.7749,
+              longitude: -122.4194,
+              speed: 0.0,
+              battery_level: 95,
+              network_status: '5G'
+            }).catch((err) => console.warn('Fall detection emergency trigger notice:', err));
           }
         } catch (err) {
           console.warn('Sensor 200ms frame stream error:', err);
@@ -153,6 +187,41 @@ export const RealSmartphoneSensor = ({ userId = 1, onFallDetected }) => {
         <div className="p-3.5 bg-amber-950/80 border border-amber-500/50 rounded-2xl flex items-center gap-2.5 text-amber-300 text-xs font-semibold">
           <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 animate-pulse" />
           <span>{streamError}</span>
+        </div>
+      )}
+
+      {/* Fall Detection Live Status Display */}
+      {lastAnalysis && (
+        <div className={`p-4 rounded-2xl border flex items-center justify-between flex-wrap gap-3 transition-all ${
+          lastAnalysis.status_label === 'FALL CONFIRMED' || lastAnalysis.is_fall_detected
+            ? 'bg-rose-950/90 border-rose-500/80 text-rose-200 animate-pulse shadow-lg shadow-rose-900/40'
+            : lastAnalysis.status_label === 'POSSIBLE FALL'
+            ? 'bg-amber-950/90 border-amber-500/80 text-amber-200'
+            : 'bg-slate-900/90 border-slate-800 text-slate-300'
+        }`}>
+          <div className="space-y-0.5">
+            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider">
+              <span>FALL ALGORITHM STATUS:</span>
+              <span className={`px-2.5 py-0.5 rounded-full font-black font-mono ${
+                lastAnalysis.status_label === 'FALL CONFIRMED' || lastAnalysis.is_fall_detected
+                  ? 'bg-rose-500 text-white'
+                  : lastAnalysis.status_label === 'POSSIBLE FALL'
+                  ? 'bg-amber-500 text-black'
+                  : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
+              }`}>
+                {lastAnalysis.status_label || (lastAnalysis.is_fall_detected ? 'FALL CONFIRMED' : 'NORMAL')}
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-400 font-mono">
+              {lastAnalysis.detected_stage} {lastAnalysis.explanation && `| ${lastAnalysis.explanation}`}
+            </p>
+          </div>
+          <div className="text-[11px] font-mono flex items-center gap-3">
+            <span>FreeFall: <strong className={lastAnalysis.free_fall ? 'text-amber-400' : 'text-slate-500'}>{lastAnalysis.free_fall ? 'YES' : 'NO'}</strong></span>
+            <span>Impact: <strong className={lastAnalysis.impact ? 'text-rose-400' : 'text-slate-500'}>{lastAnalysis.impact ? 'YES' : 'NO'}</strong></span>
+            <span>Rotation: <strong className={lastAnalysis.rotation ? 'text-purple-400' : 'text-slate-500'}>{lastAnalysis.rotation ? 'YES' : 'NO'}</strong></span>
+            <span>Stillness: <strong className={lastAnalysis.stillness ? 'text-emerald-400' : 'text-slate-500'}>{lastAnalysis.stillness ? 'YES' : 'NO'}</strong></span>
+          </div>
         </div>
       )}
 

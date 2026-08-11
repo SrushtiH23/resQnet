@@ -353,6 +353,7 @@ def analyze_sensor_frames(req: schemas.FallSimulationRequest, db: Session = Depe
 
     return {
         "is_fall_detected": result["is_fall"],
+        "status_label": result.get("status_label", "NORMAL"),
         "detected_stage": result["stage"],
         "free_fall": result["free_fall"],
         "impact": result["impact"],
