@@ -70,13 +70,13 @@ origins = [
     "http://127.0.0.1:3000",
     "http://127.0.0.1:5173",
     "https://resqnet-ten.vercel.app",
-    "https://res-qnet-gilt.vercel.app",
-    "*"
+    "https://res-qnet-gilt.vercel.app"
 ]
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -103,14 +103,15 @@ def register_user(user_in: schemas.UserRegister, db: Session = Depends(get_db)):
     if requested_role not in ["user", "doctor", "hospital"]:
         raise HTTPException(status_code=400, detail="Invalid role specified for registration.")
 
-    existing = db.query(User).filter(User.email == user_in.email).first()
+    clean_email = user_in.email.strip().lower() if user_in.email else ""
+    existing = db.query(User).filter(User.email.ilike(clean_email)).first()
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
 
     user = User(
         full_name=user_in.full_name,
-        email=user_in.email,
-        hashed_password=get_password_hash(user_in.password),
+        email=clean_email,
+        hashed_password=get_password_hash(user_in.password.strip()),
         phone=user_in.phone,
         role=requested_role
     )
@@ -132,8 +133,14 @@ def register_user(user_in: schemas.UserRegister, db: Session = Depends(get_db)):
 
 @app.post("/api/auth/login", response_model=schemas.Token)
 def login(login_in: schemas.UserLogin, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.email == login_in.email).first()
-    if not user or not verify_password(login_in.password, user.hashed_password):
+    clean_email = login_in.email.strip().lower() if login_in.email else ""
+    clean_password = login_in.password.strip() if login_in.password else ""
+
+    user = db.query(User).filter(User.email.ilike(clean_email)).first()
+    if not user:
+        user = db.query(User).filter(User.email == clean_email).first()
+
+    if not user or not verify_password(clean_password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
     access_token = create_access_token(data={"sub": user.email, "role": user.role, "user_id": user.id})

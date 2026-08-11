@@ -25,11 +25,13 @@ export const AuthProvider = ({ children }) => {
   }, [token]);
 
   const login = async (email, password) => {
-    const res = await api.post('/auth/login', { email, password });
+    const cleanEmail = email ? email.trim().toLowerCase() : '';
+    const cleanPassword = password ? password.trim() : '';
+    const res = await api.post('/auth/login', { email: cleanEmail, password: cleanPassword });
     const { access_token, user_id, role, full_name } = res.data;
     localStorage.setItem('resqnet_token', access_token);
     setToken(access_token);
-    setUser({ id: user_id, email, role, full_name });
+    setUser({ id: user_id, email: cleanEmail, role, full_name });
     return res.data;
   };
 

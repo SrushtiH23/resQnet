@@ -121,6 +121,9 @@ export const Register = () => {
                 <input
                   type="email"
                   required
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck="false"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                   className="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-rose-500"

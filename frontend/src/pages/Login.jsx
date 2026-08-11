@@ -85,6 +85,9 @@ export const Login = () => {
               <input
                 type="email"
                 required
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck="false"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full pl-9 pr-4 py-2.5 bg-slate-900/80 border border-slate-700/80 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition-all"
