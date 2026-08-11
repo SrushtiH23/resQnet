@@ -52,12 +52,20 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
         raise credentials_exception
     return user
 
-def require_role(allowed_roles: list[str]):
+from typing import Union, List
+
+def require_role(allowed_roles: Union[str, List[str]]):
+    if isinstance(allowed_roles, str):
+        roles = [allowed_roles]
+    else:
+        roles = list(allowed_roles)
+
     def role_checker(current_user = Depends(get_current_user)):
-        if current_user.role not in allowed_roles and current_user.role != "admin":
+        if current_user.role not in roles:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Action restricted to roles: {', '.join(allowed_roles)}"
+                detail=f"Action restricted to roles: {', '.join(roles)}"
             )
         return current_user
     return role_checker
+

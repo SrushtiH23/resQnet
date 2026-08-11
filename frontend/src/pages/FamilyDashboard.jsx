@@ -3,6 +3,7 @@ import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { InteractiveLiveMap } from '../components/InteractiveLiveMap';
 import { StepTimeline } from '../components/StepTimeline';
+import { EmergencyEscalationCard } from '../components/EmergencyEscalationCard';
 import { ShieldAlert, MapPin, Radio, CheckCircle, XCircle, Clock, Heart, Phone, Battery, Wifi, Activity, Zap, Navigation, Truck } from 'lucide-react';
 
 export const FamilyDashboard = () => {
@@ -145,7 +146,12 @@ export const FamilyDashboard = () => {
             isEmergency={true}
           />
 
-          {/* Time-Stamped Step Timeline (6:20 PM - 6:24 PM) */}
+          {/* Real Emergency Escalation & Live Provider Notification Status */}
+          {activeEmergency && (
+            <EmergencyEscalationCard emergency={activeEmergency} onStatusChange={fetchActiveEmergency} />
+          )}
+
+          {/* Time-Stamped Step Timeline */}
           <StepTimeline />
         </div>
 

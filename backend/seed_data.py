@@ -23,7 +23,7 @@ def seed_database():
             full_name="Alex Mercer",
             email="user@resqnet.com",
             hashed_password=get_password_hash("password123"),
-            phone="+1-555-0192",
+            phone="+919876543210",
             role="user"
         )
         # Family Contact
@@ -31,7 +31,7 @@ def seed_database():
             full_name="Sarah Mercer (Mother)",
             email="family@resqnet.com",
             hashed_password=get_password_hash("password123"),
-            phone="+1-555-0193",
+            phone="+919876543211",
             role="family"
         )
         # Doctor
@@ -39,7 +39,7 @@ def seed_database():
             full_name="Dr. Robert Chen",
             email="doctor@resqnet.com",
             hashed_password=get_password_hash("password123"),
-            phone="+1-555-0800",
+            phone="+919876543212",
             role="doctor"
         )
         # Hospital Admin
@@ -47,7 +47,7 @@ def seed_database():
             full_name="Metro City Trauma Center",
             email="hospital@resqnet.com",
             hashed_password=get_password_hash("password123"),
-            phone="+1-555-0900",
+            phone="+919876543213",
             role="hospital"
         )
         # System Admin
@@ -55,7 +55,7 @@ def seed_database():
             full_name="ResQNet Administrator",
             email="admin@resqnet.com",
             hashed_password=get_password_hash("password123"),
-            phone="+1-555-0000",
+            phone="+919876543214",
             role="admin"
         )
 
@@ -79,7 +79,7 @@ def seed_database():
             allergies="Penicillin, Peanuts",
             insurance_details="BlueShield Premium #BS-994821",
             doctor_name="Dr. Robert Chen",
-            doctor_phone="+1-555-0800",
+            doctor_phone="+919876543212",
             emergency_notes="Requires immediate blood glucose check if unconscious."
         )
         db.add(med_profile)
@@ -93,18 +93,18 @@ def seed_database():
         db.add(qr_card)
 
         # 4. Family Contacts (Escalation Order)
-        f1 = FamilyContact(user_id=patient.id, contact_name="Sarah Mercer", relationship_type="Mother", phone="+1-555-0193", email="family@resqnet.com", escalation_order=1)
-        f2 = FamilyContact(user_id=patient.id, contact_name="David Mercer", relationship_type="Father", phone="+1-555-0194", email="david@resqnet.com", escalation_order=2)
-        f3 = FamilyContact(user_id=patient.id, contact_name="Chris Mercer", relationship_type="Brother", phone="+1-555-0195", email="chris@resqnet.com", escalation_order=3)
+        f1 = FamilyContact(user_id=patient.id, contact_name="Sarah Mercer", relationship_type="Mother", phone="+919876543211", email="family@resqnet.com", escalation_order=1)
+        f2 = FamilyContact(user_id=patient.id, contact_name="David Mercer", relationship_type="Father", phone="+918123456789", email="david@resqnet.com", escalation_order=2)
+        f3 = FamilyContact(user_id=patient.id, contact_name="Chris Mercer", relationship_type="Brother", phone="+917012345678", email="chris@resqnet.com", escalation_order=3)
         db.add_all([f1, f2, f3])
 
-        # 5. Hospitals (Coordinates around Metro area: 12.9716, 77.5946 or 37.7749, -122.4194)
+        # 5. Hospitals
         h1 = Hospital(
             name="City Central Emergency Hospital",
             latitude=37.7749,
             longitude=-122.4194,
             address="100 Hospital Way, Sector 4",
-            phone="+1-555-9111",
+            phone="+919876543220",
             available_beds=14,
             specialities="Trauma, Cardiology, ICU, Neurology"
         )
@@ -113,7 +113,7 @@ def seed_database():
             latitude=37.7833,
             longitude=-122.4167,
             address="550 Medical Plaza Drive",
-            phone="+1-555-9112",
+            phone="+919876543221",
             available_beds=8,
             specialities="Pediatrics, Emergency Triage, Orthopedics"
         )
@@ -122,7 +122,7 @@ def seed_database():
             latitude=37.7650,
             longitude=-122.4300,
             address="88 Metro Boulevard",
-            phone="+1-555-9113",
+            phone="+919876543222",
             available_beds=3,
             specialities="Burn ICU, Critical Care, Trauma"
         )
@@ -132,17 +132,17 @@ def seed_database():
         db.refresh(h2)
 
         # 6. Ambulances
-        a1 = Ambulance(hospital_id=h1.id, vehicle_number="AMB-101", driver_name="John Miller", driver_phone="+1-555-0441", latitude=37.7750, longitude=-122.4200, status="Available")
-        a2 = Ambulance(hospital_id=h1.id, vehicle_number="AMB-102", driver_name="Mark Vance", driver_phone="+1-555-0442", latitude=37.7760, longitude=-122.4180, status="Available")
-        a3 = Ambulance(hospital_id=h2.id, vehicle_number="AMB-201", driver_name="Sarah Connor", driver_phone="+1-555-0443", latitude=37.7840, longitude=-122.4160, status="Available")
+        a1 = Ambulance(hospital_id=h1.id, vehicle_number="AMB-101", driver_name="John Miller", driver_phone="+919876543230", latitude=37.7750, longitude=-122.4200, status="Available")
+        a2 = Ambulance(hospital_id=h1.id, vehicle_number="AMB-102", driver_name="Mark Vance", driver_phone="+919876543231", latitude=37.7760, longitude=-122.4180, status="Available")
+        a3 = Ambulance(hospital_id=h2.id, vehicle_number="AMB-201", driver_name="Sarah Connor", driver_phone="+919876543232", latitude=37.7840, longitude=-122.4160, status="Available")
         db.add_all([a1, a2, a3])
 
-        # 7. Initial Emergency Event & Log (Simulated Active/Recent Case)
+        # 7. Initial Past Emergency Event (Resolved)
         emergency = EmergencyEvent(
             user_id=patient.id,
             trigger_source="Fall Detection",
             confidence_score=85.0,
-            status="Hospital Dispatched",
+            status="Resolved",
             latitude=37.7755,
             longitude=-122.4210,
             speed=0.0,
@@ -151,7 +151,7 @@ def seed_database():
             assigned_hospital_id=h1.id,
             assigned_ambulance_id=a1.id,
             escalation_step=4,
-            created_at=datetime.utcnow() - timedelta(minutes=10)
+            created_at=datetime.utcnow() - timedelta(days=1)
         )
         db.add(emergency)
         db.commit()

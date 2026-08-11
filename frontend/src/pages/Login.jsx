@@ -8,8 +8,14 @@ export const Login = () => {
   const [password, setPassword] = useState('password123');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { user, role, login } = useAuth();
   const navigate = useNavigate();
+
+  React.useEffect(() => {
+    if (user && role) {
+      navigate(`/${role}-dashboard`, { replace: true });
+    }
+  }, [user, role, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -108,18 +114,21 @@ export const Login = () => {
           <p className="text-xs font-semibold text-slate-400 flex items-center gap-1">
             <ShieldCheck className="w-4 h-4 text-emerald-400" /> One-Click Role Demos (Preset Accounts):
           </p>
-          <div className="grid grid-cols-2 gap-2 text-xs">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
             <button onClick={() => handleQuickDemo('user@resqnet.com')} className="p-2 bg-slate-800/80 hover:bg-rose-950/40 border border-slate-700 hover:border-rose-500/40 rounded-lg text-slate-200 text-left font-medium">
               🙋 Patient (User)
             </button>
             <button onClick={() => handleQuickDemo('family@resqnet.com')} className="p-2 bg-slate-800/80 hover:bg-amber-950/40 border border-slate-700 hover:border-amber-500/40 rounded-lg text-slate-200 text-left font-medium">
-              👨‍👩‍👧 Family Contact
+              👨‍👩‍👧 Family
             </button>
             <button onClick={() => handleQuickDemo('doctor@resqnet.com')} className="p-2 bg-slate-800/80 hover:bg-cyan-950/40 border border-slate-700 hover:border-cyan-500/40 rounded-lg text-slate-200 text-left font-medium">
-              👨‍⚕️ Doctor Role
+              👨‍⚕️ Doctor
             </button>
             <button onClick={() => handleQuickDemo('hospital@resqnet.com')} className="p-2 bg-slate-800/80 hover:bg-indigo-950/40 border border-slate-700 hover:border-indigo-500/40 rounded-lg text-slate-200 text-left font-medium">
-              🏥 Hospital ER
+              🏥 Hospital
+            </button>
+            <button onClick={() => handleQuickDemo('admin@resqnet.com')} className="p-2 bg-slate-800/80 hover:bg-purple-950/40 border border-slate-700 hover:border-purple-500/40 rounded-lg text-slate-200 text-left font-medium col-span-2 sm:col-span-1">
+              ⚙️ Admin
             </button>
           </div>
         </div>

@@ -195,3 +195,27 @@ class AuditLog(Base):
     timestamp = Column(DateTime, default=datetime.utcnow)
 
     user = relationship("User", back_populates="audit_logs")
+
+class NotificationLog(Base):
+    __tablename__ = "notification_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    emergency_event_id = Column(Integer, ForeignKey("emergency_events.id"), nullable=False)
+    contact_id = Column(Integer, ForeignKey("family_contacts.id"), nullable=True)
+    channel = Column(String(20), default="SMS")            # SMS, VOICE_CALL
+    provider = Column(String(50), default="twilio")        # twilio, mock
+    provider_message_id = Column(String(100), nullable=True)
+    status = Column(String(30), default="PENDING")         # PENDING, SENT, DELIVERED, FAILED, ACKNOWLEDGED
+    error_message = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    delivered_at = Column(DateTime, nullable=True)
+
+class EmergencyAcknowledgement(Base):
+    __tablename__ = "emergency_acknowledgements"
+
+    id = Column(Integer, primary_key=True, index=True)
+    emergency_event_id = Column(Integer, ForeignKey("emergency_events.id"), nullable=False)
+    contact_id = Column(Integer, ForeignKey("family_contacts.id"), nullable=True)
+    response = Column(String(50), nullable=False)          # "I am responding", "I cannot respond"
+    timestamp = Column(DateTime, default=datetime.utcnow)
+

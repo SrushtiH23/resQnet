@@ -1,6 +1,21 @@
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from typing import Optional, List, Any
 from datetime import datetime
+import re
+
+def validate_and_normalize_indian_phone(v: Optional[str]) -> Optional[str]:
+    if v is None or v == "":
+        return None
+    v_str = str(v).strip()
+    if v_str.startswith("+91"):
+        digits = v_str[3:].strip()
+    else:
+        digits = v_str
+
+    if not re.match(r"^[6-9][0-9]{9}$", digits):
+        raise ValueError("Enter a valid 10-digit Indian mobile number.")
+
+    return f"+91{digits}"
 
 # --- Auth Schemas ---
 class UserRegister(BaseModel):
@@ -9,6 +24,11 @@ class UserRegister(BaseModel):
     password: str
     phone: Optional[str] = None
     role: str = "user" # user, family, doctor, hospital, admin
+
+    @field_validator("phone", mode="before")
+    @classmethod
+    def validate_phone(cls, v):
+        return validate_and_normalize_indian_phone(v)
 
 class UserLogin(BaseModel):
     email: EmailStr
@@ -47,6 +67,11 @@ class MedicalProfileSchema(BaseModel):
     doctor_phone: Optional[str] = None
     emergency_notes: Optional[str] = None
 
+    @field_validator("doctor_phone", mode="before")
+    @classmethod
+    def validate_doctor_phone(cls, v):
+        return validate_and_normalize_indian_phone(v)
+
 class MedicalProfileResponse(MedicalProfileSchema):
     id: int
     user_id: int
@@ -62,6 +87,11 @@ class FamilyContactCreate(BaseModel):
     phone: str
     email: Optional[str] = None
     escalation_order: int = 1
+
+    @field_validator("phone", mode="before")
+    @classmethod
+    def validate_contact_phone(cls, v):
+        return validate_and_normalize_indian_phone(v)
 
 class FamilyContactResponse(FamilyContactCreate):
     id: int
@@ -104,10 +134,19 @@ class ConfidenceRequest(BaseModel):
     chatbot: float = 0.0
     user_response: bool = False
     qr_confirmation: bool = False
+    fall_detected: bool = False
+    strong_impact: bool = False
+    rotation_change: bool = False
+    loss_of_consciousness: bool = False
+    chest_pain: bool = False
+    breathing_difficulty: bool = False
+    severe_bleeding: bool = False
 
 class ConfidenceResponse(BaseModel):
     confidence_score: float
     severity: str
+    emergency_required: bool = False
+    reasons: List[str] = []
     recommended_action: str
     recommended_status: str
     weight_breakdown: dict
@@ -121,6 +160,13 @@ class EmergencyCreate(BaseModel):
     speed: Optional[float] = 0.0
     battery_level: Optional[int] = 100
     network_status: Optional[str] = "4G"
+
+class LocationUpdateRequest(BaseModel):
+    emergency_id: int
+    latitude: float
+    longitude: float
+    accuracy: Optional[float] = None
+    timestamp: Optional[str] = None
 
 class EmergencyValidationRequest(BaseModel):
     emergency_id: int
@@ -147,20 +193,55 @@ class EmergencyResponse(BaseModel):
     class Config:
         from_attributes = True
 
+class NotificationLogResponse(BaseModel):
+    id: int
+    emergency_event_id: int
+    contact_id: Optional[int] = None
+    channel: str
+    provider: str
+    provider_message_id: Optional[str] = None
+    status: str
+    error_message: Optional[str] = None
+    created_at: datetime
+    delivered_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+class EmergencyAcknowledgementRequest(BaseModel):
+    emergency_id: int
+    contact_id: Optional[int] = None
+    response: str
+
+class EmergencyAcknowledgementResponse(BaseModel):
+    id: int
+    emergency_event_id: int
+    contact_id: Optional[int] = None
+    response: str
+    timestamp: datetime
+
+    class Config:
+        from_attributes = True
+
 # --- Triage Chatbot Schemas ---
 class ChatbotTriageRequest(BaseModel):
-    emergency_id: int
-    can_move: bool
-    is_bleeding: bool
-    has_chest_pain: bool
-    has_breathing_difficulty: bool
-    is_conscious: bool
+    emergency_id: Optional[int] = None
+    is_conscious: bool = True
+    fell_or_fainted: bool = False
+    has_chest_pain: bool = False
+    has_breathing_difficulty: bool = False
+    is_bleeding: bool = False
+    can_stand_or_walk: bool = True
+    sudden_dizziness: bool = False
+    is_alone: bool = True
 
 class ChatbotTriageResponse(BaseModel):
-    emergency_id: int
+    confidence_score: float
+    severity: str
+    emergency_required: bool
+    reasons: List[str]
+    guidance_message: str
     score_added: float
-    new_confidence_score: float
-    recommended_action: str
 
 # --- QR Card Schemas ---
 class QRGenerateResponse(BaseModel):

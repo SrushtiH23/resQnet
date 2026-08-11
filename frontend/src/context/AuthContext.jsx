@@ -39,27 +39,27 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
-  const switchRole = async (targetRole) => {
-    // Helper to log into default seeded account for quick role testing
-    const defaultAccounts = {
-      user: { email: 'user@resqnet.com', password: 'password123' },
-      family: { email: 'family@resqnet.com', password: 'password123' },
-      doctor: { email: 'doctor@resqnet.com', password: 'password123' },
-      hospital: { email: 'hospital@resqnet.com', password: 'password123' },
-      admin: { email: 'admin@resqnet.com', password: 'password123' },
-    };
-
-    if (defaultAccounts[targetRole]) {
-      const { email, password } = defaultAccounts[targetRole];
-      await login(email, password);
-    }
-  };
+  const role = user?.role || null;
+  const access_token = token;
+  const isAuthenticated = !!user;
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, logout, switchRole }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        role,
+        token,
+        access_token,
+        isAuthenticated,
+        loading,
+        login,
+        logout
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
 };
 
 export const useAuth = () => useContext(AuthContext);
+

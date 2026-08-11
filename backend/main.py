@@ -1,12 +1,19 @@
+import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env
+load_dotenv()
+
 from fastapi import FastAPI, Depends, HTTPException, status, WebSocket, WebSocketDisconnect, Query
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from datetime import datetime
 import math
 from typing import List, Optional
+from pydantic import BaseModel
 
 from database import engine, Base, get_db
-from models import User, MedicalProfile, FamilyContact, Hospital, Ambulance, EmergencyEvent, EmergencyLog, Notification, QRCard, ChatbotSession, AuditLog, SensorEvent
+from models import User, MedicalProfile, FamilyContact, Hospital, Ambulance, EmergencyEvent, EmergencyLog, Notification, QRCard, ChatbotSession, AuditLog, SensorEvent, NotificationLog, EmergencyAcknowledgement
 import schemas
 from auth import (
     get_password_hash, verify_password, create_access_token,
@@ -14,12 +21,12 @@ from auth import (
 )
 from services.fall_detection import IntelligentFallDetector, SlidingWindowBuffer
 from services.confidence_engine import ConfidenceScoringEngine
-from services.escalation_engine import EscalationQueueManager
+from services.escalation_engine import EmergencyEscalationEngine
 from services.routing_engine import ProductionGeospatialRouter, HospitalGraphRouter
 from services.ambulance_engine import PriorityAmbulanceAllocator
 from services.qr_service import EncryptedQRService
 from services.chatbot_service import EmergencyTriageChatbot
-from services.notification_service import NotificationAndAuditService
+from services.notification_service import NotificationAndAuditService, normalize_indian_phone
 from websocket_manager import ws_manager
 from seed_data import seed_database
 
@@ -29,6 +36,26 @@ try:
     seed_database()
 except Exception as err:
     print(f"Database auto-seed notice: {err}")
+
+# Print SMS Provider Configuration Status at Startup
+textbee_key = os.getenv("TEXTBEE_API_KEY", "").strip()
+textbee_device = os.getenv("TEXTBEE_DEVICE_ID", "").strip()
+tw_sid = os.getenv("TWILIO_ACCOUNT_SID", "").strip()
+tw_token = os.getenv("TWILIO_AUTH_TOKEN", "").strip()
+tw_phone = os.getenv("TWILIO_PHONE_NUMBER", "").strip()
+
+print("==================================================")
+print("ResQNet Startup Environment Check:")
+print("TextBee configuration:")
+print(f"API Key: {'configured' if textbee_key else 'NOT CONFIGURED'}")
+print(f"Device ID: {'configured' if textbee_device else 'NOT CONFIGURED'}")
+print("Twilio configuration:")
+print(f"Account SID: {'configured' if tw_sid else 'NOT CONFIGURED'}")
+print(f"Auth Token: {'configured' if tw_token else 'NOT CONFIGURED'}")
+print(f"Phone Number: {'configured' if tw_phone else 'NOT CONFIGURED'}")
+if not (textbee_key and textbee_device) and not (tw_sid and tw_token and tw_phone):
+    print("Notice: SMS provider is not configured.")
+print("==================================================")
 
 app = FastAPI(
     title="ResQNet Emergency Intelligence API",
@@ -250,6 +277,9 @@ def record_sensor_telemetry(req: schemas.SensorFrame, user_id: int = Query(...),
 # ==========================================
 # MODULE 7: Confidence Scoring Engine
 # ==========================================
+# ==========================================
+# MODULE 7: Confidence Scoring Engine
+# ==========================================
 @app.post("/api/decision/confidence-score", response_model=schemas.ConfidenceResponse)
 def compute_confidence(req: schemas.ConfidenceRequest):
     res = ConfidenceScoringEngine.calculate_score(
@@ -259,56 +289,136 @@ def compute_confidence(req: schemas.ConfidenceRequest):
         gps=req.gps,
         chatbot=req.chatbot,
         user_response=req.user_response,
-        qr_confirmation=req.qr_confirmation
+        qr_confirmation=req.qr_confirmation,
+        fall_detected=req.fall_detected,
+        strong_impact=req.strong_impact,
+        rotation_change=req.rotation_change,
+        loss_of_consciousness=req.loss_of_consciousness,
+        chest_pain=req.chest_pain,
+        breathing_difficulty=req.breathing_difficulty,
+        severe_bleeding=req.severe_bleeding
     )
-    return {
-        "confidence_score": res["confidence_score"],
-        "severity": res["severity"],
-        "recommended_action": res["recommended_action"],
-        "recommended_status": res["recommended_status"],
-        "weight_breakdown": res["weight_breakdown"],
-        "scoring_explanation": res["scoring_explanation"]
-    }
+    return res
 
 # ==========================================
 # MODULE 8 & 10: Emergency Creation, Validation & Escalation
 # ==========================================
 @app.post("/api/emergency/create", response_model=schemas.EmergencyResponse)
 def create_emergency(req: schemas.EmergencyCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    # Default confidence depending on source
-    initial_conf = 40.0 if req.trigger_source == "SOS Button" else 85.0
+    print("========== SOS API HIT ==========")
+    print(f"Request User ID: {current_user.id} ({current_user.full_name})")
+    print(f"Request Trigger Source: {req.trigger_source}")
+    print(f"Request Coordinates: ({req.latitude}, {req.longitude})")
 
-    emergency = EmergencyEvent(
-        user_id=current_user.id,
-        trigger_source=req.trigger_source,
-        confidence_score=initial_conf,
-        status="Asking User" if initial_conf < 80 else "Hospital Dispatched",
-        latitude=req.latitude,
-        longitude=req.longitude,
-        speed=req.speed or 0.0,
-        battery_level=req.battery_level or 95,
-        network_status=req.network_status or "4G",
-        escalation_step=1
-    )
-    db.add(emergency)
+    try:
+        is_manual_sos = req.trigger_source in ["MANUAL_SOS", "SOS Button"]
+        trigger_type = "MANUAL_SOS" if is_manual_sos else req.trigger_source
+        initial_conf = 95.0 if is_manual_sos else (85.0 if req.trigger_source == "Fall Detection" else 50.0)
+
+        emergency = EmergencyEvent(
+            user_id=current_user.id,
+            trigger_source=trigger_type,
+            confidence_score=initial_conf,
+            status="Family Notified" if is_manual_sos else ("Asking User" if initial_conf < 60 else "Hospital Dispatched"),
+            latitude=req.latitude,
+            longitude=req.longitude,
+            speed=req.speed or 0.0,
+            battery_level=req.battery_level or 95,
+            network_status=req.network_status or "4G",
+            escalation_step=1
+        )
+        db.add(emergency)
+        db.commit()
+        db.refresh(emergency)
+
+        print("Emergency created")
+        print(f"Emergency ID: {emergency.id}")
+
+        contacts_count = db.query(FamilyContact).filter(FamilyContact.user_id == current_user.id).count()
+        print(f"Contacts retrieved: {contacts_count}")
+
+        NotificationAndAuditService.log_timeline_event(db, emergency.id, "Emergency Created", f"Triggered via {trigger_type} at ({req.latitude:.4f}, {req.longitude:.4f})")
+        NotificationAndAuditService.record_audit(db, current_user.id, "EMERGENCY_CREATED", f"Emergency #{emergency.id} created")
+
+        # Broadcast WebSocket update for EMERGENCY_CREATED
+        print("Sending WebSocket update for EMERGENCY_CREATED...")
+        try:
+            import asyncio
+            payload = {
+                "event_type": "EMERGENCY_CREATED",
+                "emergency_id": emergency.id,
+                "latitude": emergency.latitude,
+                "longitude": emergency.longitude,
+                "status": emergency.status,
+                "confidence_score": emergency.confidence_score,
+                "trigger_source": emergency.trigger_source,
+                "timestamp": datetime.utcnow().isoformat()
+            }
+            try:
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    loop.create_task(ws_manager.broadcast_location(emergency.id, payload))
+            except Exception as ws_err:
+                print(f"WebSocket loop notice: {ws_err}")
+        except Exception as ws_e:
+            print(f"WebSocket error: {ws_e}")
+        print("WebSocket update sent")
+
+        # Auto-find nearest hospital if critical
+        if initial_conf >= 80.0:
+            hospitals = db.query(Hospital).filter(Hospital.is_active == True).all()
+            h_dicts = [{"id": h.id, "name": h.name, "latitude": h.latitude, "longitude": h.longitude, "phone": h.phone, "address": h.address, "available_beds": h.available_beds, "specialities": h.specialities} for h in hospitals]
+            if h_dicts:
+                routes = HospitalGraphRouter.dijkstra_routing(req.latitude, req.longitude, h_dicts)
+                best_h = routes[0]
+                emergency.assigned_hospital_id = best_h["hospital_id"]
+                db.commit()
+                NotificationAndAuditService.log_timeline_event(db, emergency.id, "Hospital Selected", f"Assigned {best_h['hospital_name']} (ETA: {best_h['eta_minutes']}m via Dijkstra)")
+
+        # Execute Escalation Engine
+        print("Escalation engine called")
+        from services.escalation_engine import EmergencyEscalationEngine
+        EmergencyEscalationEngine.run_full_escalation(db, emergency.id)
+        print("Escalation completed")
+
+        return emergency
+    except Exception as err:
+        import traceback
+        print("==================================================")
+        print("CRITICAL ERROR IN EMERGENCY CREATION:")
+        print(f"Error: {err}")
+        traceback.print_exc()
+        print("==================================================")
+        raise HTTPException(status_code=500, detail=f"Emergency creation failed: {str(err)}")
+
+@app.post("/api/emergency/location/update")
+def update_emergency_location(req: schemas.LocationUpdateRequest, db: Session = Depends(get_db)):
+    emergency = db.query(EmergencyEvent).filter(EmergencyEvent.id == req.emergency_id).first()
+    if not emergency:
+        raise HTTPException(status_code=404, detail="Emergency event not found")
+
+    emergency.latitude = req.latitude
+    emergency.longitude = req.longitude
     db.commit()
-    db.refresh(emergency)
 
-    NotificationAndAuditService.log_timeline_event(db, emergency.id, "Emergency Triggered", f"Triggered via {req.trigger_source} at ({req.latitude:.4f}, {req.longitude:.4f})")
-    NotificationAndAuditService.record_audit(db, current_user.id, "EMERGENCY_TRIGGERED", f"Emergency #{emergency.id} created")
+    # Broadcast location update via WebSocket
+    payload = {
+        "event_type": "LOCATION_UPDATED",
+        "emergency_id": emergency.id,
+        "latitude": req.latitude,
+        "longitude": req.longitude,
+        "accuracy": req.accuracy,
+        "timestamp": req.timestamp or datetime.utcnow().isoformat()
+    }
+    try:
+        import asyncio
+        loop = asyncio.get_event_loop()
+        if loop.is_running():
+            loop.create_task(ws_manager.broadcast_location(emergency.id, payload))
+    except Exception as e:
+        print(f"WebSocket broadcast error: {e}")
 
-    # If confidence >= 80, auto-find nearest hospital
-    if initial_conf >= 80.0:
-        hospitals = db.query(Hospital).filter(Hospital.is_active == True).all()
-        h_dicts = [{"id": h.id, "name": h.name, "latitude": h.latitude, "longitude": h.longitude, "phone": h.phone, "address": h.address, "available_beds": h.available_beds, "specialities": h.specialities} for h in hospitals]
-        if h_dicts:
-            routes = HospitalGraphRouter.dijkstra_routing(req.latitude, req.longitude, h_dicts)
-            best_h = routes[0]
-            emergency.assigned_hospital_id = best_h["hospital_id"]
-            db.commit()
-            NotificationAndAuditService.log_timeline_event(db, emergency.id, "Hospital Selected", f"Assigned {best_h['hospital_name']} (ETA: {best_h['eta_minutes']}m via Dijkstra)")
-
-    return emergency
+    return {"status": "success", "latitude": req.latitude, "longitude": req.longitude}
 
 @app.post("/api/emergency/validate")
 def validate_emergency(req: schemas.EmergencyValidationRequest, db: Session = Depends(get_db)):
@@ -328,7 +438,69 @@ def validate_emergency(req: schemas.EmergencyValidationRequest, db: Session = De
         emergency.status = "Hospital Dispatched" if emergency.confidence_score >= 80 else "Family Notified"
         db.commit()
         NotificationAndAuditService.log_timeline_event(db, emergency.id, "Human Validation", f"Emergency confirmed by {req.validator_role}. Score increased to {emergency.confidence_score}%.")
+        
+        # Trigger Escalation for confirmed emergency
+        try:
+            from services.escalation_engine import EmergencyEscalationEngine
+            EmergencyEscalationEngine.process_escalation_step(db, emergency.id, current_step=1)
+        except Exception as exc:
+            print(f"Escalation notification notice: {exc}")
+
         return {"status": "Confirmed", "confidence_score": emergency.confidence_score}
+
+@app.post("/api/emergency/acknowledge", response_model=schemas.EmergencyAcknowledgementResponse)
+def acknowledge_emergency(req: schemas.EmergencyAcknowledgementRequest, db: Session = Depends(get_db)):
+    emergency = db.query(EmergencyEvent).filter(EmergencyEvent.id == req.emergency_id).first()
+    if not emergency:
+        raise HTTPException(status_code=404, detail="Emergency not found")
+
+    ack = EmergencyAcknowledgement(
+        emergency_event_id=req.emergency_id,
+        contact_id=req.contact_id,
+        response=req.response,
+        timestamp=datetime.utcnow()
+    )
+    db.add(ack)
+
+    # Mark notification logs for this contact as ACKNOWLEDGED
+    if req.contact_id:
+        db.query(NotificationLog).filter(
+            NotificationLog.emergency_event_id == req.emergency_id,
+            NotificationLog.contact_id == req.contact_id
+        ).update({"status": "ACKNOWLEDGED"})
+
+    emergency.status = "Contact Acknowledged"
+    db.commit()
+    db.refresh(ack)
+
+    contact_name = "Emergency Contact"
+    if req.contact_id:
+        c = db.query(FamilyContact).filter(FamilyContact.id == req.contact_id).first()
+        if c:
+            contact_name = c.contact_name
+
+    NotificationAndAuditService.log_timeline_event(
+        db, emergency.id, "Contact Acknowledged",
+        f"{contact_name} responded: '{req.response}'. Further automated escalation halted."
+    )
+
+    # Broadcast WebSocket update
+    try:
+        import asyncio
+        payload = {
+            "event_type": "CONTACT_ACKNOWLEDGED",
+            "emergency_id": emergency.id,
+            "contact_name": contact_name,
+            "response": req.response,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        loop = asyncio.get_event_loop()
+        if loop.is_running():
+            loop.create_task(ws_manager.broadcast_location(emergency.id, payload))
+    except Exception as e:
+        print(f"WebSocket broadcast error: {e}")
+
+    return ack
 
 @app.get("/api/emergency/active", response_model=List[schemas.EmergencyResponse])
 def get_active_emergencies(db: Session = Depends(get_db)):
@@ -346,52 +518,53 @@ def get_emergency_timeline(emergency_id: int, db: Session = Depends(get_db)):
     logs = db.query(EmergencyLog).filter(EmergencyLog.emergency_event_id == emergency_id).order_by(EmergencyLog.timestamp.asc()).all()
     return logs
 
+@app.get("/api/emergency/{emergency_id}/notifications", response_model=List[schemas.NotificationLogResponse])
+def get_emergency_notifications(emergency_id: int, db: Session = Depends(get_db)):
+    return db.query(NotificationLog).filter(NotificationLog.emergency_event_id == emergency_id).order_by(NotificationLog.created_at.desc()).all()
+
 # ==========================================
 # MODULE 9: Triage Chatbot API
 # ==========================================
 @app.post("/api/emergency/triage-chatbot", response_model=schemas.ChatbotTriageResponse)
 def process_triage(req: schemas.ChatbotTriageRequest, db: Session = Depends(get_db)):
-    emergency = db.query(EmergencyEvent).filter(EmergencyEvent.id == req.emergency_id).first()
-    if not emergency:
-        raise HTTPException(status_code=404, detail="Emergency event not found")
-
     triage_res = EmergencyTriageChatbot.evaluate_triage(
-        can_move=req.can_move,
-        is_bleeding=req.is_bleeding,
-        has_chest_pain=req.has_chest_pain,
-        has_breathing_difficulty=req.has_breathing_difficulty,
-        is_conscious=req.is_conscious
-    )
-
-    # Record chatbot session
-    cb_session = ChatbotSession(
-        emergency_event_id=req.emergency_id,
-        can_move=req.can_move,
-        is_bleeding=req.is_bleeding,
-        has_chest_pain=req.has_chest_pain,
-        has_breathing_difficulty=req.has_breathing_difficulty,
         is_conscious=req.is_conscious,
-        score_contribution=triage_res["score_added"]
-    )
-    db.add(cb_session)
-
-    # Boost confidence
-    emergency.confidence_score = min(100.0, emergency.confidence_score + triage_res["score_added"])
-    if emergency.confidence_score >= 80.0:
-        emergency.status = "Hospital Dispatched"
-    db.commit()
-
-    NotificationAndAuditService.log_timeline_event(
-        db, req.emergency_id, "Triage Completed",
-        f"Chatbot triage added +{triage_res['score_added']}% confidence. Symptoms: {', '.join(triage_res['symptoms_identified'])}"
+        fell_or_fainted=req.fell_or_fainted,
+        has_chest_pain=req.has_chest_pain,
+        has_breathing_difficulty=req.has_breathing_difficulty,
+        is_bleeding=req.is_bleeding,
+        can_stand_or_walk=req.can_stand_or_walk,
+        sudden_dizziness=req.sudden_dizziness,
+        is_alone=req.is_alone
     )
 
-    return {
-        "emergency_id": req.emergency_id,
-        "score_added": triage_res["score_added"],
-        "new_confidence_score": emergency.confidence_score,
-        "recommended_action": triage_res["guidance_message"]
-    }
+    if req.emergency_id:
+        emergency = db.query(EmergencyEvent).filter(EmergencyEvent.id == req.emergency_id).first()
+        if emergency:
+            # Update confidence score
+            emergency.confidence_score = max(emergency.confidence_score, triage_res["confidence_score"])
+            if emergency.confidence_score >= 80.0:
+                emergency.status = "Hospital Dispatched"
+            db.commit()
+
+            cb_session = ChatbotSession(
+                emergency_event_id=emergency.id,
+                can_move=req.can_stand_or_walk,
+                is_bleeding=req.is_bleeding,
+                has_chest_pain=req.has_chest_pain,
+                has_breathing_difficulty=req.has_breathing_difficulty,
+                is_conscious=req.is_conscious,
+                score_contribution=triage_res["confidence_score"]
+            )
+            db.add(cb_session)
+            db.commit()
+
+            NotificationAndAuditService.log_timeline_event(
+                db, emergency.id, "Triage Completed",
+                f"Chatbot triage updated score to {triage_res['confidence_score']}%. Severity: {triage_res['severity']}"
+            )
+
+    return triage_res
 
 # ==========================================
 # MODULE 12 & 13: Hospital Routing & Ambulance Dispatch
@@ -425,14 +598,14 @@ def get_nearest_ambulance(lat: float, lon: float, db: Session = Depends(get_db))
     return nearest
 
 @app.get("/api/hospital/ambulances", response_model=List[schemas.AmbulanceResponse])
-def get_ambulances(db: Session = Depends(get_db)):
+def get_ambulances(current_user: User = Depends(require_role(["hospital", "admin", "doctor"])), db: Session = Depends(get_db)):
     return db.query(Ambulance).all()
 
 # ==========================================
 # MODULE 17: Admin Dashboard Stats
 # ==========================================
 @app.get("/api/admin/stats")
-def get_admin_stats(db: Session = Depends(get_db)):
+def get_admin_stats(current_user: User = Depends(require_role("admin")), db: Session = Depends(get_db)):
     total_users = db.query(User).count()
     total_hospitals = db.query(Hospital).count()
     total_emergencies = db.query(EmergencyEvent).count()
@@ -448,11 +621,212 @@ def get_admin_stats(db: Session = Depends(get_db)):
         "false_alarms": false_alarms,
         "false_alarm_rate_percent": false_alarm_rate,
         "resolved_cases": resolved_cases,
-        "avg_response_time_minutes": 4.2
+        "system_status": "OPERATIONAL"
     }
 
+# ==========================================
+# DEVELOPMENT-ONLY TEST ENDPOINT (Requirement 6)
+# ==========================================
+class TestSmsRequest(BaseModel):
+    phone: str
+
+@app.post("/api/test/sms")
+def test_sms_endpoint(req: TestSmsRequest):
+    """
+    Development-only endpoint to test TextBee / Twilio SMS independently.
+    Sends a real SMS to the provided phone number using the configured SMS provider.
+    """
+    provider_mode = os.getenv("SMS_PROVIDER", "textbee").lower()
+    textbee_key = os.getenv("TEXTBEE_API_KEY", "").strip()
+    textbee_device = os.getenv("TEXTBEE_DEVICE_ID", "").strip()
+    account_sid = os.getenv("TWILIO_ACCOUNT_SID", "").strip()
+    auth_token = os.getenv("TWILIO_AUTH_TOKEN", "").strip()
+    phone_number = os.getenv("TWILIO_PHONE_NUMBER", "").strip()
+
+    dest_phone = normalize_indian_phone(req.phone)
+
+    print("==================================================")
+    print("DEVELOPMENT TEST SMS REQUEST RECEIVED")
+    print(f"Target Phone Raw: {req.phone}")
+    print(f"Target Phone Normalized: {dest_phone}")
+
+    if provider_mode == "textbee" or (textbee_key and textbee_device):
+        if not textbee_key or not textbee_device:
+            print("RESULT: TextBee provider not configured. Missing credentials in backend/.env")
+            print("==================================================")
+            return {
+                "success": False,
+                "provider": "textbee",
+                "error": "TextBee provider not configured"
+            }
+
+        print(f"TextBee Device ID: {textbee_device[:6]}... (configured)")
+        print("Attempting TextBee gateway send-sms request...")
+
+        try:
+            import requests
+            url = f"https://api.textbee.dev/api/v1/gateway/devices/{textbee_device}/send-sms"
+            headers = {
+                "x-api-key": textbee_key,
+                "Content-Type": "application/json"
+            }
+            payload = {
+                "recipients": [dest_phone],
+                "message": "🚨 RESQNET TEST SMS: Your TextBee SMS Gateway is active and properly connected."
+            }
+            resp = requests.post(url, json=payload, headers=headers, timeout=10)
+            if resp.status_code in [200, 201]:
+                res_data = resp.json()
+                msg_id = res_data.get("data", {}).get("_id") or res_data.get("id") or "TXB_TEST"
+                print(f"SUCCESS: TextBee accepted request! Message ID: {msg_id}")
+                print("==================================================")
+                return {
+                    "success": True,
+                    "provider": "textbee",
+                    "message_sid": msg_id,
+                    "status": "sent",
+                    "target_phone": dest_phone
+                }
+            else:
+                err_msg = f"TextBee API Error ({resp.status_code}): {resp.text}"
+                print(f"FAILURE: {err_msg}")
+                print("==================================================")
+                return {
+                    "success": False,
+                    "provider": "textbee",
+                    "error": err_msg,
+                    "target_phone": dest_phone
+                }
+        except Exception as err:
+            print(f"FAILURE: TextBee SMS exception: {err}")
+            print("==================================================")
+            return {
+                "success": False,
+                "provider": "textbee",
+                "error": str(err),
+                "target_phone": dest_phone
+            }
+
+    elif provider_mode == "twilio" and account_sid and auth_token and phone_number:
+        print(f"Twilio Account SID: {account_sid[:6]}... (configured)")
+        print(f"Twilio Sender Number: {phone_number}")
+        print("Attempting Twilio client messages.create()...")
+
+        try:
+            from twilio.rest import Client
+            client = Client(account_sid, auth_token)
+            msg = client.messages.create(
+                body="🚨 RESQNET TEST SMS: Your emergency notification pipeline is connected to Twilio.",
+                from_=phone_number,
+                to=dest_phone
+            )
+
+            print(f"SUCCESS: Twilio API accepted request!")
+            print(f"Message SID: {msg.sid}")
+            print(f"Message Status: {msg.status}")
+            print("==================================================")
+
+            return {
+                "success": True,
+                "provider": "twilio",
+                "message_sid": msg.sid,
+                "status": msg.status,
+                "target_phone": dest_phone
+            }
+        except Exception as err:
+            error_code = getattr(err, "code", None)
+            error_msg = str(err)
+            print(f"FAILURE: Twilio request failed! Error ({error_code}): {error_msg}")
+            print("==================================================")
+            return {
+                "success": False,
+                "provider": "twilio",
+                "error_code": error_code,
+                "error": error_msg,
+                "target_phone": dest_phone
+            }
+
+    else:
+        print("RESULT: TextBee provider not configured")
+        print("==================================================")
+        return {
+            "success": False,
+            "provider": "textbee",
+            "error": "TextBee provider not configured"
+        }
+
+class TestCallRequest(BaseModel):
+    phone: str
+
+@app.post("/api/test/call")
+def test_call_endpoint(req: TestCallRequest):
+    """
+    Development-only endpoint to test Twilio Voice Call independently.
+    Initiates a real outbound call to the provided phone number using Twilio Client SDK.
+    """
+    account_sid = os.getenv("TWILIO_ACCOUNT_SID", "").strip()
+    auth_token = os.getenv("TWILIO_AUTH_TOKEN", "").strip()
+    phone_number = os.getenv("TWILIO_PHONE_NUMBER", "").strip()
+
+    print("==================================================")
+    print("DEVELOPMENT TEST VOICE CALL REQUEST RECEIVED")
+    print(f"Target Phone Raw: {req.phone}")
+
+    if not account_sid or not auth_token or not phone_number:
+        print("RESULT: Twilio Voice provider is not configured. Missing credentials in backend/.env")
+        print("==================================================")
+        return {
+            "success": False,
+            "provider": "twilio",
+            "error": "Twilio Voice provider is not configured. Missing credentials in backend/.env"
+        }
+
+    dest_phone = normalize_indian_phone(req.phone)
+    print(f"Target Phone Normalized: {dest_phone}")
+    print(f"Twilio Account SID: {account_sid[:6]}... (configured)")
+    print(f"Twilio Sender Number: {phone_number}")
+    print("Attempting Twilio client calls.create()...")
+
+    twiml = "<Response><Say voice=\"alice\">This is a test emergency call from ResQNet.</Say></Response>"
+
+    try:
+        from twilio.rest import Client
+        client = Client(account_sid, auth_token)
+        call = client.calls.create(
+            twiml=twiml,
+            from_=phone_number,
+            to=dest_phone
+        )
+
+        print(f"SUCCESS: Twilio Call API accepted request!")
+        print(f"Call SID: {call.sid}")
+        print(f"Call Status: {call.status}")
+        print("==================================================")
+
+        return {
+            "success": True,
+            "provider": "twilio",
+            "call_sid": call.sid,
+            "status": call.status,
+            "target_phone": dest_phone
+        }
+    except Exception as err:
+        error_code = getattr(err, "code", None)
+        error_msg = str(err)
+        print(f"FAILURE: Twilio call request failed!")
+        print(f"Error Code: {error_code}")
+        print(f"Error Detail: {error_msg}")
+        print("==================================================")
+        return {
+            "success": False,
+            "provider": "twilio",
+            "error_code": error_code,
+            "error": error_msg,
+            "target_phone": dest_phone
+        }
+
 @app.get("/api/admin/audit-logs")
-def get_audit_logs(db: Session = Depends(get_db)):
+def get_audit_logs(current_user: User = Depends(require_role("admin")), db: Session = Depends(get_db)):
     return db.query(AuditLog).order_by(AuditLog.timestamp.desc()).limit(50).all()
 
 # ==========================================

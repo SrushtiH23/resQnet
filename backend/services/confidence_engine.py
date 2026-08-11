@@ -54,104 +54,141 @@ class ConfidenceScoringEngine:
         chatbot: float = 0.0,
         user_response: bool = False,
         qr_confirmation: bool = False,
+        fall_detected: bool = False,
+        strong_impact: bool = False,
+        rotation_change: bool = False,
+        loss_of_consciousness: bool = False,
+        chest_pain: bool = False,
+        breathing_difficulty: bool = False,
+        severe_bleeding: bool = False,
         weights_override: Optional[Dict[str, float]] = None
     ) -> Dict[str, Any]:
         """
-        Computes emergency confidence score (0-100%), severity rating, recommended action,
-        and step-by-step mathematical scoring explanation.
+        Computes explainable emergency confidence score (0-100%), risk severity,
+        reasons breakdown, and recommended action.
         """
-        weights = weights_override if weights_override else cls._current_weights
-
         score = 0.0
         breakdown = {}
+        reasons = []
         explanations = []
 
-        # Factor 1: Accelerometer
-        if accelerometer:
-            contrib = weights.get("accelerometer", 25.0)
-            score += contrib
-            breakdown["Accelerometer (Impact/Freefall)"] = contrib
-            explanations.append(f"• Accelerometer: +{contrib:.1f}% (High impact force / free fall vector detected)")
+        # 1. Fall Motion Components
+        if fall_detected:
+            score += 30.0
+            breakdown["Fall Detected"] = 30.0
+            reasons.append("Fall detected (+30%)")
+            explanations.append("• Fall Detected: +30.0% (Free fall pattern identified)")
 
-        # Factor 2: Gyroscope
-        if gyroscope:
-            contrib = weights.get("gyroscope", 15.0)
+        if strong_impact or accelerometer:
+            contrib = 20.0 if strong_impact else 15.0
             score += contrib
-            breakdown["Gyroscope (Body Rotation)"] = contrib
-            explanations.append(f"• Gyroscope: +{contrib:.1f}% (Rapid angular body rotation > 180°/s)")
+            breakdown["Strong Impact"] = contrib
+            reasons.append(f"Strong impact (+{contrib:.0f}%)")
+            explanations.append(f"• Strong Impact: +{contrib:.1f}% (High acceleration G-force magnitude)")
 
-        # Factor 3: Stillness
+        if rotation_change or gyroscope:
+            contrib = 15.0
+            score += contrib
+            breakdown["Rotation Change"] = contrib
+            reasons.append("Rotation change (+15%)")
+            explanations.append("• Rotation Change: +15.0% (Angular spin > 180°/s)")
+
         if stillness:
-            contrib = weights.get("stillness", 20.0)
-            score += contrib
-            breakdown["Stillness (Post-Impact)"] = contrib
-            explanations.append(f"• Stillness: +{contrib:.1f}% (Post-impact variance < 1.5 m/s², patient unmoving)")
+            score += 15.0
+            breakdown["Post-Impact Stillness"] = 15.0
+            reasons.append("Post-impact stillness (+15%)")
+            explanations.append("• Post-Impact Stillness: +15.0% (Patient unmoving post-impact)")
 
-        # Factor 4: GPS
-        if gps:
-            contrib = weights.get("gps", 10.0)
-            score += contrib
-            breakdown["GPS (Location Verification)"] = contrib
-            explanations.append(f"• GPS: +{contrib:.1f}% (Geospatial coordinates locked & verified)")
+        # 2. Symptoms & Triage Components
+        if loss_of_consciousness:
+            score += 25.0
+            breakdown["Loss of Consciousness"] = 25.0
+            reasons.append("Loss of consciousness (+25%)")
+            explanations.append("• Loss of Consciousness: +25.0% (Unresponsive / fainted)")
 
-        # Factor 5: Chatbot Triage
-        if chatbot > 0:
-            max_cb = weights.get("chatbot", 20.0)
-            contrib = min(float(chatbot), max_cb)
-            score += contrib
-            breakdown["Chatbot (AI Symptom Triage)"] = contrib
-            explanations.append(f"• Chatbot: +{contrib:.1f}% (Symptom triage identified high-risk indicators)")
+        if chest_pain:
+            score += 25.0
+            breakdown["Chest Pain"] = 25.0
+            reasons.append("Severe chest pain (+25%)")
+            explanations.append("• Chest Pain: +25.0% (Acute cardiac warning symptom)")
 
-        # Factor 6: User Response / Manual SOS
+        if breathing_difficulty:
+            score += 30.0
+            breakdown["Breathing Difficulty"] = 30.0
+            reasons.append("Breathing difficulty (+30%)")
+            explanations.append("• Breathing Difficulty: +30.0% (Severe respiratory distress)")
+
+        if severe_bleeding:
+            score += 30.0
+            breakdown["Severe Bleeding"] = 30.0
+            reasons.append("Severe bleeding (+30%)")
+            explanations.append("• Severe Bleeding: +30.0% (Active hemorrhage)")
+
+        if chatbot > 0 and not (loss_of_consciousness or chest_pain or breathing_difficulty or severe_bleeding):
+            contrib = min(float(chatbot), 20.0)
+            score += contrib
+            breakdown["Chatbot Triage"] = contrib
+            reasons.append(f"Chatbot symptom score (+{contrib:.0f}%)")
+            explanations.append(f"• Chatbot Triage: +{contrib:.1f}% (Self-reported symptom severity)")
+
+        # 3. User SOS Confirmation
         if user_response:
-            contrib = weights.get("user_response", 40.0)
-            score += contrib
-            breakdown["User Response (SOS / Need Help)"] = contrib
-            explanations.append(f"• User Response: +{contrib:.1f}% (Manual SOS pressed or 'Need Help' confirmed)")
+            score += 40.0
+            breakdown["Manual SOS Confirmed"] = 40.0
+            reasons.append("Manual SOS confirmed (+40%)")
+            explanations.append("• User Response: +40.0% (Manual SOS confirmed by patient)")
 
-        # Factor 7: QR Confirmation
+        if gps:
+            score += 10.0
+            breakdown["GPS Locked"] = 10.0
+            reasons.append("GPS location verified (+10%)")
+            explanations.append("• GPS: +10.0% (Coordinates locked)")
+
         if qr_confirmation:
-            contrib = weights.get("qr_confirmation", 25.0)
-            score += contrib
-            breakdown["QR Confirmation (Doctor / Scan)"] = contrib
-            explanations.append(f"• QR Confirmation: +{contrib:.1f}% (Doctor / Bystander verified via encrypted QR scan)")
+            score += 25.0
+            breakdown["QR Scan Verified"] = 25.0
+            reasons.append("QR scan verified (+25%)")
+            explanations.append("• QR Confirmation: +25.0% (Verified doctor / scan)")
 
-        # Cap total score at 100.0%
         total_score = min(score, 100.0)
 
-        # Output Categorization: Severity & Recommended Action
+        # Categorization
         if total_score >= 80.0:
             severity = "CRITICAL"
+            emergency_required = True
             recommended_action = "DISPATCH_AMBULANCE_IMMEDIATELY"
             recommended_status = "Hospital Dispatched"
-            action_description = "Confidence >= 80%: Auto-assign nearest ER hospital via Dijkstra routing & allocate priority ambulance."
+            action_description = "CRITICAL RISK: Auto-assign nearest ER hospital & allocate priority ambulance."
         elif total_score >= 60.0:
             severity = "HIGH"
+            emergency_required = True
             recommended_action = "ESCALATE_TO_FAMILY_QUEUE"
             recommended_status = "Family Notified"
-            action_description = "Confidence 60-79%: Trigger sequential family contact escalation queue (Mother -> Father)."
+            action_description = "HIGH RISK: Initiate emergency contact notification & call escalation."
         elif total_score >= 30.0:
             severity = "MEDIUM"
-            recommended_action = "TRIGGER_30S_USER_CHECKOUT_POPUP"
+            emergency_required = False
+            recommended_action = "PROVIDE_SAFETY_ADVICE_AND_MONITOR"
             recommended_status = "Asking User"
-            action_description = "Confidence 30-59%: Display 30-second 'Possible Fall Detected' checkout popup on patient device."
+            action_description = "MEDIUM RISK: Provide safety advice and active monitoring. Do not auto-notify family."
         else:
             severity = "LOW"
+            emergency_required = False
             recommended_action = "STANDBY_MONITORING"
             recommended_status = "Standby"
-            action_description = "Confidence < 30%: Maintain active 20Hz background monitoring without alerting emergency contacts."
+            action_description = "LOW RISK: Maintain standard background monitoring."
 
-        # Natural Language Scoring Rationale
-        explanation_header = f"Emergency Confidence Score: {total_score:.1f}% | Severity: {severity} | Action: {recommended_action}"
-        explanation_body = "\n".join(explanations) if explanations else "• No active emergency evidence factors detected."
-        full_explanation = f"{explanation_header}\n\nEvidence Breakdown:\n{explanation_body}\n\nDecision Rationale:\n{action_description}"
+        explanation_header = f"ResQNet Emergency Decision Support | Score: {total_score:.1f}% | Risk: {severity}"
+        explanation_body = "\n".join(explanations) if explanations else "• No emergency threat factors detected."
+        full_explanation = f"{explanation_header}\n\nReasons:\n{explanation_body}\n\nAction Plan:\n{action_description}\n\nDisclaimer: Decision support engine only; not a formal medical diagnosis."
 
         return {
             "confidence_score": round(total_score, 1),
             "severity": severity,
+            "emergency_required": emergency_required,
+            "reasons": reasons if reasons else ["No active risk factors"],
             "recommended_action": recommended_action,
             "recommended_status": recommended_status,
             "weight_breakdown": breakdown,
-            "scoring_explanation": full_explanation,
-            "active_weights": weights.copy()
+            "scoring_explanation": full_explanation
         }

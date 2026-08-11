@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { IndianPhoneInput, validateIndianPhone } from '../components/IndianPhoneInput';
 import { mobileSensorManager } from '../services/mobileSensorManager';
 import {
   Activity, User, Mail, Lock, Phone, ShieldCheck, ArrowRight, ArrowLeft,
@@ -73,6 +74,11 @@ export const Register = () => {
 
     if (password !== confirmPassword) {
       setError('Passwords do not match.');
+      return;
+    }
+
+    if (!validateIndianPhone(phone)) {
+      setError('Enter a valid 10-digit Indian mobile number.');
       return;
     }
 
@@ -150,6 +156,13 @@ export const Register = () => {
     if (valid.length < 2) {
       setError('Please fill out at least 2 emergency contacts (Name & Phone required).');
       return;
+    }
+
+    for (const c of valid) {
+      if (!validateIndianPhone(c.phone)) {
+        setError(`Contact "${c.contact_name || 'entry'}" must have a valid 10-digit Indian mobile number.`);
+        return;
+      }
     }
 
     setLoading(true);
@@ -285,17 +298,12 @@ export const Register = () => {
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-300">Phone Number</label>
-                <input
-                  type="tel"
-                  required
-                  value={phone}
-                  onChange={e => setPhone(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-rose-500"
-                  placeholder="+1-555-0199"
-                />
-              </div>
+              <IndianPhoneInput
+                label="Phone Number"
+                required
+                value={phone}
+                onChange={setPhone}
+              />
 
               <div className="space-y-1">
                 <label className="text-xs font-semibold text-slate-300">Account Role</label>
@@ -549,17 +557,12 @@ export const Register = () => {
                     />
                   </div>
 
-                  <div className="space-y-1">
-                    <label className="text-xs font-semibold text-slate-300">Phone</label>
-                    <input
-                      type="tel"
-                      required
-                      value={c.phone}
-                      onChange={e => handleContactChange(idx, 'phone', e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-rose-500"
-                      placeholder="+1-555-0199"
-                    />
-                  </div>
+                  <IndianPhoneInput
+                    label="Phone Number"
+                    required
+                    value={c.phone}
+                    onChange={val => handleContactChange(idx, 'phone', val)}
+                  />
                 </div>
               </div>
             ))}
