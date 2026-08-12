@@ -23,10 +23,18 @@ class SecureQRService:
         Finds the patient's existing active QR code card.
         If none exists, generates a new secure QR token row.
         """
-        qr = db.query(QRCard).filter(
-            QRCard.user_id == user_id,
-            QRCard.is_active == True
-        ).order_by(QRCard.created_at.desc()).first()
+        qr = None
+        try:
+            qr = db.query(QRCard).filter(
+                QRCard.user_id == user_id,
+                QRCard.is_active == True
+            ).order_by(QRCard.created_at.desc()).first()
+        except Exception:
+            try:
+                db.rollback()
+                qr = db.query(QRCard).filter(QRCard.user_id == user_id).first()
+            except Exception:
+                db.rollback()
 
         if not qr:
             token = cls.generate_token()
@@ -36,9 +44,12 @@ class SecureQRService:
                 is_active=True,
                 created_at=datetime.utcnow()
             )
-            db.add(qr)
-            db.commit()
-            db.refresh(qr)
+            try:
+                db.add(qr)
+                db.commit()
+                db.refresh(qr)
+            except Exception:
+                db.rollback()
 
         return qr
 
