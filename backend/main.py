@@ -33,6 +33,14 @@ from seed_data import seed_database
 # Create DB tables and seed initial data safely
 try:
     Base.metadata.create_all(bind=engine)
+    # Ensure revoked_at column exists on qr_cards for existing database files
+    try:
+        from sqlalchemy import text
+        with engine.connect() as conn:
+            conn.execute(text("ALTER TABLE qr_cards ADD COLUMN revoked_at DATETIME NULL;"))
+            conn.commit()
+    except Exception:
+        pass
     seed_database()
 except Exception as err:
     print(f"Database setup/auto-seed notice: {err}")
@@ -286,42 +294,7 @@ def get_admin_overview(current_user: User = Depends(get_current_user), db: Sessi
         "audit_logs": [{"id": a.id, "action": a.action, "details": a.details, "timestamp": a.timestamp.isoformat() if a.timestamp else None} for a in audit_logs]
     }
 
-# ==========================================
-# MODULE 3: Privacy QR Card APIs
-# ==========================================
-@app.get("/api/qr/generate", response_model=schemas.QRGenerateResponse)
-def generate_qr(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    qr_card = db.query(QRCard).filter(QRCard.user_id == current_user.id).first()
-    if not qr_card:
-        qr_token = EncryptedQRService.generate_medical_qr_token(current_user.id)
-        qr_card = QRCard(user_id=current_user.id, qr_code_token=qr_token)
-        db.add(qr_card)
-        db.commit()
-        db.refresh(qr_card)
 
-    return {
-        "qr_token": qr_card.qr_code_token,
-        "privacy_notice": "Contains ONLY encrypted payload token. No raw personal, medical, or phone details exposed."
-    }
-
-@app.post("/api/qr/scan")
-def scan_qr(scan_in: schemas.QRScanRequest, current_user: User = Depends(require_role(["doctor", "hospital", "admin"])), db: Session = Depends(get_db)):
-    patient_id = EncryptedQRService.verify_and_decode_qr(scan_in.qr_token)
-    if not patient_id:
-        raise HTTPException(status_code=400, detail="Invalid or expired QR token")
-
-    patient = db.query(User).filter(User.id == patient_id).first()
-    profile = db.query(MedicalProfile).filter(MedicalProfile.user_id == patient_id).first()
-
-    NotificationAndAuditService.record_audit(db, current_user.id, "QR_MEDICAL_ACCESS", f"Doctor/Hospital accessed profile for Patient ID {patient_id}")
-
-    return {
-        "patient_name": patient.full_name if patient else "Unknown Patient",
-        "phone": patient.phone if patient else None,
-        "medical_profile": profile,
-        "decrypted_by": current_user.full_name,
-        "timestamp": datetime.utcnow()
-    }
 
 # ==========================================
 # MODULE 4 & 5 & 6: Sensor & Fall Detection
