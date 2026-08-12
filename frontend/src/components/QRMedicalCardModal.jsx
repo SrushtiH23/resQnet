@@ -1,12 +1,26 @@
-import React, { useRef } from 'react';
+import React from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
 import { Download, RefreshCw, ShieldCheck, XCircle, QrCode } from 'lucide-react';
 
 export const QRMedicalCardModal = ({ isOpen, onClose, qrToken, user, medicalProfile, onRegenerate }) => {
   if (!isOpen) return null;
 
-  const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://resqnet-ten.vercel.app';
-  const qrUrl = qrToken?.startsWith('http') ? qrToken : `${baseUrl}/qr/patient/${qrToken}`;
+  // Extract clean token
+  let cleanToken = qrToken || '';
+  if (cleanToken.includes('/qr/patient/')) {
+    cleanToken = cleanToken.split('/qr/patient/')[1].trim();
+  }
+
+  // Construct standard public URL for Android Camera & Google Lens scanning
+  const qrUrl = cleanToken
+    ? `https://resqnet-ten.vercel.app/qr/patient/${cleanToken}`
+    : 'https://resqnet-ten.vercel.app';
+
+  // Log exact payload string being encoded for verification
+  console.log('==================================================');
+  console.log('ResQNet QR Code Canvas Encoded Payload URL:');
+  console.log(qrUrl);
+  console.log('==================================================');
 
   const handleDownload = () => {
     const canvas = document.getElementById('resqnet-qr-canvas');
@@ -30,7 +44,7 @@ export const QRMedicalCardModal = ({ isOpen, onClose, qrToken, user, medicalProf
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-fade-in select-none">
       <div className="glass-panel p-6 rounded-3xl max-w-md w-full border border-slate-700 space-y-5 shadow-2xl relative">
         {/* Modal Header */}
         <div className="flex items-center justify-between pb-3 border-b border-slate-800">
@@ -56,26 +70,33 @@ export const QRMedicalCardModal = ({ isOpen, onClose, qrToken, user, medicalProf
             </span>
           </div>
 
-          {/* Secure Canvas QR Code (Contains ONLY secure URL/Token) */}
-          <div className="p-4 bg-white rounded-2xl inline-block shadow-2xl mx-auto border-4 border-slate-800">
+          {/* High-Contrast Canvas QR Code with White Quiet Zone (4 Module Margin) */}
+          <div className="p-4 bg-white rounded-3xl inline-block shadow-2xl mx-auto">
             <QRCodeCanvas
               id="resqnet-qr-canvas"
               value={qrUrl}
-              size={190}
-              level="H"
-              includeMargin={true}
+              size={220}
+              level="M"
+              marginSize={4}
+              bgColor="#FFFFFF"
+              fgColor="#000000"
             />
           </div>
 
-          <p className="text-[11px] font-mono text-slate-400 truncate max-w-xs mx-auto">
-            Token: <span className="text-cyan-300">{qrToken || 'generating...'}</span>
-          </p>
+          <div className="space-y-0.5 max-w-xs mx-auto">
+            <p className="text-[11px] font-mono text-cyan-300 truncate">
+              URL: {qrUrl}
+            </p>
+            <p className="text-[10px] text-slate-400 font-mono">
+              Token: {cleanToken || 'Generating...'}
+            </p>
+          </div>
 
           {/* Privacy Protocol Notice */}
           <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 text-[10px] text-slate-300 flex items-center gap-2 text-left">
             <ShieldCheck className="w-5 h-5 text-emerald-400 flex-shrink-0" />
             <span>
-              <strong>Zero-Privacy-Leak Guarantee:</strong> No medical records or phone numbers are encoded in this image. Scanner authorization dictates what information is exposed.
+              <strong>Zero-Privacy-Leak Guarantee:</strong> Medical details are stored server-side. Phone cameras decode only the secure token URL.
             </span>
           </div>
         </div>
