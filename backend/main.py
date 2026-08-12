@@ -865,17 +865,15 @@ def regenerate_qr(current_user: User = Depends(get_current_user), db: Session = 
             "privacy_notice": "Old QR token revoked. New secure QR code generated."
         }
 
-class BystanderNotifyRequest(BaseModel):
-    token: str
-
 @app.post("/api/qr/notify-family")
-def bystander_notify_family(req: BystanderNotifyRequest, db: Session = Depends(get_db)):
+def bystander_notify_family(payload: dict, db: Session = Depends(get_db)):
     """
     Public bystander endpoint: allows any bystander scanning a ResQNet QR code
     to immediately send emergency SMS alerts to the patient's registered family contacts.
     """
+    token = payload.get("token", "") if isinstance(payload, dict) else ""
     try:
-        qr, error_msg = SecureQRService.validate_token(db, req.token)
+        qr, error_msg = SecureQRService.validate_token(db, token)
         if not qr:
             raise HTTPException(status_code=404, detail="Invalid or inactive ResQNet QR token.")
 
