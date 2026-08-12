@@ -21,7 +21,7 @@ class SecureQRService:
     def get_or_create_patient_qr(cls, db: Session, user_id: int) -> QRCard:
         """
         Finds the patient's existing active QR code card.
-        If none exists, generates a new secure QR token row.
+        If none exists or token is legacy format, generates a new secure QR token row.
         """
         qr = None
         try:
@@ -36,16 +36,20 @@ class SecureQRService:
             except Exception:
                 db.rollback()
 
-        if not qr:
+        if not qr or not qr.qr_code_token or not qr.qr_code_token.startswith("rq_tok_"):
             token = cls.generate_token()
-            qr = QRCard(
-                user_id=user_id,
-                qr_code_token=token,
-                is_active=True,
-                created_at=datetime.utcnow()
-            )
-            try:
+            if qr:
+                qr.qr_code_token = token
+                qr.is_active = True
+            else:
+                qr = QRCard(
+                    user_id=user_id,
+                    qr_code_token=token,
+                    is_active=True,
+                    created_at=datetime.utcnow()
+                )
                 db.add(qr)
+            try:
                 db.commit()
                 db.refresh(qr)
             except Exception:
@@ -59,14 +63,18 @@ class SecureQRService:
         Revokes all existing QR tokens for the patient and issues a new active secure token.
         """
         # Revoke old tokens
-        active_qrs = db.query(QRCard).filter(
-            QRCard.user_id == user_id,
-            QRCard.is_active == True
-        ).all()
+        try:
+            active_qrs = db.query(QRCard).filter(
+                QRCard.user_id == user_id,
+                QRCard.is_active == True
+            ).all()
 
-        for old_qr in active_qrs:
-            old_qr.is_active = False
-            old_qr.revoked_at = datetime.utcnow()
+            for old_qr in active_qrs:
+                old_qr.is_active = False
+                if hasattr(old_qr, 'revoked_at'):
+                    old_qr.revoked_at = datetime.utcnow()
+        except Exception:
+            db.rollback()
 
         # Create new active token
         new_token = cls.generate_token()
@@ -76,9 +84,12 @@ class SecureQRService:
             is_active=True,
             created_at=datetime.utcnow()
         )
-        db.add(new_qr)
-        db.commit()
-        db.refresh(new_qr)
+        try:
+            db.add(new_qr)
+            db.commit()
+            db.refresh(new_qr)
+        except Exception:
+            db.rollback()
 
         return new_qr
 
@@ -89,16 +100,21 @@ class SecureQRService:
         Returns (QRCard, None) if valid.
         Returns (None, error_reason) if invalid or revoked.
         """
-        # Extract token string if full URL was provided
         clean_token = token.strip()
         if "/qr/patient/" in clean_token:
             clean_token = clean_token.split("/qr/patient/")[-1].strip()
+        clean_token = clean_token.split("?")[0].split("#")[0].strip()
 
         qr = db.query(QRCard).filter(QRCard.qr_code_token == clean_token).first()
+        if not qr and len(clean_token) > 5:
+            qr = db.query(QRCard).filter(
+                (QRCard.qr_code_token.like(f"%{clean_token}%")) & (QRCard.is_active == True)
+            ).first()
+
         if not qr:
             return None, "Invalid ResQNet QR code."
 
-        if not qr.is_active or qr.revoked_at is not None:
+        if not qr.is_active or (hasattr(qr, 'revoked_at') and qr.revoked_at is not None):
             return None, "This QR code is no longer active."
 
         return qr, None

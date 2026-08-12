@@ -866,6 +866,7 @@ def regenerate_qr(current_user: User = Depends(get_current_user), db: Session = 
         }
 
 @app.get("/api/qr/{token}")
+@app.get("/qr/patient/{token}")
 def get_qr_details(token: str, request: Request, db: Session = Depends(get_db)):
     """
     Secure QR Scan & Role-Based Response Endpoint:
