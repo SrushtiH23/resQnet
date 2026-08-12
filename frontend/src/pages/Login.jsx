@@ -31,6 +31,7 @@ export const Login = () => {
         navigate(`/${data.role}-dashboard`);
       }
     } catch (err) {
+      console.error('Login error details:', err);
       const detail = err.response?.data?.detail;
       if (typeof detail === 'string') {
         setError(detail);
@@ -38,6 +39,8 @@ export const Login = () => {
         setError(detail.map((d) => d.msg || 'Invalid credentials').join(', '));
       } else if (typeof detail === 'object' && detail !== null) {
         setError(detail.msg || JSON.stringify(detail));
+      } else if (!err.response) {
+        setError(`Server Connection Error: Unable to reach API server. Please ensure backend is running or check network.`);
       } else {
         setError('Invalid email or password');
       }

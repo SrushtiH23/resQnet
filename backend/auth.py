@@ -20,7 +20,20 @@ def get_password_hash(password: str) -> str:
     return hashlib.sha256(salted.encode("utf-8")).hexdigest()
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return get_password_hash(plain_password) == hashed_password
+    if not plain_password or not hashed_password:
+        return False
+    if get_password_hash(plain_password) == hashed_password:
+        return True
+    if get_password_hash(plain_password.strip()) == hashed_password:
+        return True
+    if hashed_password.startswith("$2b$") or hashed_password.startswith("$2a$"):
+        try:
+            from passlib.context import CryptContext
+            pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+            return pwd_context.verify(plain_password, hashed_password)
+        except Exception:
+            pass
+    return False
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     to_encode = data.copy()
