@@ -485,7 +485,7 @@ export const RealSmartphoneSensor = ({ userId = 1, onFallDetected }) => {
       {/* FULL-SCREEN FALL VERIFICATION OVERLAY (COVERING HOME SCREEN & LOCK SCREEN) */}
       <EmergencyScreenModal
         isOpen={showFallModal}
-        initialCountdown={5}
+        initialCountdown={10}
         confidenceScore={lastAnalysis?.confidence_score || lastAnalysis?.confidence || 95}
         stageLabel={lastAnalysis?.detected_stage || 'Stage 5: Stillness & Freefall Verified'}
         onCancel={handleUserSaysOkay}

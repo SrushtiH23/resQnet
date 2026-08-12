@@ -3,7 +3,7 @@ import { AlertTriangle, ShieldCheck, Flame, Bell } from 'lucide-react';
 
 export const EmergencyScreenModal = ({
   isOpen,
-  initialCountdown = 5,
+  initialCountdown = 10,
   confidenceScore = 95,
   stageLabel = 'Stage 5: Stillness Verified',
   onCancel,
