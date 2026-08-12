@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">ResQNet</string>
+    <string name="title_activity_main">ResQNet</string>
+    <string name="package_name">com.resqnet.app</string>
+    <string name="custom_url_scheme">com.resqnet.app</string>
+</resources>
