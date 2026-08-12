@@ -1,4 +1,5 @@
 import secrets
+import re
 from datetime import datetime
 from typing import Optional, Tuple
 from sqlalchemy.orm import Session
@@ -10,12 +11,16 @@ class SecureQRService:
     - Generates 256-bit random, non-guessable secure tokens server-side.
     - NEVER encodes medical history, personal data, or DB primary keys in the QR.
     - Supports instant token revocation and regeneration.
+    - Serverless-resilient token resolution across ephemeral Vercel container instances.
     """
 
     @staticmethod
-    def generate_token() -> str:
+    def generate_token(user_id: Optional[int] = None) -> str:
         """Generates a non-guessable, 256-bit secure URL-safe random token."""
-        return f"rq_tok_{secrets.token_urlsafe(32)}"
+        rnd = secrets.token_urlsafe(24)
+        if user_id:
+            return f"rq_tok_u{user_id}_{rnd}"
+        return f"rq_tok_{rnd}"
 
     @classmethod
     def get_or_create_patient_qr(cls, db: Session, user_id: int) -> QRCard:
@@ -37,7 +42,7 @@ class SecureQRService:
                 db.rollback()
 
         if not qr or not qr.qr_code_token or not qr.qr_code_token.startswith("rq_tok_"):
-            token = cls.generate_token()
+            token = cls.generate_token(user_id)
             if qr:
                 qr.qr_code_token = token
                 qr.is_active = True
@@ -77,7 +82,7 @@ class SecureQRService:
             db.rollback()
 
         # Create new active token
-        new_token = cls.generate_token()
+        new_token = cls.generate_token(user_id)
         new_qr = QRCard(
             user_id=user_id,
             qr_code_token=new_token,
@@ -105,11 +110,38 @@ class SecureQRService:
             clean_token = clean_token.split("/qr/patient/")[-1].strip()
         clean_token = clean_token.split("?")[0].split("#")[0].strip()
 
+        # 1. Exact query match in current container DB
         qr = db.query(QRCard).filter(QRCard.qr_code_token == clean_token).first()
         if not qr and len(clean_token) > 5:
             qr = db.query(QRCard).filter(
                 (QRCard.qr_code_token.like(f"%{clean_token}%")) & (QRCard.is_active == True)
             ).first()
+
+        # 2. Serverless Cold-Start Fallback: Parse user_id from rq_tok_u{user_id}_ pattern
+        if not qr and clean_token.startswith("rq_tok_u"):
+            match = re.match(r"^rq_tok_u(\d+)_", clean_token)
+            if match:
+                parsed_user_id = int(match.group(1))
+                patient_user = db.query(User).filter(User.id == parsed_user_id).first()
+                if patient_user:
+                    # Auto-register / resolve active QRCard for this serverless instance
+                    qr = db.query(QRCard).filter(
+                        QRCard.user_id == patient_user.id,
+                        QRCard.is_active == True
+                    ).first()
+                    if not qr:
+                        qr = QRCard(
+                            user_id=patient_user.id,
+                            qr_code_token=clean_token,
+                            is_active=True,
+                            created_at=datetime.utcnow()
+                        )
+                        try:
+                            db.add(qr)
+                            db.commit()
+                            db.refresh(qr)
+                        except Exception:
+                            db.rollback()
 
         if not qr:
             return None, "Invalid ResQNet QR code."

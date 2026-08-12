@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const rawBaseUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8001';
+const rawBaseUrl = import.meta.env.VITE_API_URL || 'https://res-qnet-gilt.vercel.app';
 const API_BASE_URL = `${rawBaseUrl.replace(/\/$/, '')}/api`;
 
 const api = axios.create({

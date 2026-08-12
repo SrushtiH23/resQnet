@@ -814,7 +814,7 @@ def generate_or_get_qr(current_user: User = Depends(get_current_user), db: Sessi
     """
     try:
         qr = SecureQRService.get_or_create_patient_qr(db, current_user.id)
-        token_str = qr.qr_code_token if (qr and hasattr(qr, 'qr_code_token') and qr.qr_code_token) else SecureQRService.generate_token()
+        token_str = qr.qr_code_token if (qr and hasattr(qr, 'qr_code_token') and qr.qr_code_token) else SecureQRService.generate_token(current_user.id)
         base_url = os.getenv("FRONTEND_URL", "https://resqnet-ten.vercel.app")
         qr_url = f"{base_url}/qr/patient/{token_str}"
         return {
@@ -826,7 +826,7 @@ def generate_or_get_qr(current_user: User = Depends(get_current_user), db: Sessi
         }
     except Exception as err:
         print(f"generate_or_get_qr notice: {err}")
-        fallback_token = SecureQRService.generate_token()
+        fallback_token = SecureQRService.generate_token(current_user.id)
         return {
             "qr_token": fallback_token,
             "qr_url": f"https://resqnet-ten.vercel.app/qr/patient/{fallback_token}",
@@ -844,7 +844,7 @@ def regenerate_qr(current_user: User = Depends(get_current_user), db: Session = 
     """
     try:
         new_qr = SecureQRService.regenerate_patient_qr(db, current_user.id)
-        token_str = new_qr.qr_code_token if (new_qr and hasattr(new_qr, 'qr_code_token')) else SecureQRService.generate_token()
+        token_str = new_qr.qr_code_token if (new_qr and hasattr(new_qr, 'qr_code_token')) else SecureQRService.generate_token(current_user.id)
         base_url = os.getenv("FRONTEND_URL", "https://resqnet-ten.vercel.app")
         qr_url = f"{base_url}/qr/patient/{token_str}"
         return {
@@ -856,7 +856,7 @@ def regenerate_qr(current_user: User = Depends(get_current_user), db: Session = 
         }
     except Exception as err:
         print(f"regenerate_qr notice: {err}")
-        fallback_token = SecureQRService.generate_token()
+        fallback_token = SecureQRService.generate_token(current_user.id)
         return {
             "qr_token": fallback_token,
             "qr_url": f"https://resqnet-ten.vercel.app/qr/patient/{fallback_token}",
