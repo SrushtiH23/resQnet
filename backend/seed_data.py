@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 from database import engine, SessionLocal, Base
 from models import User, MedicalProfile, FamilyContact, Hospital, Ambulance, EmergencyEvent, EmergencyLog, AuditLog, QRCard
 from auth import get_password_hash
-from services.qr_service import EncryptedQRService
+from services.qr_service import SecureQRService
 from datetime import datetime, timedelta
 
 def seed_database():
@@ -77,7 +77,7 @@ def seed_database():
         db.add(med_profile)
 
         # 3. Encrypted QR Card
-        qr_token = EncryptedQRService.generate_medical_qr_token(patient.id)
+        qr_token = SecureQRService.generate_token()
         qr_card = QRCard(
             user_id=patient.id,
             qr_code_token=qr_token
