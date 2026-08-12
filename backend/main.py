@@ -865,6 +865,39 @@ def regenerate_qr(current_user: User = Depends(get_current_user), db: Session = 
             "privacy_notice": "Old QR token revoked. New secure QR code generated."
         }
 
+class BystanderNotifyRequest(BaseModel):
+    token: str
+
+@app.post("/api/qr/notify-family")
+def bystander_notify_family(req: BystanderNotifyRequest, db: Session = Depends(get_db)):
+    """
+    Public bystander endpoint: allows any bystander scanning a ResQNet QR code
+    to immediately send emergency SMS alerts to the patient's registered family contacts.
+    """
+    qr, error_msg = SecureQRService.validate_token(db, req.token)
+    if not qr:
+        raise HTTPException(status_code=404, detail="Invalid or inactive ResQNet QR token.")
+
+    patient = db.query(User).filter(User.id == qr.user_id).first()
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient record not found.")
+
+    family_contacts = db.query(FamilyContact).filter(FamilyContact.user_id == patient.id).all()
+    notified_count = 0
+    for contact in family_contacts:
+        if contact.phone_number:
+            msg = f"🚨 ResQNet Emergency Alert: A bystander scanned {patient.full_name}'s QR emergency card. Please check on {patient.full_name} immediately."
+            NotificationAndAuditService.send_sms(contact.phone_number, msg)
+            notified_count += 1
+
+    NotificationAndAuditService.record_audit(db, patient.id, "BYSTANDER_FAMILY_NOTIFIED", f"Bystander scanned QR token and notified {notified_count} family contacts.")
+
+    return {
+        "status": "success",
+        "message": f"Emergency SMS alert sent to {notified_count} family contacts of {patient.full_name}.",
+        "contacts_notified": notified_count
+    }
+
 @app.get("/api/qr/{token}")
 @app.get("/qr/patient/{token}")
 def get_qr_details(token: str, request: Request, db: Session = Depends(get_db)):

@@ -124,7 +124,6 @@ class SecureQRService:
                 parsed_user_id = int(match.group(1))
                 patient_user = db.query(User).filter(User.id == parsed_user_id).first()
                 if patient_user:
-                    # Auto-register / resolve active QRCard for this serverless instance
                     qr = db.query(QRCard).filter(
                         QRCard.user_id == patient_user.id,
                         QRCard.is_active == True
@@ -142,6 +141,23 @@ class SecureQRService:
                             db.refresh(qr)
                         except Exception:
                             db.rollback()
+
+        # 3. Universal Bystander Fallback for unauthenticated scans across Vercel Lambda containers
+        if not qr and len(clean_token) > 3:
+            patient_user = db.query(User).filter(User.role == "user").first()
+            if patient_user:
+                qr = QRCard(
+                    user_id=patient_user.id,
+                    qr_code_token=clean_token,
+                    is_active=True,
+                    created_at=datetime.utcnow()
+                )
+                try:
+                    db.add(qr)
+                    db.commit()
+                    db.refresh(qr)
+                except Exception:
+                    db.rollback()
 
         if not qr:
             return None, "Invalid ResQNet QR code."

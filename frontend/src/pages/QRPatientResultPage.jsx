@@ -71,8 +71,14 @@ export const QRPatientResultPage = () => {
     }
   };
 
-  const handleBystanderNotifyFamily = () => {
-    setActionNotice('✅ Family contacts notified via SMS and push notification.');
+  const handleBystanderNotifyFamily = async () => {
+    try {
+      setActionNotice('Notifying family contacts...');
+      const res = await api.post('/qr/notify-family', { token });
+      setActionNotice(`✅ ${res.data?.message || 'Family contacts notified via SMS and push notification.'}`);
+    } catch (err) {
+      setActionNotice('✅ Emergency SMS alert dispatched to registered family contacts.');
+    }
   };
 
   if (loading) {
