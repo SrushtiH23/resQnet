@@ -1,14 +1,14 @@
 import React, { useRef } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
-import { Download, Printer, ShieldCheck, XCircle, Heart, PhoneCall, QrCode, User } from 'lucide-react';
+import { Download, RefreshCw, ShieldCheck, XCircle, QrCode } from 'lucide-react';
 
-export const QRMedicalCardModal = ({ isOpen, onClose, qrToken, user, medicalProfile }) => {
-  const canvasRef = useRef(null);
-
+export const QRMedicalCardModal = ({ isOpen, onClose, qrToken, user, medicalProfile, onRegenerate }) => {
   if (!isOpen) return null;
 
+  const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://resqnet-ten.vercel.app';
+  const qrUrl = qrToken?.startsWith('http') ? qrToken : `${baseUrl}/qr/patient/${qrToken}`;
+
   const handleDownload = () => {
-    // Find canvas rendered inside the modal
     const canvas = document.getElementById('resqnet-qr-canvas');
     if (!canvas) {
       alert('QR Canvas not found');
@@ -23,20 +23,22 @@ export const QRMedicalCardModal = ({ isOpen, onClose, qrToken, user, medicalProf
     document.body.removeChild(link);
   };
 
-  const handlePrint = () => {
-    window.print();
+  const handleRegenerateClick = () => {
+    if (window.confirm('Are you sure you want to regenerate your QR Code? Any printed or saved copies of the old QR code will become permanently inactive.')) {
+      if (onRegenerate) onRegenerate();
+    }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
       <div className="glass-panel p-6 rounded-3xl max-w-md w-full border border-slate-700 space-y-5 shadow-2xl relative">
         {/* Modal Header */}
         <div className="flex items-center justify-between pb-3 border-b border-slate-800">
           <div className="flex items-center gap-2">
             <QrCode className="w-5 h-5 text-cyan-400" />
-            <h3 className="text-base font-bold text-white">ResQNet Encrypted Medical Card</h3>
+            <h3 className="text-base font-bold text-white">ResQNet Privacy-Preserving Emergency QR Card</h3>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors">
+          <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors cursor-pointer">
             <XCircle className="w-5 h-5" />
           </button>
         </div>
@@ -48,54 +50,49 @@ export const QRMedicalCardModal = ({ isOpen, onClose, qrToken, user, medicalProf
               <p className="text-[10px] text-cyan-400 font-extrabold uppercase tracking-widest">ResQNet Emergency Card</p>
               <h4 className="text-lg font-black text-white">{user?.full_name || 'Patient Emergency Card'}</h4>
             </div>
-            <span className="px-2.5 py-1 bg-rose-500/20 text-rose-400 border border-rose-500/40 text-xs font-mono font-bold rounded-lg">
-              Blood: {medicalProfile?.blood_group || 'O+'}
+            <span className="px-2.5 py-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-xs font-mono font-bold rounded-lg flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              ACTIVE
             </span>
           </div>
 
-          {/* Real Canvas QR Code */}
+          {/* Secure Canvas QR Code (Contains ONLY secure URL/Token) */}
           <div className="p-4 bg-white rounded-2xl inline-block shadow-2xl mx-auto border-4 border-slate-800">
             <QRCodeCanvas
               id="resqnet-qr-canvas"
-              value={qrToken || 'resqnet_medical_card_placeholder'}
-              size={180}
+              value={qrUrl}
+              size={190}
               level="H"
               includeMargin={true}
             />
           </div>
 
-          {/* Patient Summary Snapshot */}
-          <div className="grid grid-cols-2 gap-2 text-[11px] text-left">
-            <div className="p-2 bg-slate-900/90 rounded-xl border border-slate-800 space-y-0.5">
-              <span className="text-slate-400 text-[10px]">Primary Doctor:</span>
-              <p className="font-semibold text-cyan-300 truncate">{medicalProfile?.doctor_name || 'Dr. Robert Chen'}</p>
-            </div>
-            <div className="p-2 bg-slate-900/90 rounded-xl border border-slate-800 space-y-0.5">
-              <span className="text-slate-400 text-[10px]">Emergency Phone:</span>
-              <p className="font-semibold text-amber-300 truncate">{user?.phone || '+1 (555) 019-2831'}</p>
-            </div>
-          </div>
+          <p className="text-[11px] font-mono text-slate-400 truncate max-w-xs mx-auto">
+            Token: <span className="text-cyan-300">{qrToken || 'generating...'}</span>
+          </p>
 
-          {/* Privacy Footnote */}
-          <div className="p-2.5 bg-slate-950 rounded-xl border border-slate-800 text-[10px] text-slate-400 flex items-center gap-2 text-left">
-            <ShieldCheck className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-            <span>Encrypted Token: Only verified Doctor & Hospital roles can decrypt records.</span>
+          {/* Privacy Protocol Notice */}
+          <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 text-[10px] text-slate-300 flex items-center gap-2 text-left">
+            <ShieldCheck className="w-5 h-5 text-emerald-400 flex-shrink-0" />
+            <span>
+              <strong>Zero-Privacy-Leak Guarantee:</strong> No medical records or phone numbers are encoded in this image. Scanner authorization dictates what information is exposed.
+            </span>
           </div>
         </div>
 
-        {/* Action Buttons: Download & Print */}
+        {/* Action Buttons: Download & Regenerate */}
         <div className="grid grid-cols-2 gap-3 pt-2">
           <button
             onClick={handleDownload}
-            className="py-3 px-4 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-lg shadow-cyan-600/20 transition-all hover:scale-105"
+            className="py-3 px-4 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-lg shadow-cyan-600/20 transition-all hover:scale-105 cursor-pointer"
           >
-            <Download className="w-4 h-4" /> Download QR (PNG)
+            <Download className="w-4 h-4" /> Download PNG
           </button>
           <button
-            onClick={handlePrint}
-            className="py-3 px-4 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-bold flex items-center justify-center gap-2 border border-slate-700 transition-all hover:scale-105"
+            onClick={handleRegenerateClick}
+            className="py-3 px-4 bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 rounded-xl text-xs font-bold flex items-center justify-center gap-2 border border-amber-500/40 transition-all hover:scale-105 cursor-pointer"
           >
-            <Printer className="w-4 h-4 text-amber-400" /> Print Medical Card
+            <RefreshCw className="w-4 h-4 text-amber-400" /> Regenerate QR
           </button>
         </div>
       </div>

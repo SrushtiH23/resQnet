@@ -19,6 +19,8 @@ import { EmergencyHistoryPage } from './pages/EmergencyHistoryPage';
 import { MedicalProfilePage } from './pages/MedicalProfilePage';
 import { DoctorProfilePage } from './pages/DoctorProfilePage';
 import { ActiveEmergenciesPage } from './pages/ActiveEmergenciesPage';
+import { QRScannerPage } from './pages/QRScannerPage';
+import { QRPatientResultPage } from './pages/QRPatientResultPage';
 
 function FallbackRedirect() {
   const { user, role, loading } = useAuth();
@@ -40,6 +42,10 @@ function AppRoutes() {
           <Route path="/login" element={<Login />} />
           <Route path="/admin-login" element={<AdminLogin />} />
           <Route path="/register" element={<Register />} />
+
+          {/* Public & Scanner Routes */}
+          <Route path="/qr-scanner" element={<QRScannerPage />} />
+          <Route path="/qr/patient/:token" element={<QRPatientResultPage />} />
 
           {/* Role-Specific Dashboards */}
           <Route

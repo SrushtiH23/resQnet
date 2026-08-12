@@ -283,10 +283,53 @@ class ChatbotTriageResponse(BaseModel):
 # --- QR Card Schemas ---
 class QRGenerateResponse(BaseModel):
     qr_token: str
+    qr_url: str
+    is_active: bool
+    created_at: str
     privacy_notice: str
 
 class QRScanRequest(BaseModel):
     qr_token: str
+
+class BystanderQRResponse(BaseModel):
+    access_level: str = "bystander"
+    token: str
+    is_active: bool
+    patient_name: str
+    blood_group: Optional[str] = "Not Specified"
+    critical_allergies: Optional[str] = "None Reported"
+    critical_medical_conditions: Optional[str] = "None Reported"
+    has_active_emergency: bool = False
+    active_emergency: Optional[dict] = None
+
+class DoctorQRResponse(BaseModel):
+    access_level: str = "doctor"
+    token: str
+    is_active: bool
+    patient_name: str
+    age: Optional[int] = None
+    blood_group: Optional[str] = None
+    allergies: Optional[str] = None
+    medical_conditions: Optional[str] = None
+    current_medications: Optional[str] = None
+    primary_doctor: Optional[dict] = None
+    emergency_contacts: List[dict] = []
+    emergency_history_count: int = 0
+    has_active_emergency: bool = False
+    active_emergency: Optional[dict] = None
+
+class HospitalQRResponse(BaseModel):
+    access_level: str = "hospital"
+    token: str
+    is_active: bool
+    patient_name: str
+    age: Optional[int] = None
+    blood_group: Optional[str] = None
+    allergies: Optional[str] = None
+    medical_conditions: Optional[str] = None
+    current_medications: Optional[str] = None
+    has_active_emergency: bool = False
+    active_emergency: Optional[dict] = None
 
 # --- Hospital & Routing Schemas ---
 class HospitalCreate(BaseModel):

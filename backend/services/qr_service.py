@@ -1,43 +1,93 @@
-import jwt
-import os
-import uuid
-from datetime import datetime, timedelta
-from typing import Dict, Any, Optional
+import secrets
+from datetime import datetime
+from typing import Optional, Tuple
+from sqlalchemy.orm import Session
+from models import QRCard, User
 
-SECRET_KEY = os.getenv("JWT_SECRET", "resqnet_super_secret_jwt_key_2026")
-ALGORITHM = "HS256"
-
-class EncryptedQRService:
+class SecureQRService:
     """
-    QR Medical Card Privacy & Encryption Service
-    Generates privacy-preserving QR tokens containing ONLY an encrypted UUID and User Token.
-    Never stores raw personal, phone, or medical information inside the QR payload.
-    Exposes medical details ONLY after doctor/hospital role authorization.
+    ResQNet Privacy-Preserving QR Token Engine
+    - Generates 256-bit random, non-guessable secure tokens server-side.
+    - NEVER encodes medical history, personal data, or DB primary keys in the QR.
+    - Supports instant token revocation and regeneration.
     """
 
     @staticmethod
-    def generate_medical_qr_token(user_id: int) -> str:
-        """Generates a secure QR payload containing only an encrypted UUID, user_id, and expiration."""
-        payload = {
-            "qr_uuid": str(uuid.uuid4()),
-            "qr_user_id": user_id,
-            "type": "resqnet_medical_card",
-            "iat": datetime.utcnow(),
-            "exp": datetime.utcnow() + timedelta(days=365) # Valid for 1 year
-        }
-        token = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
-        return token
+    def generate_token() -> str:
+        """Generates a non-guessable, 256-bit secure URL-safe random token."""
+        return f"rq_tok_{secrets.token_urlsafe(32)}"
 
-    @staticmethod
-    def verify_and_decode_qr(qr_token: str) -> Optional[int]:
+    @classmethod
+    def get_or_create_patient_qr(cls, db: Session, user_id: int) -> QRCard:
         """
-        Decodes the QR token to verify signature and extract user_id.
-        Returns user_id if valid, None if tampered or expired.
+        Finds the patient's existing active QR code card.
+        If none exists, generates a new secure QR token row.
         """
-        try:
-            payload = jwt.decode(qr_token, SECRET_KEY, algorithms=[ALGORITHM])
-            if payload.get("type") == "resqnet_medical_card":
-                return payload.get("qr_user_id")
-        except jwt.PyJWTError:
-            return None
-        return None
+        qr = db.query(QRCard).filter(
+            QRCard.user_id == user_id,
+            QRCard.is_active == True
+        ).order_by(QRCard.created_at.desc()).first()
+
+        if not qr:
+            token = cls.generate_token()
+            qr = QRCard(
+                user_id=user_id,
+                qr_code_token=token,
+                is_active=True,
+                created_at=datetime.utcnow()
+            )
+            db.add(qr)
+            db.commit()
+            db.refresh(qr)
+
+        return qr
+
+    @classmethod
+    def regenerate_patient_qr(cls, db: Session, user_id: int) -> QRCard:
+        """
+        Revokes all existing QR tokens for the patient and issues a new active secure token.
+        """
+        # Revoke old tokens
+        active_qrs = db.query(QRCard).filter(
+            QRCard.user_id == user_id,
+            QRCard.is_active == True
+        ).all()
+
+        for old_qr in active_qrs:
+            old_qr.is_active = False
+            old_qr.revoked_at = datetime.utcnow()
+
+        # Create new active token
+        new_token = cls.generate_token()
+        new_qr = QRCard(
+            user_id=user_id,
+            qr_code_token=new_token,
+            is_active=True,
+            created_at=datetime.utcnow()
+        )
+        db.add(new_qr)
+        db.commit()
+        db.refresh(new_qr)
+
+        return new_qr
+
+    @classmethod
+    def validate_token(cls, db: Session, token: str) -> Tuple[Optional[QRCard], Optional[str]]:
+        """
+        Validates the QR token.
+        Returns (QRCard, None) if valid.
+        Returns (None, error_reason) if invalid or revoked.
+        """
+        # Extract token string if full URL was provided
+        clean_token = token.strip()
+        if "/qr/patient/" in clean_token:
+            clean_token = clean_token.split("/qr/patient/")[-1].strip()
+
+        qr = db.query(QRCard).filter(QRCard.qr_code_token == clean_token).first()
+        if not qr:
+            return None, "Invalid ResQNet QR code."
+
+        if not qr.is_active or qr.revoked_at is not None:
+            return None, "This QR code is no longer active."
+
+        return qr, None

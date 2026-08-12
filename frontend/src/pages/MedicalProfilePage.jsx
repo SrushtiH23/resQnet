@@ -109,6 +109,16 @@ export const MedicalProfilePage = () => {
     }
   };
 
+  const handleRegenerateQR = async () => {
+    try {
+      const res = await api.post('/qr/regenerate');
+      setQrToken(res.data.qr_token);
+      alert('New secure QR token generated! Previous QR code token is now permanently revoked.');
+    } catch (err) {
+      alert('Failed to regenerate QR card.');
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 space-y-8">
       {/* Page Header */}
@@ -394,6 +404,9 @@ export const MedicalProfilePage = () => {
         isOpen={showQrModal}
         onClose={() => setShowQrModal(false)}
         qrToken={qrToken}
+        user={user}
+        medicalProfile={profile}
+        onRegenerate={handleRegenerateQR}
       />
     </div>
   );

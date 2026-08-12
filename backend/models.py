@@ -46,10 +46,11 @@ class QRCard(Base):
     __tablename__ = "qr_cards"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), unique=True, nullable=False)
-    qr_code_token = Column(String(255), unique=True, nullable=False) # Only contains encrypted token
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    qr_code_token = Column(String(255), unique=True, nullable=False) # Random secure token / URL
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+    revoked_at = Column(DateTime, nullable=True)
 
     user = relationship("User", back_populates="qr_card")
 

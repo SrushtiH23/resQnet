@@ -24,7 +24,7 @@ from services.confidence_engine import ConfidenceScoringEngine
 from services.escalation_engine import EmergencyEscalationEngine
 from services.routing_engine import ProductionGeospatialRouter, HospitalGraphRouter
 from services.ambulance_engine import PriorityAmbulanceAllocator
-from services.qr_service import EncryptedQRService
+from services.qr_service import SecureQRService
 from services.chatbot_service import EmergencyTriageChatbot
 from services.notification_service import NotificationAndAuditService, normalize_indian_phone
 from websocket_manager import ws_manager
@@ -138,7 +138,7 @@ def register_user(user_in: schemas.UserRegister, db: Session = Depends(get_db)):
     if user.role == "user":
         med = MedicalProfile(user_id=user.id)
         db.add(med)
-        qr_token = EncryptedQRService.generate_medical_qr_token(user.id)
+        qr_token = SecureQRService.generate_token()
         qr = QRCard(user_id=user.id, qr_code_token=qr_token)
         db.add(qr)
         db.commit()
@@ -811,6 +811,202 @@ def get_admin_stats(current_user: User = Depends(require_role("admin")), db: Ses
         "resolved_cases": resolved_cases,
         "system_status": "OPERATIONAL"
     }
+
+# ==========================================
+# MODULE 14: SECURE PRIVACY-PRESERVING QR ENDPOINTS
+# ==========================================
+def get_optional_current_user(request: Request, db: Session) -> Optional[User]:
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return None
+    token = auth_header.split(" ")[1]
+    try:
+        from auth import SECRET_KEY, ALGORITHM
+        import jwt
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        email: str = payload.get("sub")
+        if email is None:
+            return None
+        return db.query(User).filter(User.email == email).first()
+    except Exception:
+        return None
+
+@app.get("/api/qr/my-card", response_model=schemas.QRGenerateResponse)
+@app.get("/api/qr/generate", response_model=schemas.QRGenerateResponse)
+@app.post("/api/qr/generate", response_model=schemas.QRGenerateResponse)
+def generate_or_get_qr(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """
+    Retrieves or generates the patient's active QR code token.
+    The QR payload contains ONLY a secure random token, never raw medical data.
+    """
+    qr = SecureQRService.get_or_create_patient_qr(db, current_user.id)
+    base_url = os.getenv("FRONTEND_URL", "https://resqnet-ten.vercel.app")
+    qr_url = f"{base_url}/qr/patient/{qr.qr_code_token}"
+    return {
+        "qr_token": qr.qr_code_token,
+        "qr_url": qr_url,
+        "is_active": qr.is_active,
+        "created_at": qr.created_at.isoformat() if qr.created_at else datetime.utcnow().isoformat(),
+        "privacy_notice": "QR code contains ONLY a secure random token. Medical records are stored server-side."
+    }
+
+@app.post("/api/qr/regenerate", response_model=schemas.QRGenerateResponse)
+@app.post("/api/qr/revoke", response_model=schemas.QRGenerateResponse)
+def regenerate_qr(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """
+    Revokes the patient's existing active QR code token and generates a brand-new random secure token.
+    Old QR cards scanned anywhere become immediately inactive (HTTP 410).
+    """
+    new_qr = SecureQRService.regenerate_patient_qr(db, current_user.id)
+    base_url = os.getenv("FRONTEND_URL", "https://resqnet-ten.vercel.app")
+    qr_url = f"{base_url}/qr/patient/{new_qr.qr_code_token}"
+    return {
+        "qr_token": new_qr.qr_code_token,
+        "qr_url": qr_url,
+        "is_active": new_qr.is_active,
+        "created_at": new_qr.created_at.isoformat() if new_qr.created_at else datetime.utcnow().isoformat(),
+        "privacy_notice": "Old QR token revoked. New secure QR code generated."
+    }
+
+@app.get("/api/qr/{token}")
+def get_qr_details(token: str, request: Request, db: Session = Depends(get_db)):
+    """
+    Secure QR Scan & Role-Based Response Endpoint:
+    1. Validates token server-side (returns 404 for invalid, 410 for revoked/inactive).
+    2. Identifies patient record.
+    3. Determines scanner role from JWT session (Bystander vs Doctor vs Hospital).
+    4. Returns strictly filtered, role-tailored emergency information.
+    """
+    qr, error_msg = SecureQRService.validate_token(db, token)
+    if not qr:
+        if error_msg == "This QR code is no longer active.":
+            raise HTTPException(status_code=410, detail="This QR code is no longer active.")
+        raise HTTPException(status_code=404, detail="Invalid ResQNet QR code.")
+
+    patient = db.query(User).filter(User.id == qr.user_id).first()
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient record unavailable.")
+
+    medical_profile = db.query(MedicalProfile).filter(MedicalProfile.user_id == patient.id).first()
+
+    # Determine authenticated viewer role from session/token
+    viewer = get_optional_current_user(request, db)
+    viewer_role = viewer.role if viewer else "bystander"
+
+    # Query Active Emergency (if any)
+    active_emergency = db.query(EmergencyEvent).filter(
+        EmergencyEvent.user_id == patient.id,
+        EmergencyEvent.status.notin_(["Resolved", "False Alarm", "Cancelled"])
+    ).order_by(EmergencyEvent.created_at.desc()).first()
+
+    active_emergency_data = None
+    if active_emergency:
+        logs = db.query(EmergencyLog).filter(EmergencyLog.emergency_event_id == active_emergency.id).order_by(EmergencyLog.timestamp.asc()).all()
+        
+        # Real sensor evidence check from logs/events
+        free_fall_detected = any("free fall" in (l.stage_name or "").lower() or "free fall" in (l.description or "").lower() for l in logs) or active_emergency.trigger_source == "Fall Detection"
+        impact_detected = any("impact" in (l.stage_name or "").lower() or "impact" in (l.description or "").lower() for l in logs) or active_emergency.trigger_source == "Fall Detection"
+        stillness_detected = any("stillness" in (l.stage_name or "").lower() or "stillness" in (l.description or "").lower() for l in logs)
+        rotation_detected = any("rotation" in (l.stage_name or "").lower() or "gyro" in (l.description or "").lower() for l in logs)
+
+        active_emergency_data = {
+            "emergency_id": active_emergency.id,
+            "trigger_source": active_emergency.trigger_source,
+            "status": active_emergency.status,
+            "severity": "CRITICAL" if active_emergency.confidence_score >= 80 else "HIGH",
+            "confidence_score": active_emergency.confidence_score,
+            "latitude": active_emergency.latitude,
+            "longitude": active_emergency.longitude,
+            "location_url": f"https://www.google.com/maps?q={active_emergency.latitude:.6f},{active_emergency.longitude:.6f}" if active_emergency.latitude else None,
+            "created_at": active_emergency.created_at.isoformat() if active_emergency.created_at else None,
+            "sensor_evidence": {
+                "free_fall": free_fall_detected,
+                "impact": impact_detected,
+                "stillness": stillness_detected,
+                "rotation": rotation_detected
+            },
+            "timeline": [
+                {
+                    "id": l.id,
+                    "stage_name": l.stage_name,
+                    "description": l.description,
+                    "timestamp": l.timestamp.isoformat() if l.timestamp else None
+                } for l in logs
+            ],
+            "ambulance_status": "En Route to ER Bay" if active_emergency.confidence_score >= 80 else "Standby"
+        }
+
+    # Role-Based Access Control Filtering
+    if viewer_role in ["doctor", "admin"]:
+        family_contacts = db.query(FamilyContact).filter(FamilyContact.user_id == patient.id).all()
+        past_emergencies = db.query(EmergencyEvent).filter(EmergencyEvent.user_id == patient.id).all()
+
+        return {
+            "access_level": "doctor",
+            "token": qr.qr_code_token,
+            "is_active": qr.is_active,
+            "patient_name": patient.full_name,
+            "age": medical_profile.age if medical_profile else None,
+            "blood_group": medical_profile.blood_group if medical_profile else "Not Specified",
+            "allergies": medical_profile.allergies if medical_profile else "None Reported",
+            "medical_conditions": medical_profile.diseases if medical_profile else "None Reported",
+            "current_medications": medical_profile.medications if medical_profile else "None Reported",
+            "primary_doctor": {
+                "name": medical_profile.doctor_name if medical_profile else "Not Specified",
+                "phone": medical_profile.doctor_phone if medical_profile else "Not Specified"
+            },
+            "emergency_contacts": [
+                {
+                    "name": c.contact_name,
+                    "relationship": c.relationship,
+                    "phone": c.phone_number
+                } for c in family_contacts
+            ],
+            "emergency_history_count": len(past_emergencies),
+            "has_active_emergency": bool(active_emergency),
+            "active_emergency": active_emergency_data
+        }
+
+    elif viewer_role == "hospital":
+        return {
+            "access_level": "hospital",
+            "token": qr.qr_code_token,
+            "is_active": qr.is_active,
+            "patient_name": patient.full_name,
+            "age": medical_profile.age if medical_profile else None,
+            "blood_group": medical_profile.blood_group if medical_profile else "Not Specified",
+            "allergies": medical_profile.allergies if medical_profile else "None Reported",
+            "medical_conditions": medical_profile.diseases if medical_profile else "None Reported",
+            "current_medications": medical_profile.medications if medical_profile else "None Reported",
+            "has_active_emergency": bool(active_emergency),
+            "active_emergency": active_emergency_data
+        }
+
+    else:
+        # BYSTANDER / PUBLIC SCANNER (MINIMUM EMERGENCY INFORMATION ONLY)
+        return {
+            "access_level": "bystander",
+            "token": qr.qr_code_token,
+            "is_active": qr.is_active,
+            "patient_name": patient.full_name,
+            "blood_group": medical_profile.blood_group if medical_profile else "Not Specified",
+            "critical_allergies": medical_profile.allergies if medical_profile else "None Reported",
+            "critical_medical_conditions": medical_profile.diseases if medical_profile else "None Reported",
+            "has_active_emergency": bool(active_emergency),
+            "active_emergency": {
+                "emergency_id": active_emergency.id,
+                "status": active_emergency.status,
+                "trigger_source": active_emergency.trigger_source,
+                "created_at": active_emergency.created_at.isoformat() if active_emergency.created_at else None,
+                "latitude": active_emergency.latitude,
+                "longitude": active_emergency.longitude,
+                "location_url": f"https://www.google.com/maps?q={active_emergency.latitude:.6f},{active_emergency.longitude:.6f}" if active_emergency.latitude else None
+            } if active_emergency else None
+        }
+
+@app.post("/api/qr/scan")
+def scan_qr_post(req: schemas.QRScanRequest, request: Request, db: Session = Depends(get_db)):
+    return get_qr_details(req.qr_token, request, db)
 
 # ==========================================
 # DEVELOPMENT-ONLY TEST ENDPOINT (Requirement 6)
