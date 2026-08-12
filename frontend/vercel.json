@@ -5,11 +5,7 @@
       "destination": "https://res-qnet-gilt.vercel.app/api/:path*"
     },
     {
-      "source": "/qr/patient/:token",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/(.*)",
+      "source": "/:path*",
       "destination": "/index.html"
     }
   ]
