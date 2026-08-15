@@ -43,7 +43,7 @@ def seed_database():
             phone="+919876543213",
             role="hospital"
         )
-        # System Admin
+        # System Admin 1
         admin_user = User(
             full_name="ResQNet Administrator",
             email="admin@gmail.com",
@@ -51,8 +51,16 @@ def seed_database():
             phone="+919876543214",
             role="admin"
         )
+        # System Admin 2
+        admin_user2 = User(
+            full_name="ResQNet Portal Admin",
+            email="admin@resqnet.com",
+            hashed_password=get_password_hash("admin@321"),
+            phone="+919876543215",
+            role="admin"
+        )
 
-        db.add_all([patient, doctor_user, hospital_user, admin_user])
+        db.add_all([patient, doctor_user, hospital_user, admin_user, admin_user2])
         db.commit()
 
         # Refresh to get IDs

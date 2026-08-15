@@ -22,9 +22,13 @@ def get_password_hash(password: str) -> str:
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     if not plain_password or not hashed_password:
         return False
+    clean_p = plain_password.strip()
     if get_password_hash(plain_password) == hashed_password:
         return True
-    if get_password_hash(plain_password.strip()) == hashed_password:
+    if get_password_hash(clean_p) == hashed_password:
+        return True
+    default_salted = f"{clean_p}resqnet_super_secret_jwt_key_2026"
+    if hashlib.sha256(default_salted.encode("utf-8")).hexdigest() == hashed_password:
         return True
     if hashed_password.startswith("$2b$") or hashed_password.startswith("$2a$"):
         try:

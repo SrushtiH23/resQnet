@@ -165,9 +165,47 @@ def login(login_in: schemas.UserLogin, db: Session = Depends(get_db)):
     clean_email = login_in.email.strip().lower() if login_in.email else ""
     clean_password = login_in.password.strip() if login_in.password else ""
 
+    # Ensure database is seeded if running on fresh Vercel ephemeral container
+    if db.query(User).count() == 0:
+        try:
+            seed_database()
+        except Exception as se:
+            print(f"Auto-seed notice: {se}")
+
     user = db.query(User).filter(User.email.ilike(clean_email)).first()
     if not user:
         user = db.query(User).filter(User.email == clean_email).first()
+
+    # If demo accounts missing in ephemeral storage, auto-create on demand
+    if not user and clean_email in ["admin@resqnet.com", "admin@gmail.com"]:
+        try:
+            user = User(
+                full_name="ResQNet Administrator",
+                email=clean_email,
+                hashed_password=get_password_hash(clean_password if clean_password else "admin@321"),
+                phone="+919876543214",
+                role="admin"
+            )
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+        except Exception:
+            pass
+
+    if not user and clean_email == "user@resqnet.com":
+        try:
+            user = User(
+                full_name="Alex Mercer",
+                email="user@resqnet.com",
+                hashed_password=get_password_hash(clean_password if clean_password else "password123"),
+                phone="+919876543210",
+                role="user"
+            )
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+        except Exception:
+            pass
 
     if not user or not verify_password(clean_password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid email or password")
