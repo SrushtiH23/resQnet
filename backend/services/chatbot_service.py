@@ -1,10 +1,10 @@
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 from services.confidence_engine import ConfidenceScoringEngine
 
 class EmergencyTriageChatbot:
     """
     Module 9: AI / Rule-Based Triage Chatbot Engine
-    Evaluates self-reported symptoms through structured follow-up questions:
+    Evaluates self-reported symptoms through natural language parsing and structured checklist:
     1. Conscious & able to respond?
     2. Fall or lost consciousness?
     3. Chest pain?
@@ -16,7 +16,22 @@ class EmergencyTriageChatbot:
     """
 
     @staticmethod
+    def parse_natural_language(text: str) -> Dict[str, bool]:
+        if not text:
+            return {}
+        txt = text.lower()
+        return {
+            "sudden_dizziness": any(kw in txt for kw in ["dizz", "lighthead", "vertigo", "spin", "wooz", "faintish", "unsteady head"]),
+            "fell_or_fainted": any(kw in txt for kw in ["fell", "fall", "faint", "passed out", "blackout", "blacked out", "lost consciousness", "syncope", "collapse"]),
+            "has_chest_pain": any(kw in txt for kw in ["chest pain", "chest tightness", "chest pressure", "heart pain", "angina", "tight chest", "heavy chest"]),
+            "has_breathing_difficulty": any(kw in txt for kw in ["breath", "breathing", "shortness of breath", "can't breathe", "cannot breathe", "trouble breathing", "gasping", "suffocating", "winded", "hard to breathe"]),
+            "is_bleeding": any(kw in txt for kw in ["bleed", "bleeding", "blood", "hemorrhage", "gush"]),
+            "cannot_stand_or_walk": any(kw in txt for kw in ["cannot stand", "can't stand", "unable to stand", "cannot walk", "can't walk", "unable to walk", "immobile", "can't move legs", "collapsed legs"])
+        }
+
+    @staticmethod
     def evaluate_triage(
+        text_input: Optional[str] = None,
         is_conscious: bool = True,
         fell_or_fainted: bool = False,
         has_chest_pain: bool = False,
@@ -27,16 +42,29 @@ class EmergencyTriageChatbot:
         is_alone: bool = True
     ) -> Dict[str, Any]:
         
-        loss_of_consciousness = (not is_conscious) or fell_or_fainted
+        parsed = EmergencyTriageChatbot.parse_natural_language(text_input or "")
+
+        final_sudden_dizziness = sudden_dizziness or parsed.get("sudden_dizziness", False)
+        final_fell_or_fainted = fell_or_fainted or parsed.get("fell_or_fainted", False)
+        final_has_chest_pain = has_chest_pain or parsed.get("has_chest_pain", False)
+        final_has_breathing_difficulty = has_breathing_difficulty or parsed.get("has_breathing_difficulty", False)
+        final_is_bleeding = is_bleeding or parsed.get("is_bleeding", False)
+        
+        parsed_immobile = parsed.get("cannot_stand_or_walk", False)
+        final_can_stand_or_walk = False if parsed_immobile else can_stand_or_walk
+
+        loss_of_consciousness = (not is_conscious) or final_fell_or_fainted
+        chatbot_score = 20.0 if final_sudden_dizziness else 0.0
 
         # Calculate using ConfidenceScoringEngine
         score_res = ConfidenceScoringEngine.calculate_score(
-            fall_detected=fell_or_fainted,
+            fall_detected=final_fell_or_fainted,
             loss_of_consciousness=loss_of_consciousness,
-            chest_pain=has_chest_pain,
-            breathing_difficulty=has_breathing_difficulty,
-            severe_bleeding=is_bleeding,
-            stillness=not can_stand_or_walk
+            chest_pain=final_has_chest_pain,
+            breathing_difficulty=final_has_breathing_difficulty,
+            severe_bleeding=final_is_bleeding,
+            stillness=not final_can_stand_or_walk,
+            chatbot=chatbot_score
         )
 
         score = score_res["confidence_score"]
@@ -44,22 +72,98 @@ class EmergencyTriageChatbot:
         emergency_required = score_res["emergency_required"]
         reasons = score_res["reasons"]
 
-        # Formulate guidance message based on risk level
+        # Build list of detected symptoms
+        detected_symptoms = []
+        if final_has_breathing_difficulty:
+            detected_symptoms.append("Difficulty breathing")
+        if final_has_chest_pain:
+            detected_symptoms.append("Acute chest pain")
+        if final_fell_or_fainted:
+            detected_symptoms.append("Fell / Lost consciousness")
+        if final_is_bleeding:
+            detected_symptoms.append("Severe bleeding")
+        if not final_can_stand_or_walk:
+            detected_symptoms.append("Cannot stand / walk")
+        if final_sudden_dizziness:
+            detected_symptoms.append("Sudden dizziness")
+        if not is_conscious:
+            detected_symptoms.append("Unconscious / Unresponsive")
+
+        # Build contributing factors breakdown
+        contributing_factors = []
+        if final_has_breathing_difficulty:
+            contributing_factors.append({"factor": "Difficulty breathing", "points": 30})
+        if final_is_bleeding:
+            contributing_factors.append({"factor": "Severe bleeding", "points": 30})
+        if final_fell_or_fainted:
+            contributing_factors.append({"factor": "Fall / Lost consciousness", "points": 30})
+        if final_has_chest_pain:
+            contributing_factors.append({"factor": "Acute chest pain", "points": 25})
+        if not is_conscious and not final_fell_or_fainted:
+            contributing_factors.append({"factor": "Unconsciousness", "points": 25})
+        if final_sudden_dizziness:
+            contributing_factors.append({"factor": "Sudden dizziness", "points": 20})
+        if not final_can_stand_or_walk:
+            contributing_factors.append({"factor": "Cannot stand / walk", "points": 15})
+
+        # Formulate terminology & reasons
         if severity == "CRITICAL":
-            guidance = "CRITICAL EMERGENCY THREAT DETECTED. Creating emergency event, locking current GPS coordinates, and initiating family contact & voice escalation immediately."
+            priority_level = "CRITICAL PRIORITY"
+            guidance = "CRITICAL EMERGENCY THREAT DETECTED. High-threat emergency indicators detected. Emergency escalation recommended."
+            recommended_action = "Initiate emergency escalation immediately."
+            scoring_reasons = [
+                "Multiple critical emergency indicators detected",
+                "High threat to vital functions reported",
+                "Immediate medical response required"
+            ]
         elif severity == "HIGH":
-            guidance = "HIGH RISK CONDITION DETECTED. High threat symptoms identified. Standby while we prepare emergency contact notification."
+            priority_level = "HIGH PRIORITY"
+            guidance = "HIGH RISK CONDITION DETECTED. Significant emergency indicators reported. Emergency escalation recommended."
+            recommended_action = "Initiate emergency escalation."
+            scoring_reasons = [
+                "Multiple emergency indicators detected",
+                "Mobility or respiratory distress warning sign present",
+                "Elevated threat level based on reported symptoms"
+            ]
         elif severity == "MEDIUM":
-            guidance = "MEDIUM RISK: Dizziness or mild symptoms recorded. Please sit or lie down and avoid walking alone. If symptoms worsen, press the SOS button for immediate emergency assistance."
+            priority_level = "MEDIUM PRIORITY"
+            guidance = "MEDIUM RISK: Moderate symptoms recorded. Please sit or lie down and avoid walking alone. Reassess if symptoms worsen."
+            recommended_action = "Sit or lie down immediately and monitor symptoms closely. Press SOS if condition worsens."
+            scoring_reasons = [
+                "Moderate warning signs reported",
+                "No active severe respiratory or cardiac compromise detected",
+                "Monitoring recommended"
+            ]
         else:
-            guidance = "LOW RISK: Mild symptoms recorded. Please sit or lie down, hydrate, and rest. Maintain monitoring. No automatic emergency notification triggered."
+            priority_level = "LOW PRIORITY"
+            guidance = "LOW RISK: Mild or single symptom recorded. Please sit or lie down, hydrate, and rest. Maintain monitoring. No emergency escalation triggered."
+            recommended_action = "Continue monitoring and reassess if symptoms worsen or new warning signs appear."
+            scoring_reasons = [
+                "No additional high-risk indicators detected",
+                "Mild symptom profile reported"
+            ]
 
         return {
             "confidence_score": score,
             "severity": severity,
+            "priority_level": priority_level,
             "emergency_required": emergency_required,
             "reasons": reasons,
+            "scoring_reasons": scoring_reasons,
             "guidance_message": guidance,
-            "score_added": score
+            "score_added": score,
+            "detected_symptoms": detected_symptoms,
+            "contributing_factors": contributing_factors,
+            "recommended_action": recommended_action,
+            "mapped_flags": {
+                "sudden_dizziness": final_sudden_dizziness,
+                "fell_or_fainted": final_fell_or_fainted,
+                "has_chest_pain": final_has_chest_pain,
+                "has_breathing_difficulty": final_has_breathing_difficulty,
+                "is_bleeding": final_is_bleeding,
+                "can_stand_or_walk": final_can_stand_or_walk,
+                "is_conscious": is_conscious
+            }
         }
+
 

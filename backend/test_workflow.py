@@ -80,6 +80,18 @@ class TestResQNetWorkflow(unittest.TestCase):
         self.assertIn(res["severity"], ["HIGH", "CRITICAL"])
         self.assertTrue(res["emergency_required"])
 
+    def test_scenario_8_natural_language_parsing(self):
+        """8. Natural language input -> parsed symptoms, contributing factors, and priority level"""
+        res = EmergencyTriageChatbot.evaluate_triage(
+            text_input="I suddenly feel dizzy, fell down with acute chest pain and cannot walk"
+        )
+        self.assertIn(res["severity"], ["HIGH", "CRITICAL"])
+        self.assertIn("Acute chest pain", res["detected_symptoms"])
+        self.assertIn("Sudden dizziness", res["detected_symptoms"])
+        self.assertIn("Cannot stand / walk", res["detected_symptoms"])
+        self.assertTrue(len(res["contributing_factors"]) >= 3)
+        self.assertEqual(res["priority_level"], "HIGH PRIORITY" if res["severity"] == "HIGH" else "CRITICAL PRIORITY")
+
     def test_scenario_4_fall_detected_critical(self):
         """4. Fall detected + no response -> CRITICAL risk, emergency created, GPS captured"""
         res = ConfidenceScoringEngine.calculate_score(

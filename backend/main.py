@@ -689,6 +689,7 @@ def get_emergency_notifications(emergency_id: int, db: Session = Depends(get_db)
 @app.post("/api/emergency/triage-chatbot", response_model=schemas.ChatbotTriageResponse)
 def process_triage(req: schemas.ChatbotTriageRequest, db: Session = Depends(get_db)):
     triage_res = EmergencyTriageChatbot.evaluate_triage(
+        text_input=req.text_input,
         is_conscious=req.is_conscious,
         fell_or_fainted=req.fell_or_fainted,
         has_chest_pain=req.has_chest_pain,

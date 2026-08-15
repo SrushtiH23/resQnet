@@ -263,6 +263,7 @@ class EmergencyAcknowledgementResponse(BaseModel):
 # --- Triage Chatbot Schemas ---
 class ChatbotTriageRequest(BaseModel):
     emergency_id: Optional[int] = None
+    text_input: Optional[str] = None
     is_conscious: bool = True
     fell_or_fainted: bool = False
     has_chest_pain: bool = False
@@ -275,10 +276,17 @@ class ChatbotTriageRequest(BaseModel):
 class ChatbotTriageResponse(BaseModel):
     confidence_score: float
     severity: str
+    priority_level: Optional[str] = "LOW PRIORITY"
     emergency_required: bool
     reasons: List[str]
+    scoring_reasons: Optional[List[str]] = []
     guidance_message: str
     score_added: float
+    detected_symptoms: Optional[List[str]] = []
+    contributing_factors: Optional[List[Dict[str, Any]]] = []
+    recommended_action: Optional[str] = ""
+    mapped_flags: Optional[Dict[str, bool]] = None
+
 
 # --- QR Card Schemas ---
 class QRGenerateResponse(BaseModel):
