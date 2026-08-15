@@ -1,6 +1,14 @@
 import axios from 'axios';
 
-const rawBaseUrl = (import.meta.env.VITE_API_URL || '').trim().replace(/\/$/, '');
+let envUrl = (import.meta.env.VITE_API_URL || '').trim();
+
+if (!envUrl) {
+  if (typeof window !== 'undefined' && window.location.hostname.includes('vercel.app')) {
+    envUrl = 'https://res-qnet-gilt.vercel.app';
+  }
+}
+
+const rawBaseUrl = envUrl.replace(/\/$/, '');
 let API_BASE_URL = '/api';
 
 if (rawBaseUrl) {
