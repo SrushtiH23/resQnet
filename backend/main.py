@@ -92,6 +92,11 @@ app.add_middleware(
 
 sliding_buffer = SlidingWindowBuffer(capacity=100)
 
+@app.get("/api/health")
+@app.get("/health")
+def health_check():
+    return {"status": "ok"}
+
 @app.get("/")
 @app.get("")
 def root():
