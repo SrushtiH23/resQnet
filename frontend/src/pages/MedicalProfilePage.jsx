@@ -32,6 +32,8 @@ export const MedicalProfilePage = () => {
   });
   const [showAddContact, setShowAddContact] = useState(false);
   const [phoneError, setPhoneError] = useState('');
+  const [editingContact, setEditingContact] = useState(null);
+  const [editPhoneError, setEditPhoneError] = useState('');
 
   useEffect(() => {
     fetchProfile();
@@ -69,11 +71,11 @@ export const MedicalProfilePage = () => {
 
   const handleAddContact = async (e) => {
     e.preventDefault();
-    const err = validateIndianPhone(newContact.phone);
-    if (err) {
-      setPhoneError(err);
+    if (!validateIndianPhone(newContact.phone)) {
+      setPhoneError('Enter a valid 10-digit Indian mobile number.');
       return;
     }
+    setPhoneError('');
 
     try {
       await api.post('/user/family-contacts', {
@@ -82,10 +84,46 @@ export const MedicalProfilePage = () => {
       });
       setNewContact({ contact_name: '', relationship_type: 'Mother', phone: '', email: '', escalation_order: 1 });
       setShowAddContact(false);
-      setPhoneError('');
       fetchContacts();
     } catch (err) {
-      alert('Failed to add contact.');
+      console.error('Error adding contact:', err);
+      alert(err.response?.data?.detail || 'Failed to add contact.');
+    }
+  };
+
+  const handleStartEdit = (contact) => {
+    setEditingContact({
+      id: contact.id,
+      contact_name: contact.contact_name || '',
+      relationship_type: contact.relationship_type || 'Mother',
+      phone: contact.phone || '',
+      email: contact.email || '',
+      escalation_order: contact.escalation_order || 1
+    });
+    setEditPhoneError('');
+  };
+
+  const handleSaveEditContact = async (e) => {
+    e.preventDefault();
+    if (!validateIndianPhone(editingContact.phone)) {
+      setEditPhoneError('Enter a valid 10-digit Indian mobile number.');
+      return;
+    }
+    setEditPhoneError('');
+
+    try {
+      await api.put(`/user/family-contacts/${editingContact.id}`, {
+        contact_name: editingContact.contact_name,
+        relationship_type: editingContact.relationship_type,
+        phone: editingContact.phone,
+        email: editingContact.email,
+        escalation_order: editingContact.escalation_order
+      });
+      setEditingContact(null);
+      fetchContacts();
+    } catch (err) {
+      console.error('Error updating contact:', err);
+      alert(err.response?.data?.detail || 'Failed to update contact.');
     }
   };
 
@@ -95,7 +133,8 @@ export const MedicalProfilePage = () => {
       await api.delete(`/user/family-contacts/${contactId}`);
       fetchContacts();
     } catch (err) {
-      alert('Failed to delete contact.');
+      console.error('Error deleting contact:', err);
+      alert(err.response?.data?.detail || 'Failed to delete contact.');
     }
   };
 
@@ -375,23 +414,99 @@ export const MedicalProfilePage = () => {
                 <p className="text-xs text-slate-400 italic text-center py-4">No emergency contacts saved.</p>
               ) : (
                 contacts.map((contact, idx) => (
-                  <div key={contact.id || idx} className="p-3.5 bg-slate-900/90 rounded-2xl border border-slate-800 flex items-center justify-between text-xs">
-                    <div>
-                      <p className="font-extrabold text-white">{contact.contact_name}</p>
-                      <p className="text-[11px] text-slate-400">{contact.relationship_type} • <span className="font-mono text-amber-400">{contact.phone}</span></p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="px-2 py-0.5 bg-slate-800 text-slate-400 border border-slate-700 text-[10px] font-mono font-bold rounded">
-                        Priority #{contact.escalation_order || idx + 1}
-                      </span>
-                      <button
-                        onClick={() => handleDeleteContact(contact.id)}
-                        className="p-1.5 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 rounded-lg"
-                        title="Delete contact"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
+                  <div key={contact.id || idx} className="p-3.5 bg-slate-900/90 rounded-2xl border border-slate-800 text-xs space-y-3">
+                    {editingContact && editingContact.id === contact.id ? (
+                      <form onSubmit={handleSaveEditContact} className="space-y-3 p-1">
+                        <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                          <span className="font-extrabold text-amber-400">Edit Emergency Contact</span>
+                          <button
+                            type="button"
+                            onClick={() => setEditingContact(null)}
+                            className="text-slate-400 hover:text-white text-[11px]"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+
+                        <div>
+                          <label className="text-slate-400 font-semibold block mb-1">Full Name</label>
+                          <input
+                            type="text"
+                            required
+                            value={editingContact.contact_name}
+                            onChange={(e) => setEditingContact({ ...editingContact, contact_name: e.target.value })}
+                            className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2 text-white focus:outline-none focus:border-amber-500"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-slate-400 font-semibold block mb-1">Relationship</label>
+                          <select
+                            value={editingContact.relationship_type}
+                            onChange={(e) => setEditingContact({ ...editingContact, relationship_type: e.target.value })}
+                            className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2 text-white focus:outline-none focus:border-amber-500"
+                          >
+                            {['Mother', 'Father', 'Spouse', 'Brother', 'Sister', 'Friend', 'Physician', 'Other'].map((rel) => (
+                              <option key={rel} value={rel}>{rel}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="text-slate-400 font-semibold block mb-1">Mobile Number (+91)</label>
+                          <IndianPhoneInput
+                            value={editingContact.phone}
+                            onChange={(val) => {
+                              setEditingContact({ ...editingContact, phone: val });
+                              if (editPhoneError) setEditPhoneError('');
+                            }}
+                            error={editPhoneError}
+                          />
+                        </div>
+
+                        <div className="flex items-center gap-2 pt-1">
+                          <button
+                            type="submit"
+                            className="flex-1 py-2 bg-amber-600 hover:bg-amber-500 text-white font-extrabold rounded-xl transition-all flex items-center justify-center gap-1.5"
+                          >
+                            <Save className="w-3.5 h-3.5" /> Save Changes
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setEditingContact(null)}
+                            className="py-2 px-3 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl transition-all"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </form>
+                    ) : (
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-extrabold text-white">{contact.contact_name}</p>
+                          <p className="text-[11px] text-slate-400">{contact.relationship_type} • <span className="font-mono text-amber-400">{contact.phone}</span></p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="px-2 py-0.5 bg-slate-800 text-slate-400 border border-slate-700 text-[10px] font-mono font-bold rounded">
+                            Priority #{contact.escalation_order || idx + 1}
+                          </span>
+                          <button
+                            onClick={() => handleStartEdit(contact)}
+                            className="p-1.5 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 rounded-lg transition-all"
+                            title="Edit contact"
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteContact(contact.id)}
+                            className="p-1.5 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 rounded-lg transition-all"
+                            title="Delete contact"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))
               )}

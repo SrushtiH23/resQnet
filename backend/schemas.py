@@ -124,6 +124,20 @@ class FamilyContactCreate(BaseModel):
     def validate_contact_phone(cls, v):
         return validate_and_normalize_indian_phone(v)
 
+class FamilyContactUpdate(BaseModel):
+    contact_name: Optional[str] = None
+    relationship_type: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    escalation_order: Optional[int] = None
+
+    @field_validator("phone", mode="before")
+    @classmethod
+    def validate_contact_phone(cls, v):
+        if v is None or v == "":
+            return None
+        return validate_and_normalize_indian_phone(v)
+
 class FamilyContactResponse(FamilyContactCreate):
     id: int
     user_id: int

@@ -297,6 +297,49 @@ def add_family_contact(contact_in: schemas.FamilyContactCreate, current_user: Us
     db.refresh(contact)
     return contact
 
+@app.put("/api/user/family-contacts/{contact_id}", response_model=schemas.FamilyContactResponse)
+def update_family_contact(contact_id: int, contact_in: schemas.FamilyContactUpdate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    contact = db.query(FamilyContact).filter(
+        FamilyContact.id == contact_id,
+        FamilyContact.user_id == current_user.id
+    ).first()
+    if not contact:
+        raise HTTPException(status_code=404, detail="Emergency contact not found")
+
+    if contact_in.contact_name is not None:
+        contact.contact_name = contact_in.contact_name
+    if contact_in.relationship_type is not None:
+        contact.relationship_type = contact_in.relationship_type
+    if contact_in.phone is not None:
+        contact.phone = contact_in.phone
+    if contact_in.email is not None:
+        contact.email = contact_in.email
+    if contact_in.escalation_order is not None:
+        contact.escalation_order = contact_in.escalation_order
+
+    db.commit()
+    db.refresh(contact)
+    NotificationAndAuditService.record_audit(
+        db, current_user.id, "EMERGENCY_CONTACT_UPDATED", f"Updated contact {contact.contact_name}"
+    )
+    return contact
+
+@app.delete("/api/user/family-contacts/{contact_id}")
+def delete_family_contact(contact_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    contact = db.query(FamilyContact).filter(
+        FamilyContact.id == contact_id,
+        FamilyContact.user_id == current_user.id
+    ).first()
+    if not contact:
+        raise HTTPException(status_code=404, detail="Emergency contact not found")
+
+    db.delete(contact)
+    db.commit()
+    NotificationAndAuditService.record_audit(
+        db, current_user.id, "EMERGENCY_CONTACT_DELETED", f"Deleted contact ID {contact_id}"
+    )
+    return {"status": "success", "message": "Emergency contact deleted successfully"}
+
 @app.put("/api/doctor/profile")
 def update_doctor_profile(profile_in: schemas.DoctorProfileSchema, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     NotificationAndAuditService.record_audit(
