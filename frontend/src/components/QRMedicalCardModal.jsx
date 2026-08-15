@@ -12,9 +12,10 @@ export const QRMedicalCardModal = ({ isOpen, onClose, qrToken, user, medicalProf
   }
 
   // Construct standard public URL for Android Camera & Google Lens scanning
+  const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://resqnet-ten.vercel.app';
   const qrUrl = cleanToken
-    ? `https://resqnet-ten.vercel.app/qr/patient/${cleanToken}`
-    : 'https://resqnet-ten.vercel.app';
+    ? `${baseUrl}/qr/patient/${cleanToken}`
+    : baseUrl;
 
   // Log exact payload string being encoded for verification
   console.log('==================================================');
