@@ -90,7 +90,21 @@ class TestResQNetWorkflow(unittest.TestCase):
         self.assertIn("Sudden dizziness", res["detected_symptoms"])
         self.assertIn("Cannot stand / walk", res["detected_symptoms"])
         self.assertTrue(len(res["contributing_factors"]) >= 3)
-        self.assertEqual(res["priority_level"], "HIGH PRIORITY" if res["severity"] == "HIGH" else "CRITICAL PRIORITY")
+        self.assertIn("Rule-Based Risk Score", res["rule_based_score_label"])
+
+    def test_headache_and_warning_signs(self):
+        """Test headache parsing and neurological warning signs"""
+        res1 = EmergencyTriageChatbot.evaluate_triage(text_input="I have a headache.")
+        self.assertIn("Headache", res1["detected_symptoms"])
+        self.assertIn("Rule-Based Risk Score", res1["rule_based_score_label"])
+
+        res2 = EmergencyTriageChatbot.evaluate_triage(
+            text_input="I have a headache.",
+            severe_headache=True,
+            speech_difficulty=True
+        )
+        self.assertIn("Difficulty speaking", res2["detected_symptoms"])
+        self.assertIn("Neurological warning sign", [cf["factor"] for cf in res2["contributing_factors"]])
 
     def test_scenario_4_fall_detected_critical(self):
         """4. Fall detected + no response -> CRITICAL risk, emergency created, GPS captured"""

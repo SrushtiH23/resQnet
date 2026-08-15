@@ -271,10 +271,16 @@ class ChatbotTriageRequest(BaseModel):
     is_bleeding: bool = False
     can_stand_or_walk: bool = True
     sudden_dizziness: bool = False
+    has_headache: bool = False
+    severe_headache: bool = False
+    speech_difficulty: bool = False
+    weakness_numbness: bool = False
+    vision_problems: bool = False
     is_alone: bool = True
 
 class ChatbotTriageResponse(BaseModel):
     confidence_score: float
+    rule_based_score_label: Optional[str] = "Rule-Based Risk Score: 0 points"
     severity: str
     priority_level: Optional[str] = "LOW PRIORITY"
     emergency_required: bool

@@ -765,6 +765,11 @@ def process_triage(req: schemas.ChatbotTriageRequest, db: Session = Depends(get_
         is_bleeding=req.is_bleeding,
         can_stand_or_walk=req.can_stand_or_walk,
         sudden_dizziness=req.sudden_dizziness,
+        has_headache=req.has_headache,
+        severe_headache=req.severe_headache,
+        speech_difficulty=req.speech_difficulty,
+        weakness_numbness=req.weakness_numbness,
+        vision_problems=req.vision_problems,
         is_alone=req.is_alone
     )
 

@@ -24,14 +24,18 @@ export const DashboardTriageChatbot = ({ activeEmergency, onRequestEmergency }) 
     is_bleeding: false,
     can_stand_or_walk: true,
     sudden_dizziness: false,
+    has_headache: false,
+    severe_headache: false,
+    speech_difficulty: false,
+    weakness_numbness: false,
+    vision_problems: false,
     is_alone: true
   });
 
   const [textInput, setTextInput] = useState('');
   const [triageResult, setTriageResult] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [askedWarningSigns, setAskedWarningSigns] = useState(false);
-  const [askedMobility, setAskedMobility] = useState(false);
+  const [askedFollowUps, setAskedFollowUps] = useState(new Set());
 
   const messagesEndRef = useRef(null);
 
@@ -52,10 +56,7 @@ export const DashboardTriageChatbot = ({ activeEmergency, onRequestEmergency }) 
   }, [messages, loading]);
 
   const handleToggle = (key) => {
-    setTriageState((prev) => {
-      const updated = { ...prev, [key]: !prev[key] };
-      return updated;
-    });
+    setTriageState((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
   const handleReset = () => {
@@ -67,12 +68,16 @@ export const DashboardTriageChatbot = ({ activeEmergency, onRequestEmergency }) 
       is_bleeding: false,
       can_stand_or_walk: true,
       sudden_dizziness: false,
+      has_headache: false,
+      severe_headache: false,
+      speech_difficulty: false,
+      weakness_numbness: false,
+      vision_problems: false,
       is_alone: true
     });
     setTextInput('');
     setTriageResult(null);
-    setAskedWarningSigns(false);
-    setAskedMobility(false);
+    setAskedFollowUps(new Set());
     setMessages([
       {
         id: 'init-1',
@@ -99,6 +104,7 @@ export const DashboardTriageChatbot = ({ activeEmergency, onRequestEmergency }) 
       if (data.mapped_flags) {
         setTriageState((prev) => ({
           ...prev,
+          has_headache: prev.has_headache || data.mapped_flags.has_headache,
           sudden_dizziness: prev.sudden_dizziness || data.mapped_flags.sudden_dizziness,
           fell_or_fainted: prev.fell_or_fainted || data.mapped_flags.fell_or_fainted,
           has_chest_pain: prev.has_chest_pain || data.mapped_flags.has_chest_pain,
@@ -108,39 +114,46 @@ export const DashboardTriageChatbot = ({ activeEmergency, onRequestEmergency }) 
         }));
       }
 
-      // Determine conversational flow:
-      // If user only reported dizziness or single mild symptom and warning signs haven't been asked yet:
-      const reportedHighRisk = data.mapped_flags && (
-        data.mapped_flags.has_chest_pain || 
-        data.mapped_flags.has_breathing_difficulty || 
-        data.mapped_flags.fell_or_fainted || 
-        data.mapped_flags.is_bleeding
-      );
+      // Symptom-Specific Follow-Up Routing
+      const flags = data.mapped_flags || {};
+      let nextFollowUpType = null;
+      let nextFollowUpText = '';
 
-      if (!isFollowUp && !askedWarningSigns && !reportedHighRisk && data.mapped_flags?.sudden_dizziness) {
-        setAskedWarningSigns(true);
+      if (!isFollowUp) {
+        if (flags.has_headache && !askedFollowUps.has('headache')) {
+          nextFollowUpType = 'headache';
+          nextFollowUpText = 'Is the headache sudden/severe or accompanied by any of these warning signs?';
+        } else if (flags.sudden_dizziness && !askedFollowUps.has('dizziness')) {
+          nextFollowUpType = 'dizziness';
+          nextFollowUpText = 'Are you currently able to stand or walk normally without assistance?';
+        } else if (flags.has_chest_pain && !askedFollowUps.has('chest_pain')) {
+          nextFollowUpType = 'chest_pain';
+          nextFollowUpText = 'Are you experiencing any of these associated warning signs with the chest pain?';
+        } else if (flags.has_breathing_difficulty && !askedFollowUps.has('breathing')) {
+          nextFollowUpType = 'breathing';
+          nextFollowUpText = 'Are you having severe difficulty breathing right now?';
+        } else if (flags.fell_or_fainted && !askedFollowUps.has('fainting')) {
+          nextFollowUpType = 'fainting';
+          nextFollowUpText = 'Did you lose consciousness or are you currently unable to stand or walk?';
+        } else if (flags.is_bleeding && !askedFollowUps.has('bleeding')) {
+          nextFollowUpType = 'bleeding';
+          nextFollowUpText = 'Is the bleeding severe/uncontrolled or accompanied by weakness or dizziness?';
+        }
+      }
+
+      if (nextFollowUpType) {
+        setAskedFollowUps((prev) => new Set(prev).add(nextFollowUpType));
         setMessages((prev) => [
           ...prev,
           {
             id: `ai-${Date.now()}`,
             sender: 'ai',
-            text: 'I understand you are experiencing dizziness. Are you also experiencing any of these high-risk warning signs?',
-            followUpType: 'warning_signs'
-          }
-        ]);
-      } else if (!isFollowUp && !askedMobility && data.mapped_flags?.can_stand_or_walk && (data.confidence_score > 0 || textPrompt)) {
-        setAskedMobility(true);
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: `ai-${Date.now()}`,
-            sender: 'ai',
-            text: 'Are you currently able to stand or walk normally without assistance?',
-            followUpType: 'mobility'
+            text: nextFollowUpText,
+            followUpType: nextFollowUpType
           }
         ]);
       } else {
-        // Output complete Risk Assessment Card
+        // Output complete Explainable Risk Assessment Card
         setMessages((prev) => [
           ...prev,
           {
@@ -172,6 +185,7 @@ export const DashboardTriageChatbot = ({ activeEmergency, onRequestEmergency }) 
     const trimmed = textInput.trim();
     const hasChecked = (
       triageState.sudden_dizziness ||
+      triageState.has_headache ||
       triageState.fell_or_fainted ||
       triageState.has_chest_pain ||
       triageState.has_breathing_difficulty ||
@@ -190,7 +204,7 @@ export const DashboardTriageChatbot = ({ activeEmergency, onRequestEmergency }) 
         {
           id: `ai-${Date.now()}`,
           sender: 'ai',
-          text: "I couldn't identify a specific emergency indicator from that message. Please select the applicable symptoms from the checklist below or describe how you're feeling (e.g., 'I feel dizzy and cannot walk')."
+          text: "I couldn't identify a specific emergency indicator from that description. Please select an applicable symptom below or describe your symptoms more specifically."
         }
       ]);
       return;
@@ -224,7 +238,12 @@ export const DashboardTriageChatbot = ({ activeEmergency, onRequestEmergency }) 
     ]);
 
     let updatedState = { ...triageState };
-    if (option.symptomKey) {
+    if (option.symptomKeys) {
+      option.symptomKeys.forEach((item) => {
+        updatedState[item.key] = item.value;
+      });
+      setTriageState(updatedState);
+    } else if (option.symptomKey) {
       updatedState[option.symptomKey] = option.value;
       setTriageState(updatedState);
     }
@@ -258,16 +277,16 @@ export const DashboardTriageChatbot = ({ activeEmergency, onRequestEmergency }) 
               triageResult.severity === 'MEDIUM' ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/40' :
               'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
             }`}>
-              {triageResult.priority_level || `${triageResult.severity} RISK`} ({triageResult.confidence_score}%)
+              {triageResult.priority_level || `${triageResult.severity} PRIORITY`}
             </span>
           )}
           <button
             type="button"
             onClick={handleReset}
-            title="Reset Chat & Symptoms"
-            className="p-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-800 transition-all text-xs flex items-center gap-1"
+            title="Start New Assessment"
+            className="p-1.5 px-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 hover:border-slate-700 transition-all text-xs font-medium flex items-center gap-1.5"
           >
-            <RotateCcw className="w-3.5 h-3.5" /> Reset
+            <RotateCcw className="w-3.5 h-3.5 text-cyan-400" /> Start New Assessment
           </button>
         </div>
       </div>
@@ -281,6 +300,20 @@ export const DashboardTriageChatbot = ({ activeEmergency, onRequestEmergency }) 
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+          <label className={`flex items-center gap-2 p-2.5 rounded-xl border cursor-pointer transition-all ${
+            triageState.has_headache 
+              ? 'bg-cyan-500/10 border-cyan-500/40 text-cyan-200' 
+              : 'bg-slate-950 border-slate-800 text-slate-300 hover:border-slate-700'
+          }`}>
+            <input
+              type="checkbox"
+              checked={triageState.has_headache}
+              onChange={() => handleToggle('has_headache')}
+              className="accent-cyan-500 rounded"
+            />
+            <span className="font-medium">🤯 Headache / Migraine</span>
+          </label>
+
           <label className={`flex items-center gap-2 p-2.5 rounded-xl border cursor-pointer transition-all ${
             triageState.sudden_dizziness 
               ? 'bg-cyan-500/10 border-cyan-500/40 text-cyan-200' 
@@ -385,26 +418,42 @@ export const DashboardTriageChatbot = ({ activeEmergency, onRequestEmergency }) 
                 <div>
                   <p>{msg.text}</p>
 
-                  {/* Follow-up Interactive Quick Chips */}
-                  {msg.followUpType === 'warning_signs' && (
+                  {/* Symptom-Specific Follow-Up Option Chips */}
+                  {msg.followUpType === 'headache' && (
                     <div className="mt-3 space-y-2 pt-2 border-t border-slate-800">
-                      <span className="text-[11px] font-bold text-cyan-400 block">Tap any symptom that applies:</span>
+                      <span className="text-[11px] font-bold text-cyan-400 block">Select any warning sign that applies:</span>
                       <div className="flex flex-wrap gap-1.5">
                         <button
                           type="button"
                           disabled={loading}
-                          onClick={() => handleFollowUpAnswer({ label: "🫁 Difficulty Breathing", symptomKey: "has_breathing_difficulty", value: true })}
+                          onClick={() => handleFollowUpAnswer({ label: "⚡ Sudden / Severe headache", symptomKey: "severe_headache", value: true })}
                           className="px-2.5 py-1.5 bg-slate-950 hover:bg-slate-800 border border-slate-700 hover:border-cyan-500 rounded-lg text-slate-200 text-[11px] font-semibold transition-all"
                         >
-                          🫁 Difficulty Breathing
+                          ⚡ Sudden / Severe headache
                         </button>
                         <button
                           type="button"
                           disabled={loading}
-                          onClick={() => handleFollowUpAnswer({ label: "🫀 Acute Chest Pain", symptomKey: "has_chest_pain", value: true })}
+                          onClick={() => handleFollowUpAnswer({ label: "🗣️ Difficulty speaking", symptomKey: "speech_difficulty", value: true })}
                           className="px-2.5 py-1.5 bg-slate-950 hover:bg-slate-800 border border-slate-700 hover:border-cyan-500 rounded-lg text-slate-200 text-[11px] font-semibold transition-all"
                         >
-                          🫀 Acute Chest Pain
+                          🗣️ Difficulty speaking
+                        </button>
+                        <button
+                          type="button"
+                          disabled={loading}
+                          onClick={() => handleFollowUpAnswer({ label: "💪 Weakness / Numbness", symptomKey: "weakness_numbness", value: true })}
+                          className="px-2.5 py-1.5 bg-slate-950 hover:bg-slate-800 border border-slate-700 hover:border-cyan-500 rounded-lg text-slate-200 text-[11px] font-semibold transition-all"
+                        >
+                          💪 Weakness / Numbness
+                        </button>
+                        <button
+                          type="button"
+                          disabled={loading}
+                          onClick={() => handleFollowUpAnswer({ label: "👁️ Vision problems", symptomKey: "vision_problems", value: true })}
+                          className="px-2.5 py-1.5 bg-slate-950 hover:bg-slate-800 border border-slate-700 hover:border-cyan-500 rounded-lg text-slate-200 text-[11px] font-semibold transition-all"
+                        >
+                          👁️ Vision problems
                         </button>
                         <button
                           type="button"
@@ -413,14 +462,6 @@ export const DashboardTriageChatbot = ({ activeEmergency, onRequestEmergency }) 
                           className="px-2.5 py-1.5 bg-slate-950 hover:bg-slate-800 border border-slate-700 hover:border-cyan-500 rounded-lg text-slate-200 text-[11px] font-semibold transition-all"
                         >
                           🤕 Fainted / Fell
-                        </button>
-                        <button
-                          type="button"
-                          disabled={loading}
-                          onClick={() => handleFollowUpAnswer({ label: "🩸 Severe Bleeding", symptomKey: "is_bleeding", value: true })}
-                          className="px-2.5 py-1.5 bg-slate-950 hover:bg-slate-800 border border-slate-700 hover:border-cyan-500 rounded-lg text-slate-200 text-[11px] font-semibold transition-all"
-                        >
-                          🩸 Severe Bleeding
                         </button>
                         <button
                           type="button"
@@ -434,13 +475,13 @@ export const DashboardTriageChatbot = ({ activeEmergency, onRequestEmergency }) 
                     </div>
                   )}
 
-                  {msg.followUpType === 'mobility' && (
+                  {msg.followUpType === 'dizziness' && (
                     <div className="mt-3 space-y-2 pt-2 border-t border-slate-800">
                       <div className="flex flex-wrap gap-2">
                         <button
                           type="button"
                           disabled={loading}
-                          onClick={() => handleFollowUpAnswer({ label: "Yes, I can stand & walk", symptomKey: "can_stand_or_walk", value: true })}
+                          onClick={() => handleFollowUpAnswer({ label: "✓ Yes, I can walk", symptomKey: "can_stand_or_walk", value: true })}
                           className="px-3 py-1.5 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 rounded-xl text-emerald-300 text-[11px] font-bold transition-all"
                         >
                           ✓ Yes, I can walk
@@ -448,10 +489,135 @@ export const DashboardTriageChatbot = ({ activeEmergency, onRequestEmergency }) 
                         <button
                           type="button"
                           disabled={loading}
-                          onClick={() => handleFollowUpAnswer({ label: "No, I cannot stand / walk", symptomKey: "can_stand_or_walk", value: false })}
+                          onClick={() => handleFollowUpAnswer({ label: "⊘ No, cannot walk", symptomKey: "can_stand_or_walk", value: false })}
                           className="px-3 py-1.5 bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 rounded-xl text-rose-300 text-[11px] font-bold transition-all"
                         >
-                          🚫 No, cannot walk
+                          ⊘ No, cannot walk
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {msg.followUpType === 'chest_pain' && (
+                    <div className="mt-3 space-y-2 pt-2 border-t border-slate-800">
+                      <span className="text-[11px] font-bold text-cyan-400 block">Select associated signs:</span>
+                      <div className="flex flex-wrap gap-1.5">
+                        <button
+                          type="button"
+                          disabled={loading}
+                          onClick={() => handleFollowUpAnswer({ label: "🫁 Difficulty breathing", symptomKey: "has_breathing_difficulty", value: true })}
+                          className="px-2.5 py-1.5 bg-slate-950 hover:bg-slate-800 border border-slate-700 hover:border-cyan-500 rounded-lg text-slate-200 text-[11px] font-semibold transition-all"
+                        >
+                          🫁 Difficulty breathing
+                        </button>
+                        <button
+                          type="button"
+                          disabled={loading}
+                          onClick={() => handleFollowUpAnswer({ label: "🤕 Fainting", symptomKey: "fell_or_fainted", value: true })}
+                          className="px-2.5 py-1.5 bg-slate-950 hover:bg-slate-800 border border-slate-700 hover:border-cyan-500 rounded-lg text-slate-200 text-[11px] font-semibold transition-all"
+                        >
+                          🤕 Fainting
+                        </button>
+                        <button
+                          type="button"
+                          disabled={loading}
+                          onClick={() => handleFollowUpAnswer({ label: "⚡ Severe weakness", symptomKey: "weakness_numbness", value: true })}
+                          className="px-2.5 py-1.5 bg-slate-950 hover:bg-slate-800 border border-slate-700 hover:border-cyan-500 rounded-lg text-slate-200 text-[11px] font-semibold transition-all"
+                        >
+                          ⚡ Severe weakness
+                        </button>
+                        <button
+                          type="button"
+                          disabled={loading}
+                          onClick={() => handleFollowUpAnswer({ label: "None of these", symptomKey: null, value: null })}
+                          className="px-2.5 py-1.5 bg-slate-950 hover:bg-slate-800 border border-slate-800 hover:border-slate-600 rounded-lg text-slate-400 hover:text-slate-200 text-[11px] transition-all"
+                        >
+                          None of these
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {msg.followUpType === 'breathing' && (
+                    <div className="mt-3 space-y-2 pt-2 border-t border-slate-800">
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          disabled={loading}
+                          onClick={() => handleFollowUpAnswer({ label: "Yes, severe difficulty", symptomKey: "has_breathing_difficulty", value: true })}
+                          className="px-3 py-1.5 bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 rounded-xl text-rose-300 text-[11px] font-bold transition-all"
+                        >
+                          Yes, severe difficulty
+                        </button>
+                        <button
+                          type="button"
+                          disabled={loading}
+                          onClick={() => handleFollowUpAnswer({ label: "No, mild/moderate", symptomKey: "has_breathing_difficulty", value: false })}
+                          className="px-3 py-1.5 bg-slate-950 hover:bg-slate-800 border border-slate-800 rounded-xl text-slate-300 text-[11px] font-medium transition-all"
+                        >
+                          No, mild/moderate
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {msg.followUpType === 'fainting' && (
+                    <div className="mt-3 space-y-2 pt-2 border-t border-slate-800">
+                      <div className="flex flex-wrap gap-1.5">
+                        <button
+                          type="button"
+                          disabled={loading}
+                          onClick={() => handleFollowUpAnswer({ label: "Lost consciousness", symptomKey: "fell_or_fainted", value: true })}
+                          className="px-2.5 py-1.5 bg-slate-950 hover:bg-slate-800 border border-slate-700 hover:border-cyan-500 rounded-lg text-slate-200 text-[11px] font-semibold transition-all"
+                        >
+                          Lost consciousness
+                        </button>
+                        <button
+                          type="button"
+                          disabled={loading}
+                          onClick={() => handleFollowUpAnswer({ label: "Cannot stand / walk", symptomKey: "can_stand_or_walk", value: false })}
+                          className="px-2.5 py-1.5 bg-slate-950 hover:bg-slate-800 border border-slate-700 hover:border-cyan-500 rounded-lg text-slate-200 text-[11px] font-semibold transition-all"
+                        >
+                          Cannot stand / walk
+                        </button>
+                        <button
+                          type="button"
+                          disabled={loading}
+                          onClick={() => handleFollowUpAnswer({ label: "Conscious & able to walk", symptomKey: "can_stand_or_walk", value: true })}
+                          className="px-2.5 py-1.5 bg-slate-950 hover:bg-slate-800 border border-slate-800 rounded-lg text-slate-300 text-[11px] transition-all"
+                        >
+                          Conscious & able to walk
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {msg.followUpType === 'bleeding' && (
+                    <div className="mt-3 space-y-2 pt-2 border-t border-slate-800">
+                      <div className="flex flex-wrap gap-1.5">
+                        <button
+                          type="button"
+                          disabled={loading}
+                          onClick={() => handleFollowUpAnswer({ label: "Uncontrolled bleeding", symptomKey: "is_bleeding", value: true })}
+                          className="px-2.5 py-1.5 bg-slate-950 hover:bg-slate-800 border border-slate-700 hover:border-cyan-500 rounded-lg text-slate-200 text-[11px] font-semibold transition-all"
+                        >
+                          Uncontrolled bleeding
+                        </button>
+                        <button
+                          type="button"
+                          disabled={loading}
+                          onClick={() => handleFollowUpAnswer({ label: "Accompanied by dizziness", symptomKey: "sudden_dizziness", value: true })}
+                          className="px-2.5 py-1.5 bg-slate-950 hover:bg-slate-800 border border-slate-700 hover:border-cyan-500 rounded-lg text-slate-200 text-[11px] font-semibold transition-all"
+                        >
+                          Accompanied by dizziness
+                        </button>
+                        <button
+                          type="button"
+                          disabled={loading}
+                          onClick={() => handleFollowUpAnswer({ label: "Controlled / mild", symptomKey: "is_bleeding", value: false })}
+                          className="px-2.5 py-1.5 bg-slate-950 hover:bg-slate-800 border border-slate-800 rounded-lg text-slate-400 text-[11px] transition-all"
+                        >
+                          Controlled / mild
                         </button>
                       </div>
                     </div>
@@ -471,7 +637,7 @@ export const DashboardTriageChatbot = ({ activeEmergency, onRequestEmergency }) 
                       {msg.resultData.priority_level || `${msg.resultData.severity} PRIORITY`}
                     </span>
                     <span className="text-slate-300 font-extrabold text-xs">
-                      Risk Score: {msg.resultData.confidence_score}%
+                      {msg.resultData.rule_based_score_label || `Rule-Based Risk Score: ${msg.resultData.confidence_score} points`}
                     </span>
                   </div>
 
@@ -497,11 +663,11 @@ export const DashboardTriageChatbot = ({ activeEmergency, onRequestEmergency }) 
                     </div>
                   )}
 
-                  {/* Why / Scoring Reasons */}
+                  {/* Why / Scoring Reasons / Risk Factors */}
                   {msg.resultData.scoring_reasons && msg.resultData.scoring_reasons.length > 0 && (
                     <div className="p-2.5 bg-slate-950/80 rounded-xl border border-slate-800 space-y-1">
                       <span className="text-cyan-400 font-bold text-[10px] uppercase tracking-wider block">
-                        Why (Scoring Reasons):
+                        Risk Factors (Scoring Reasons):
                       </span>
                       <ul className="space-y-0.5 text-slate-300 text-[11px]">
                         {msg.resultData.scoring_reasons.map((reason, rIdx) => (
@@ -518,13 +684,13 @@ export const DashboardTriageChatbot = ({ activeEmergency, onRequestEmergency }) 
                   {msg.resultData.contributing_factors && msg.resultData.contributing_factors.length > 0 && (
                     <div className="p-2.5 bg-slate-950/80 rounded-xl border border-slate-800 space-y-1">
                       <span className="text-slate-400 font-bold text-[10px] uppercase tracking-wider block">
-                        Contributing Factors (Rule-Based Score):
+                        Contributing Factors (Rule-Based Breakdown):
                       </span>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 pt-0.5">
                         {msg.resultData.contributing_factors.map((factor, fIdx) => (
                           <div key={fIdx} className="flex items-center justify-between bg-slate-900/90 px-2 py-1 rounded-lg border border-slate-800 text-[11px]">
                             <span className="text-slate-300">{factor.factor}</span>
-                            <span className="text-cyan-400 font-black ml-2">+{factor.points}%</span>
+                            <span className="text-cyan-400 font-black ml-2">+{factor.points} pts</span>
                           </div>
                         ))}
                       </div>
@@ -553,6 +719,17 @@ export const DashboardTriageChatbot = ({ activeEmergency, onRequestEmergency }) 
                       </button>
                     </div>
                   )}
+
+                  {/* Start New Assessment Button inside Result Card */}
+                  <div className="pt-2 border-t border-slate-800/80 flex justify-center">
+                    <button
+                      type="button"
+                      onClick={handleReset}
+                      className="py-2 px-4 bg-slate-900 hover:bg-slate-800 text-cyan-400 hover:text-cyan-300 border border-cyan-500/30 hover:border-cyan-500/60 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-md"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" /> Start New Assessment
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
@@ -577,7 +754,7 @@ export const DashboardTriageChatbot = ({ activeEmergency, onRequestEmergency }) 
             value={textInput}
             onChange={(e) => setTextInput(e.target.value)}
             disabled={loading}
-            placeholder="Describe how you're feeling... (e.g. 'I suddenly feel dizzy and cannot stand')"
+            placeholder="Describe how you're feeling... (e.g. 'I have a headache' or 'I suddenly feel dizzy and cannot stand')"
             className="flex-1 bg-slate-950 border border-slate-800 focus:border-cyan-500/60 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-cyan-500/50 transition-all"
           />
           <button
@@ -593,5 +770,6 @@ export const DashboardTriageChatbot = ({ activeEmergency, onRequestEmergency }) 
     </div>
   );
 };
+
 
 
