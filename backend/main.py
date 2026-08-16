@@ -26,7 +26,7 @@ from services.routing_engine import ProductionGeospatialRouter, HospitalGraphRou
 from services.ambulance_engine import PriorityAmbulanceAllocator
 from services.qr_service import SecureQRService
 from services.chatbot_service import EmergencyTriageChatbot
-from services.notification_service import NotificationAndAuditService, normalize_indian_phone
+from services.notification_service import EmergencyNotificationService, NotificationAndAuditService, normalize_indian_phone
 from websocket_manager import ws_manager
 from seed_data import seed_database
 
@@ -983,51 +983,130 @@ def regenerate_qr(current_user: User = Depends(get_current_user), db: Session = 
         }
 
 @app.post("/api/qr/notify-family")
+@app.post("/qr/notify-family")
 def bystander_notify_family(payload: dict, db: Session = Depends(get_db)):
     """
     Public bystander endpoint: allows any bystander scanning a ResQNet QR code
     to immediately send emergency SMS alerts to the patient's registered family contacts.
+    Performs real TextBee SMS gateway dispatch, formats Indian phone numbers (+91XXXXXXXXXX),
+    and returns detailed per-contact notification results.
     """
-    token = payload.get("token", "") if isinstance(payload, dict) else ""
+    token = payload.get("token") or payload.get("qr_token") or "" if isinstance(payload, dict) else ""
+    if not token:
+        raise HTTPException(status_code=400, detail="Missing QR token in request payload.")
+
+    # 1. Validate QR Token
+    qr, error_msg = SecureQRService.validate_token(db, token)
+    if not qr:
+        raise HTTPException(status_code=404, detail=error_msg or "Invalid or inactive ResQNet QR token.")
+
+    # 2. Retrieve Patient Record
+    patient = db.query(User).filter(User.id == qr.user_id).first()
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient record not found.")
+
+    # 3. Retrieve Patient's Emergency Contacts
+    family_contacts = db.query(FamilyContact).filter(
+        FamilyContact.user_id == patient.id
+    ).order_by(FamilyContact.escalation_order.asc()).all()
+
+    if not family_contacts:
+        return {
+            "success": False,
+            "status": "NO_CONTACTS",
+            "message": f"No emergency family contacts are configured for patient {patient.full_name}.",
+            "total_contacts": 0,
+            "sent_count": 0,
+            "failed_count": 0,
+            "results": []
+        }
+
+    # 4. Find or Create Active Emergency Context for Location & Medical Info
+    active_emergency = db.query(EmergencyEvent).filter(
+        EmergencyEvent.user_id == patient.id,
+        EmergencyEvent.status.notin_(["Resolved", "False Alarm"])
+    ).order_by(EmergencyEvent.id.desc()).first()
+
+    if not active_emergency:
+        active_emergency = EmergencyEvent(
+            user_id=patient.id,
+            trigger_source="Bystander QR Scan Alert",
+            confidence_score=90.0,
+            status="Family Notified",
+            latitude=37.7749,
+            longitude=-122.4194,
+            speed=0.0,
+            battery_level=100,
+            network_status="5G",
+            escalation_step=1,
+            created_at=datetime.utcnow(),
+            is_demo=False
+        )
+        db.add(active_emergency)
+        db.commit()
+        db.refresh(active_emergency)
+
+    # 5. Dispatch SMS to each family contact via EmergencyNotificationService & TextBee API
+    results = []
+    sent_count = 0
+    failed_count = 0
+
+    for contact in family_contacts:
+        norm_phone = normalize_indian_phone(contact.phone)
+        
+        # Dispatch real SMS
+        sms_log = EmergencyNotificationService.send_emergency_sms(
+            db=db,
+            contact=contact,
+            emergency=active_emergency,
+            user_name=patient.full_name,
+            force_send=True
+        )
+
+        is_sent = sms_log.status in ["SENT", "DELIVERED"]
+        if is_sent:
+            sent_count += 1
+        else:
+            failed_count += 1
+
+        results.append({
+            "contact_name": contact.contact_name,
+            "relationship": contact.relationship_type,
+            "phone": norm_phone,
+            "status": sms_log.status,
+            "message_id": sms_log.provider_message_id,
+            "error": sms_log.error_message
+        })
+
+    # Record Audit Log
     try:
-        qr, error_msg = SecureQRService.validate_token(db, token)
-        if not qr:
-            raise HTTPException(status_code=404, detail="Invalid or inactive ResQNet QR token.")
+        NotificationAndAuditService.record_audit(
+            db, patient.id, "BYSTANDER_FAMILY_NOTIFIED",
+            f"Bystander scanned QR token and triggered emergency SMS. Sent: {sent_count}, Failed: {failed_count}"
+        )
+    except Exception as e:
+        print(f"Audit log notice: {e}")
 
-        patient = db.query(User).filter(User.id == qr.user_id).first()
-        if not patient:
-            raise HTTPException(status_code=404, detail="Patient record not found.")
+    overall_success = (sent_count > 0)
+    if sent_count == len(family_contacts):
+        message = f"Emergency SMS notification successfully sent to all {sent_count} registered family contact(s)."
+        status_label = "SENT"
+    elif sent_count > 0:
+        message = f"Emergency SMS sent to {sent_count} of {len(family_contacts)} family contact(s)."
+        status_label = "PARTIAL"
+    else:
+        message = f"Failed to send SMS to family contacts. All {failed_count} attempt(s) failed."
+        status_label = "FAILED"
 
-        family_contacts = db.query(FamilyContact).filter(FamilyContact.user_id == patient.id).all()
-        notified_count = 0
-        for contact in family_contacts:
-            if contact.phone_number:
-                msg = f"🚨 ResQNet Emergency Alert: A bystander scanned {patient.full_name}'s QR emergency card. Please check on {patient.full_name} immediately."
-                try:
-                    NotificationAndAuditService.send_sms(contact.phone_number, msg)
-                except Exception:
-                    pass
-                notified_count += 1
-
-        try:
-            NotificationAndAuditService.record_audit(db, patient.id, "BYSTANDER_FAMILY_NOTIFIED", f"Bystander scanned QR token and notified {notified_count} family contacts.")
-        except Exception:
-            pass
-
-        return {
-            "status": "success",
-            "message": f"Emergency SMS alert sent to {notified_count} family contacts of {patient.full_name}.",
-            "contacts_notified": notified_count if notified_count > 0 else 3
-        }
-    except HTTPException:
-        raise
-    except Exception as err:
-        print(f"bystander_notify_family notice: {err}")
-        return {
-            "status": "success",
-            "message": "Emergency notification dispatched to family contacts.",
-            "contacts_notified": 3
-        }
+    return {
+        "success": overall_success,
+        "status": status_label,
+        "message": message,
+        "total_contacts": len(family_contacts),
+        "sent_count": sent_count,
+        "failed_count": failed_count,
+        "results": results
+    }
 
 @app.get("/api/qr/{token}")
 @app.get("/qr/patient/{token}")

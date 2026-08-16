@@ -28,7 +28,8 @@ export const PatientOnboarding = ({ user }) => {
     medications: 'None',
     disability: '',
     insurance_number: '',
-    doctor_name: ''
+    doctor_name: '',
+    doctor_phone: ''
   });
 
   // Step 3: Emergency Contacts (Required Min 2)
@@ -61,6 +62,12 @@ export const PatientOnboarding = ({ user }) => {
     setError('');
     setLoading(true);
     try {
+      if (medical.doctor_phone && !validateIndianPhone(medical.doctor_phone)) {
+        setError('Primary doctor phone must be a valid 10-digit Indian mobile number.');
+        setLoading(false);
+        return;
+      }
+
       await api.put('/user/medical-profile', {
         blood_group: medical.blood_group,
         age: parseInt(medical.age) || 28,
@@ -70,6 +77,7 @@ export const PatientOnboarding = ({ user }) => {
         medications: medical.medications,
         insurance_details: medical.insurance_number || 'N/A',
         doctor_name: medical.doctor_name || 'N/A',
+        doctor_phone: medical.doctor_phone || 'N/A',
         emergency_notes: `Gender: ${medical.gender}, Height: ${medical.height}cm, Disability: ${medical.disability || 'None'}`
       });
       setStep(3);
@@ -335,14 +343,24 @@ export const PatientOnboarding = ({ user }) => {
             </div>
           </div>
 
-          <div className="space-y-1">
-            <label className="text-xs font-semibold text-slate-300">Primary Doctor (optional)</label>
-            <input
-              type="text"
-              value={medical.doctor_name}
-              onChange={e => setMedical({ ...medical, doctor_name: e.target.value })}
-              className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-rose-500"
-              placeholder="Dr. Robert Chen (+1-555-0198)"
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-slate-300">Primary Doctor Name (optional)</label>
+              <input
+                type="text"
+                value={medical.doctor_name}
+                onChange={e => setMedical({ ...medical, doctor_name: e.target.value })}
+                className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-rose-500"
+                placeholder="Dr. Rajesh Kumar"
+              />
+            </div>
+
+            <IndianPhoneInput
+              label="Doctor Phone (+91)"
+              required={false}
+              value={medical.doctor_phone}
+              onChange={val => setMedical({ ...medical, doctor_phone: val })}
+              placeholder="9876543210"
             />
           </div>
 

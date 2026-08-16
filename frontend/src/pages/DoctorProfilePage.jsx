@@ -50,7 +50,7 @@ export const DoctorProfilePage = () => {
             </div>
             <div className="flex items-center gap-2 text-slate-300">
               <Phone className="w-4 h-4 text-cyan-400 flex-shrink-0" />
-              <span>{user?.phone || '+91-9876543212'}</span>
+              <span>{user?.phone || '+91 98765 43210'}</span>
             </div>
           </div>
         </div>

@@ -8,12 +8,13 @@ def validate_and_normalize_indian_phone(v: Optional[str]) -> Optional[str]:
         return None
     v_str = str(v).strip()
     if v_str.startswith("+91"):
-        digits = v_str[3:].strip()
-    else:
-        digits = v_str
+        v_str = v_str[3:].strip()
+    elif v_str.startswith("91") and len(v_str) > 10:
+        v_str = v_str[2:].strip()
+    digits = re.sub(r"\D", "", v_str)
 
     if not re.match(r"^[6-9][0-9]{9}$", digits):
-        raise ValueError("Enter a valid 10-digit Indian mobile number.")
+        raise ValueError("Enter a valid 10-digit Indian mobile number starting with 6, 7, 8, or 9.")
 
     return f"+91{digits}"
 

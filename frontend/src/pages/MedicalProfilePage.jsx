@@ -15,7 +15,7 @@ export const MedicalProfilePage = () => {
     medications: 'Insulin, Albuterol Inhaler',
     allergies: 'Penicillin',
     insurance_details: 'HDFC Ergo Health #99281',
-    doctor_name: 'Dr. Robert Chen',
+    doctor_name: 'Dr. Rajesh Kumar',
     doctor_phone: '9876543210',
     emergency_notes: 'Keep glucose tablet in pocket'
   });
@@ -289,7 +289,7 @@ export const MedicalProfilePage = () => {
                       type="text"
                       value={profile.doctor_name || ''}
                       onChange={(e) => setProfile({ ...profile, doctor_name: e.target.value })}
-                      placeholder="e.g. Dr. Robert Chen"
+                      placeholder="e.g. Dr. Rajesh Kumar (+91 98765 43210)"
                       className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-rose-500"
                     />
                   </div>
@@ -333,7 +333,7 @@ export const MedicalProfilePage = () => {
 
                 <div className="p-4 bg-slate-900 rounded-2xl border border-slate-800 space-y-1">
                   <span className="text-slate-400 text-[10px] uppercase font-bold tracking-wider">Primary Physician</span>
-                  <p className="font-bold text-white text-sm">{profile.doctor_name || 'Dr. Robert Chen'} ({profile.doctor_phone || 'N/A'})</p>
+                  <p className="font-bold text-white text-sm">{profile.doctor_name || 'Dr. Rajesh Kumar'} ({profile.doctor_phone ? (profile.doctor_phone.startsWith('+91') ? profile.doctor_phone : `+91 ${profile.doctor_phone}`) : 'N/A'})</p>
                 </div>
 
                 <div className="p-4 bg-slate-900 rounded-2xl border border-slate-800 space-y-1">

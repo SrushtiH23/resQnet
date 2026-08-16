@@ -19,6 +19,8 @@ export const QRPatientResultPage = () => {
   const [qrData, setQrData] = useState(null);
 
   const [actionNotice, setActionNotice] = useState(null);
+  const [notifyLoading, setNotifyLoading] = useState(false);
+  const [notifyResult, setNotifyResult] = useState(null);
 
   useEffect(() => {
     fetchQRDetails();
@@ -72,12 +74,22 @@ export const QRPatientResultPage = () => {
   };
 
   const handleBystanderNotifyFamily = async () => {
+    setNotifyLoading(true);
+    setNotifyResult(null);
     try {
-      setActionNotice('Notifying family contacts...');
       const res = await api.post('/qr/notify-family', { token });
-      setActionNotice(`✅ ${res.data?.message || 'Family contacts notified via SMS and push notification.'}`);
+      setNotifyResult(res.data);
     } catch (err) {
-      setActionNotice('✅ Emergency SMS alert dispatched to registered family contacts.');
+      console.error('Notify family error:', err);
+      const detail = err.response?.data?.detail || err.response?.data?.message || 'Failed to connect to notification server.';
+      setNotifyResult({
+        success: false,
+        status: 'FAILED',
+        message: detail,
+        results: []
+      });
+    } finally {
+      setNotifyLoading(false);
     }
   };
 
@@ -251,6 +263,67 @@ export const QRPatientResultPage = () => {
         </div>
       )}
 
+      {/* Real Emergency Notification Results Banner */}
+      {notifyResult && (
+        <div className={`p-4 rounded-2xl border text-xs font-medium space-y-3 shadow-xl transition-all ${
+          notifyResult.status === 'SENT'
+            ? 'bg-emerald-950/90 border-emerald-500/50 text-emerald-100'
+            : notifyResult.status === 'PARTIAL'
+            ? 'bg-amber-950/90 border-amber-500/50 text-amber-100'
+            : 'bg-rose-950/90 border-rose-500/50 text-rose-100'
+        }`}>
+          <div className="flex items-center justify-between font-extrabold text-sm border-b border-white/10 pb-2">
+            <span className="flex items-center gap-2">
+              {notifyResult.status === 'SENT' && <CheckCircle2 className="w-5 h-5 text-emerald-400" />}
+              {notifyResult.status === 'PARTIAL' && <AlertTriangle className="w-5 h-5 text-amber-400" />}
+              {notifyResult.status === 'FAILED' && <XCircle className="w-5 h-5 text-rose-400" />}
+              {notifyResult.status === 'SENT'
+                ? '✓ Notification Sent Successfully'
+                : notifyResult.status === 'PARTIAL'
+                ? '⚠️ Partial Notification Delivery'
+                : '✕ Notification Failed'}
+            </span>
+            <button
+              onClick={() => setNotifyResult(null)}
+              className="text-slate-400 hover:text-white font-bold text-xs"
+            >
+              ✕
+            </button>
+          </div>
+
+          <p className="leading-relaxed">{notifyResult.message}</p>
+
+          {notifyResult.results && notifyResult.results.length > 0 && (
+            <div className="space-y-2 pt-2 border-t border-white/10 text-xs font-mono">
+              <span className="text-[10px] text-slate-300 uppercase font-bold tracking-wider block">
+                Detailed Emergency Contact Status:
+              </span>
+              <div className="space-y-1.5">
+                {notifyResult.results.map((c, idx) => (
+                  <div key={idx} className="flex items-center justify-between p-2.5 rounded-xl bg-slate-950/80 border border-white/5 flex-wrap gap-2">
+                    <div>
+                      <span className="font-bold text-white">{c.contact_name}</span>
+                      <span className="text-slate-400 text-[11px]"> ({c.relationship}) • </span>
+                      <span className="text-cyan-300 font-bold">{c.phone}</span>
+                    </div>
+
+                    <span className={`font-bold px-2.5 py-0.5 rounded text-[11px] ${
+                      c.status === 'SENT' || c.status === 'DELIVERED'
+                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                        : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                    }`}>
+                      {c.status === 'SENT' || c.status === 'DELIVERED'
+                        ? `SENT ✓ (${c.message_id ? `ID: ${c.message_id.slice(0, 14)}` : 'OK'})`
+                        : `FAILED ✕ (${c.error || 'Provider error'})`}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* ========================================== */}
       {/* 5. BYSTANDER / PUBLIC SCANNER VIEW */}
       {/* ========================================== */}
@@ -300,10 +373,20 @@ export const QRPatientResultPage = () => {
 
             <button
               onClick={handleBystanderNotifyFamily}
-              className="py-4 px-5 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-2xl text-xs md:text-sm border border-emerald-400/50 shadow-xl shadow-emerald-950/60 transition-all hover:scale-105 uppercase tracking-wider cursor-pointer flex items-center justify-center gap-2"
+              disabled={notifyLoading}
+              className="py-4 px-5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-black rounded-2xl text-xs md:text-sm border border-emerald-400/50 shadow-xl shadow-emerald-950/60 transition-all hover:scale-105 uppercase tracking-wider cursor-pointer flex items-center justify-center gap-2"
             >
-              <ShieldCheck className="w-5 h-5 text-emerald-200" />
-              Notify Family
+              {notifyLoading ? (
+                <>
+                  <div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                  Sending notification...
+                </>
+              ) : (
+                <>
+                  <ShieldCheck className="w-5 h-5 text-emerald-200" />
+                  Notify Family
+                </>
+              )}
             </button>
           </div>
 

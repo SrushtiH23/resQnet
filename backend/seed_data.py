@@ -29,7 +29,7 @@ def seed_database():
         )
         # Doctor
         doctor_user = User(
-            full_name="Dr. Robert Chen",
+            full_name="Dr. Rajesh Kumar",
             email="doctor@resqnet.com",
             hashed_password=get_password_hash("password123"),
             phone="+919876543212",
@@ -78,8 +78,8 @@ def seed_database():
             medications="Insulin Glargine 10U, Ventolin Inhaler",
             allergies="Penicillin, Peanuts",
             insurance_details="BlueShield Premium #BS-994821",
-            doctor_name="Dr. Robert Chen",
-            doctor_phone="+919876543212",
+            doctor_name="Dr. Rajesh Kumar",
+            doctor_phone="+919876543210",
             emergency_notes="Requires immediate blood glucose check if unconscious."
         )
         db.add(med_profile)

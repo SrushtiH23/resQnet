@@ -221,7 +221,7 @@ export const FamilyDashboard = () => {
               </div>
               <div className="p-3 bg-slate-900 rounded-xl border border-slate-800 space-y-1">
                 <span className="text-slate-400 text-[10px]">Primary Physician:</span>
-                <p className="font-bold text-cyan-400">{medicalProfile?.doctor_name || 'Dr. Robert Chen'}</p>
+                <p className="font-bold text-cyan-400">{medicalProfile?.doctor_name || 'Dr. Rajesh Kumar'}</p>
               </div>
             </div>
 

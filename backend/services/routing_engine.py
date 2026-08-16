@@ -146,7 +146,7 @@ class ProductionGeospatialRouter:
                 "ambulance_id": amb["id"],
                 "vehicle_number": amb["vehicle_number"],
                 "driver_name": amb.get("driver_name", "Unit Driver"),
-                "driver_phone": amb.get("driver_phone", "+1-555-AMBULANCE"),
+                "driver_phone": amb.get("driver_phone", "+919876543230"),
                 "latitude": amb["latitude"],
                 "longitude": amb["longitude"],
                 "status": amb.get("status", "Available"),

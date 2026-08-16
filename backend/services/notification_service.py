@@ -44,18 +44,20 @@ class EmergencyNotificationService:
         db: Session,
         contact: FamilyContact,
         emergency: EmergencyEvent,
-        user_name: str
+        user_name: str,
+        force_send: bool = False
     ) -> NotificationLog:
-        # Check duplicate notification log
-        existing_log = db.query(NotificationLog).filter(
-            NotificationLog.emergency_event_id == emergency.id,
-            NotificationLog.contact_id == contact.id,
-            NotificationLog.channel == "SMS",
-            NotificationLog.status.in_(["SENT", "DELIVERED", "ACKNOWLEDGED"])
-        ).first()
+        # Check duplicate notification log unless force_send is True
+        if not force_send:
+            existing_log = db.query(NotificationLog).filter(
+                NotificationLog.emergency_event_id == emergency.id,
+                NotificationLog.contact_id == contact.id,
+                NotificationLog.channel == "SMS",
+                NotificationLog.status.in_(["SENT", "DELIVERED", "ACKNOWLEDGED"])
+            ).first()
 
-        if existing_log:
-            return existing_log
+            if existing_log:
+                return existing_log
 
         provider_mode = os.getenv("SMS_PROVIDER", "textbee").lower()
         textbee_api_key = os.getenv("TEXTBEE_API_KEY", "").strip()
@@ -144,8 +146,9 @@ class EmergencyNotificationService:
                     resp = requests.post(url, json=payload, headers=headers, timeout=10)
                     if resp.status_code in [200, 201]:
                         res_data = resp.json()
-                        msg_id = res_data.get("data", {}).get("_id") or res_data.get("id") or f"TXB_{uuid.uuid4().hex[:8]}"
-                        print(f"TextBee SMS request sent successfully. Message ID: {msg_id}")
+                        data_obj = res_data.get("data", {}) if isinstance(res_data, dict) else {}
+                        msg_id = data_obj.get("smsBatchId") or data_obj.get("_id") or res_data.get("id") or f"TXB_{uuid.uuid4().hex[:8]}"
+                        print(f"TextBee SMS request sent successfully. Message ID / Batch ID: {msg_id}")
                         notif_log.provider_message_id = msg_id
                         notif_log.status = "SENT"
                         notif_log.delivered_at = datetime.utcnow()

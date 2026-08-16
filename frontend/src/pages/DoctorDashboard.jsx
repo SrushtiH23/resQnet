@@ -276,7 +276,7 @@ export const DoctorDashboard = () => {
                   </div>
                   <div>
                     <h3 className="text-xl font-bold text-white">{scannedResult.patient_name}</h3>
-                    <p className="text-xs text-slate-400">Phone: {scannedResult.phone || '+91-9876543210'}</p>
+                    <p className="text-xs text-slate-400">Phone: {scannedResult.phone || '+91 98765 43210'}</p>
                   </div>
                 </div>
                 <span className="px-3 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-xs font-bold rounded-full flex items-center gap-1">
@@ -454,7 +454,7 @@ export const DoctorDashboard = () => {
                 </div>
                 <div className="p-3 bg-slate-900 rounded-xl space-y-1">
                   <span className="text-slate-400 text-[10px] block">Primary Physician:</span>
-                  <span className="font-bold text-white">Dr. Robert Chen (+91-9876543212)</span>
+                  <span className="font-bold text-white">Dr. Rajesh Kumar (+91 98765 43210)</span>
                 </div>
               </div>
             </div>

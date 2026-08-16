@@ -147,7 +147,7 @@ AmbulanceAllocationResult RoutingEngine::find_nearest_ambulance(double user_lat,
             amb.id,
             amb.vehicle_number,
             amb.driver_name.empty() ? "Unit Driver" : amb.driver_name,
-            amb.driver_phone.empty() ? "+1-555-AMBULANCE" : amb.driver_phone,
+            amb.driver_phone.empty() ? "+919876543230" : amb.driver_phone,
             std::round(dist_km * 1000.0) / 1000.0,
             eta_minutes,
             amb.status

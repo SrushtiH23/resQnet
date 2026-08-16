@@ -84,8 +84,8 @@ void test_dijkstra_and_astar() {
     RoutingEngine router;
 
     std::vector<HospitalData> hospitals = {
-        {1, "City ER Hospital", 37.7749, -122.4194, "+1-555-0100", "100 ER Street", 12, "Trauma, ICU"},
-        {2, "Metro General", 37.7833, -122.4167, "+1-555-0200", "200 Metro Ave", 0, "Emergency"}
+        {1, "City ER Hospital", 37.7749, -122.4194, "+919876543220", "100 ER Street", 12, "Trauma, ICU"},
+        {2, "Metro General", 37.7833, -122.4167, "+919876543221", "200 Metro Ave", 0, "Emergency"}
     };
 
     double user_lat = 37.7700;
