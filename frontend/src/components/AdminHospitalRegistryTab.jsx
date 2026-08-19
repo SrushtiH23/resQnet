@@ -82,11 +82,11 @@ export const AdminHospitalRegistryTab = () => {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="px-3 py-1 bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 text-xs font-bold rounded-full uppercase tracking-wider flex items-center gap-1.5 font-mono">
-              <Building2 className="w-3.5 h-3.5" /> Google Places Hospitals — Bengaluru Coverage
+              <Building2 className="w-3.5 h-3.5" /> Real Google Places hospital directory — Bengaluru coverage
             </span>
           </div>
           <h2 className="text-xl md:text-3xl font-black text-white tracking-tight">
-            Google Places Hospitals — Bengaluru Coverage
+            Real Google Places hospital directory — Bengaluru coverage
           </h2>
           <p className="text-xs md:text-sm text-slate-400 mt-0.5">
             Multi-zone discovery across Bengaluru. Cached database registry with explicit ResQNet status separation.
@@ -117,17 +117,17 @@ export const AdminHospitalRegistryTab = () => {
             </span>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-center">
+          <div className="grid grid-cols-2 sm:grid-cols-6 gap-3 text-center">
             <div className="p-3 bg-slate-900/90 rounded-2xl border border-slate-800">
-              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Unique Hospitals</span>
+              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Unique Discovered</span>
               <span className="text-xl font-black text-white font-mono">{syncMetrics.unique_hospitals_discovered}</span>
             </div>
             <div className="p-3 bg-slate-900/90 rounded-2xl border border-slate-800">
-              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Search Zones Used</span>
-              <span className="text-xl font-black text-cyan-400 font-mono">{syncMetrics.search_zones_used} Zones</span>
+              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Search Areas</span>
+              <span className="text-xl font-black text-cyan-400 font-mono">{syncMetrics.search_zones_used} Areas</span>
             </div>
             <div className="p-3 bg-slate-900/90 rounded-2xl border border-slate-800">
-              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">API Requests Made</span>
+              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">API Requests</span>
               <span className="text-xl font-black text-indigo-400 font-mono">{syncMetrics.api_requests_made} Calls</span>
             </div>
             <div className="p-3 bg-slate-900/90 rounded-2xl border border-slate-800">
@@ -135,8 +135,12 @@ export const AdminHospitalRegistryTab = () => {
               <span className="text-xl font-black text-amber-400 font-mono">{syncMetrics.duplicates_removed}</span>
             </div>
             <div className="p-3 bg-slate-900/90 rounded-2xl border border-slate-800">
-              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Stored in Database</span>
-              <span className="text-xl font-black text-emerald-400 font-mono">{syncMetrics.total_in_db} Records</span>
+              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Verified ResQNet</span>
+              <span className="text-xl font-black text-emerald-400 font-mono">{syncMetrics.verified_resqnet_hospitals ?? 0}</span>
+            </div>
+            <div className="p-3 bg-slate-900/90 rounded-2xl border border-slate-800">
+              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Unregistered</span>
+              <span className="text-xl font-black text-slate-400 font-mono">{syncMetrics.unregistered_hospitals ?? 0}</span>
             </div>
           </div>
         </div>

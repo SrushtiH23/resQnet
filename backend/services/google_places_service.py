@@ -386,15 +386,22 @@ def sync_bengaluru_hospital_registry(db: Session) -> Dict[str, Any]:
     total_in_db = db.query(Hospital).count()
     unique_count = len(discovered_dict)
 
+    verified_resqnet_hospitals = db.query(Hospital).filter(Hospital.verification_status == "VERIFIED").count()
+    unregistered_hospitals = db.query(Hospital).filter(Hospital.verification_status == "UNREGISTERED").count()
+    pending_count = db.query(Hospital).filter(Hospital.verification_status == "PENDING").count()
+
     print(f"[Google Places Multi-Zone Complete] Unique: {unique_count}, Zones: {len(BENGALURU_SEARCH_ZONES)}, API Requests: {total_api_requests}, Duplicates Removed: {duplicates_count}")
 
     return {
         "status": "success",
-        "label": "Google Places Hospitals — Bengaluru Coverage",
+        "label": "Real Google Places hospital directory — Bengaluru coverage",
         "unique_hospitals_discovered": unique_count,
         "search_zones_used": len(BENGALURU_SEARCH_ZONES),
         "api_requests_made": total_api_requests,
         "duplicates_removed": duplicates_count,
+        "verified_resqnet_hospitals": verified_resqnet_hospitals,
+        "unregistered_hospitals": unregistered_hospitals,
+        "pending_hospitals": pending_count,
         "added_to_db": added_count,
         "updated_in_db": updated_count,
         "total_in_db": total_in_db
