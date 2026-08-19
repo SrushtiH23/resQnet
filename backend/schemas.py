@@ -409,3 +409,89 @@ class NearestAmbulanceResponse(BaseModel):
     status: str
     distance_km: float
     eta_minutes: float
+
+# --- Fall Detection Evaluation Schemas ---
+class EvaluationTestCreate(BaseModel):
+    test_type: str                            # "Normal Activity" or "Fall"
+    frames: List[SensorFrame]                 # Actual live sensor frames
+    activity_notes: Optional[str] = None
+    detection_latency_ms: Optional[float] = 0.0
+
+class EvaluationTestResponse(BaseModel):
+    id: int
+    admin_id: int
+    timestamp: datetime
+    test_type: str
+    detection_result: str
+    is_fall_detected: bool
+    max_acceleration: float
+    min_acceleration: float
+    free_fall: bool
+    impact: bool
+    inactivity: bool
+    orientation_change: bool
+    detection_latency_ms: float
+    final_classification: str                # TP, TN, FP, FN
+    is_correct: bool
+    activity_notes: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+class EvaluationMetricsResponse(BaseModel):
+    total_tests: int
+    normal_tests_count: int
+    fall_tests_count: int
+    correct_count: int
+    incorrect_count: int
+    tp: int
+    tn: int
+    fp: int
+    fn: int
+    accuracy: Optional[float] = None
+    precision: Optional[float] = None
+    recall: Optional[float] = None
+    specificity: Optional[float] = None
+    f1_score: Optional[float] = None
+    false_positive_rate: Optional[float] = None
+    avg_latency_ms: Optional[float] = None
+    has_sufficient_data: bool
+
+# --- Google Places & Hospital Registry Schemas ---
+class GoogleHospitalResponse(BaseModel):
+    id: int
+    google_place_id: Optional[str] = None
+    name: str
+    address: str
+    latitude: float
+    longitude: float
+    phone: Optional[str] = None
+    website: Optional[str] = None
+    maps_url: Optional[str] = None
+    rating: Optional[float] = None
+    place_type: Optional[str] = "Hospital"
+    is_active: bool = True
+    is_registered_resqnet: bool = False
+    verification_status: str = "UNREGISTERED"
+    user_id: Optional[int] = None
+    distance_km: Optional[float] = None
+    eta_minutes: Optional[float] = None
+
+    class Config:
+        from_attributes = True
+
+class HospitalRegistrationClaim(BaseModel):
+    google_place_id: str
+    hospital_name: str
+    registration_number: str
+    contact_person: str
+    phone: str
+    email: EmailStr
+    address: str
+
+class AdminHospitalVerifyAction(BaseModel):
+    hospital_id: int
+    action: str # "approve", "reject", "enable", "disable"
+    rejection_reason: Optional[str] = None
+
+

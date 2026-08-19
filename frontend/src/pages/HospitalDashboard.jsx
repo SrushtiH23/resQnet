@@ -47,15 +47,15 @@ export const HospitalDashboard = () => {
       <div className="glass-panel p-6 rounded-3xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border border-slate-800">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="px-3 py-1 bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 text-xs font-bold rounded-full uppercase tracking-wider flex items-center gap-1.5">
-              <Building2 className="w-3.5 h-3.5" /> Metro Emergency Command ER
+            <span className="px-3 py-1 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold rounded-full uppercase tracking-wider flex items-center gap-1.5 font-mono">
+              <CheckCircle className="w-3.5 h-3.5" /> Verified ResQNet Emergency Hospital Account
             </span>
           </div>
           <h1 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight">
             Hospital Dispatch & Dijkstra Routing
           </h1>
           <p className="text-xs md:text-sm text-slate-400 mt-0.5">
-            Graph pathfinding (Dijkstra/A*) & Priority Queue Ambulance Allocator.
+            Verified ResQNet hospital account linked with Google Places API ID. Emergency dispatch active.
           </p>
         </div>
 

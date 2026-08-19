@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { FallDetectionEvaluationTab } from '../components/FallDetectionEvaluationTab';
+import { AdminHospitalRegistryTab } from '../components/AdminHospitalRegistryTab';
 import {
   LayoutDashboard, Users, Building2, ShieldAlert, Clock, Stethoscope,
-  Activity, CheckCircle2, XCircle, AlertTriangle, Eye, MapPin, Phone, Heart, Zap, FileText, X, LogOut
+  Activity, CheckCircle2, XCircle, AlertTriangle, Eye, MapPin, Phone, Heart, Zap, FileText, X, LogOut, FlaskConical
 } from 'lucide-react';
 
 export const AdminDashboard = () => {
@@ -188,6 +190,8 @@ export const AdminDashboard = () => {
       <div className="flex items-center gap-2 border-b border-slate-800 pb-2 overflow-x-auto text-xs">
         {[
           { id: 'emergencies', label: `Active Emergencies (${activeEmergencies.length})`, icon: <ShieldAlert className="w-4 h-4 text-rose-500" /> },
+          { id: 'hospital_registry', label: 'Hospital Registry (Google Places)', icon: <Building2 className="w-4 h-4 text-indigo-400" /> },
+          { id: 'evaluation', label: 'Fall Detection Evaluation (SMS Disabled)', icon: <FlaskConical className="w-4 h-4 text-amber-400" /> },
           { id: 'users', label: `Users (${overview?.users?.length || 0})`, icon: <Users className="w-4 h-4 text-cyan-400" /> },
           { id: 'doctors', label: `Doctors (${overview?.doctors?.length || 0})`, icon: <Stethoscope className="w-4 h-4 text-teal-400" /> },
           { id: 'hospitals', label: `Hospitals (${overview?.hospitals?.length || 0})`, icon: <Building2 className="w-4 h-4 text-indigo-400" /> },
@@ -198,7 +202,7 @@ export const AdminDashboard = () => {
             onClick={() => setActiveTab(tab.id)}
             className={`px-4 py-2.5 rounded-xl font-bold transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap ${
               activeTab === tab.id
-                ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40 shadow-sm'
+                ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 shadow-sm'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
             }`}
           >
@@ -207,6 +211,12 @@ export const AdminDashboard = () => {
           </button>
         ))}
       </div>
+
+      {/* HOSPITAL REGISTRY MODULE */}
+      {activeTab === 'hospital_registry' && <AdminHospitalRegistryTab />}
+
+      {/* FALL DETECTION EVALUATION MODULE */}
+      {activeTab === 'evaluation' && <FallDetectionEvaluationTab />}
 
       {/* 3. ACTIVE EMERGENCIES TAB SECTION */}
       {activeTab === 'emergencies' && (

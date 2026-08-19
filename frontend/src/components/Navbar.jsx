@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from '../context/AuthContext';
 import {
   Activity, LogOut, Smartphone, LineChart, Cpu, Zap, History, Layout,
-  Heart, PhoneCall, QrCode, ShieldAlert, Stethoscope, Building2, LayoutDashboard, Users, User
+  Heart, PhoneCall, QrCode, ShieldAlert, Stethoscope, Building2, LayoutDashboard, Users, User, FlaskConical
 } from 'lucide-react';
 
 export const Navbar = () => {
@@ -56,6 +56,7 @@ export const Navbar = () => {
       case 'admin':
         return [
           { label: 'Admin Console', path: '/admin-dashboard', icon: <LayoutDashboard className="w-3.5 h-3.5" /> },
+          { label: 'Fall Evaluation', path: '/admin-dashboard', icon: <FlaskConical className="w-3.5 h-3.5" /> },
           { label: 'Active Emergencies', path: '/admin-dashboard#active-emergencies', icon: <ShieldAlert className="w-3.5 h-3.5" /> },
           { label: 'Users', path: '/admin-dashboard#users', icon: <Users className="w-3.5 h-3.5" /> },
           { label: 'Doctors', path: '/admin-dashboard#doctors', icon: <Stethoscope className="w-3.5 h-3.5" /> },

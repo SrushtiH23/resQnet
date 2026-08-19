@@ -8,7 +8,7 @@ import {
   AlertTriangle, CheckCircle2, ShieldAlert
 } from 'lucide-react';
 
-export const RealSmartphoneSensor = ({ userId = 1, onFallDetected }) => {
+export const RealSmartphoneSensor = ({ userId = 1, onFallDetected, userLat = null, userLon = null }) => {
   const accel = useAccelerometer();
   const gyro = useGyroscope();
 
@@ -42,7 +42,7 @@ export const RealSmartphoneSensor = ({ userId = 1, onFallDetected }) => {
     gyroRef.current = gyro;
   }, [gyro]);
 
-  const executeEmergencyDispatch = (fallData) => {
+  const executeEmergencyDispatch = async (fallData) => {
     setShowFallModal(false);
 
     if (hasDispatchedEmergencyRef.current) {
@@ -55,11 +55,26 @@ export const RealSmartphoneSensor = ({ userId = 1, onFallDetected }) => {
       onFallDetectedRef.current(fallData || lastAnalysis);
     }
 
+    let lat = (userLat !== null && !isNaN(userLat)) ? userLat : 0.0;
+    let lon = (userLon !== null && !isNaN(userLon)) ? userLon : 0.0;
+
+    if ('geolocation' in navigator && (lat === 0.0 || lon === 0.0)) {
+      try {
+        const pos = await new Promise((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 4000 });
+        });
+        lat = pos.coords.latitude;
+        lon = pos.coords.longitude;
+      } catch (err) {
+        console.warn('Geolocation capture for fall dispatch notice:', err);
+      }
+    }
+
     // Dispatch single emergency alert on confirmed fall
     api.post('/emergency/create', {
       trigger_source: 'Fall Detection',
-      latitude: 37.7749,
-      longitude: -122.4194,
+      latitude: lat,
+      longitude: lon,
       speed: 0.0,
       battery_level: 95,
       network_status: '5G'
@@ -129,8 +144,8 @@ export const RealSmartphoneSensor = ({ userId = 1, onFallDetected }) => {
           const res = await api.post('/sensor/sliding-window-analyze', {
             frames: framesToSend,
             user_id: userId,
-            latitude: 37.7749,
-            longitude: -122.4194,
+            latitude: userLat !== null ? userLat : 0.0,
+            longitude: userLon !== null ? userLon : 0.0,
           });
 
           setFrameCount((prev) => prev + framesToSend.length);

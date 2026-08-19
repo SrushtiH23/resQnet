@@ -71,14 +71,24 @@ class Hospital(Base):
     __tablename__ = "hospitals"
 
     id = Column(Integer, primary_key=True, index=True)
+    google_place_id = Column(String(255), unique=True, index=True, nullable=True)
     name = Column(String(150), nullable=False)
+    address = Column(String(255), nullable=False)
     latitude = Column(Float, nullable=False)
     longitude = Column(Float, nullable=False)
-    address = Column(String(255), nullable=False)
-    phone = Column(String(20), nullable=False)
+    phone = Column(String(50), nullable=True)
+    website = Column(String(255), nullable=True)
+    maps_url = Column(String(255), nullable=True)
+    rating = Column(Float, nullable=True)
+    place_type = Column(String(100), default="Hospital")
     available_beds = Column(Integer, default=10)
     specialities = Column(Text, default="Emergency, Trauma, ICU") # Comma separated
     is_active = Column(Boolean, default=True)
+    is_registered_resqnet = Column(Boolean, default=False)
+    verification_status = Column(String(30), default="UNREGISTERED") # UNREGISTERED, PENDING, VERIFIED, REJECTED
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     ambulances = relationship("Ambulance", back_populates="hospital")
 
@@ -220,4 +230,25 @@ class EmergencyAcknowledgement(Base):
     contact_id = Column(Integer, ForeignKey("family_contacts.id"), nullable=True)
     response = Column(String(50), nullable=False)          # "I am responding", "I cannot respond"
     timestamp = Column(DateTime, default=datetime.utcnow)
+
+class EvaluationTestResult(Base):
+    __tablename__ = "evaluation_test_results"
+
+    id = Column(Integer, primary_key=True, index=True)
+    admin_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    timestamp = Column(DateTime, default=datetime.utcnow)
+    test_type = Column(String(30), nullable=False)           # "Normal Activity" or "Fall"
+    detection_result = Column(String(30), nullable=False)     # "NORMAL", "POSSIBLE FALL", "FALL CONFIRMED"
+    is_fall_detected = Column(Boolean, default=False)
+    max_acceleration = Column(Float, nullable=False)          # m/s²
+    min_acceleration = Column(Float, nullable=False)          # m/s²
+    free_fall = Column(Boolean, default=False)                # Yes/No
+    impact = Column(Boolean, default=False)                   # Yes/No
+    inactivity = Column(Boolean, default=False)               # Yes/No
+    orientation_change = Column(Boolean, default=False)       # Yes/No
+    detection_latency_ms = Column(Float, default=0.0)         # Latency in ms
+    final_classification = Column(String(10), nullable=False) # TP, TN, FP, FN
+    is_correct = Column(Boolean, nullable=False)              # True if TP or TN
+    activity_notes = Column(String(255), nullable=True)
+
 

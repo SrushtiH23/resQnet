@@ -13,7 +13,7 @@ from typing import List, Optional
 from pydantic import BaseModel
 
 from database import engine, Base, get_db
-from models import User, MedicalProfile, FamilyContact, Hospital, Ambulance, EmergencyEvent, EmergencyLog, Notification, QRCard, ChatbotSession, AuditLog, SensorEvent, NotificationLog, EmergencyAcknowledgement
+from models import User, MedicalProfile, FamilyContact, Hospital, Ambulance, EmergencyEvent, EmergencyLog, Notification, QRCard, ChatbotSession, AuditLog, SensorEvent, NotificationLog, EmergencyAcknowledgement, EvaluationTestResult
 import schemas
 from auth import (
     get_password_hash, verify_password, create_access_token,
@@ -29,19 +29,43 @@ from services.chatbot_service import EmergencyTriageChatbot
 from services.notification_service import EmergencyNotificationService, NotificationAndAuditService, normalize_indian_phone
 from websocket_manager import ws_manager
 from seed_data import seed_database
+from services.google_places_service import sync_bengaluru_hospital_registry, calculate_haversine_distance
 
 # Create DB tables and seed initial data safely
 try:
     Base.metadata.create_all(bind=engine)
-    # Ensure revoked_at column exists on qr_cards for existing database files
+    # Ensure new columns exist on existing database files
     try:
         from sqlalchemy import text
         with engine.connect() as conn:
-            conn.execute(text("ALTER TABLE qr_cards ADD COLUMN revoked_at DATETIME NULL;"))
-            conn.commit()
+            for stmt in [
+                "ALTER TABLE qr_cards ADD COLUMN revoked_at DATETIME NULL;",
+                "ALTER TABLE hospitals ADD COLUMN google_place_id VARCHAR(255) NULL;",
+                "ALTER TABLE hospitals ADD COLUMN website VARCHAR(255) NULL;",
+                "ALTER TABLE hospitals ADD COLUMN maps_url VARCHAR(255) NULL;",
+                "ALTER TABLE hospitals ADD COLUMN rating FLOAT NULL;",
+                "ALTER TABLE hospitals ADD COLUMN place_type VARCHAR(100) DEFAULT 'Hospital';",
+                "ALTER TABLE hospitals ADD COLUMN is_registered_resqnet BOOLEAN DEFAULT 0;",
+                "ALTER TABLE hospitals ADD COLUMN verification_status VARCHAR(30) DEFAULT 'UNREGISTERED';",
+                "ALTER TABLE hospitals ADD COLUMN user_id INTEGER NULL;",
+                "ALTER TABLE hospitals ADD COLUMN created_at DATETIME NULL;",
+                "ALTER TABLE hospitals ADD COLUMN updated_at DATETIME NULL;"
+            ]:
+                try:
+                    conn.execute(text(stmt))
+                    conn.commit()
+                except Exception:
+                    pass
     except Exception:
         pass
     seed_database()
+    try:
+        from database import SessionLocal
+        db_init = SessionLocal()
+        sync_bengaluru_hospital_registry(db_init)
+        db_init.close()
+    except Exception as sync_err:
+        print(f"Hospital registry auto-sync notice: {sync_err}")
 except Exception as err:
     print(f"Database setup/auto-seed notice: {err}")
 
@@ -356,6 +380,242 @@ def update_hospital_profile(profile_in: schemas.HospitalProfileSchema, current_u
     )
     return {"status": "success", "message": "Hospital facility profile updated successfully"}
 
+# ==========================================
+# GOOGLE MAPS PLATFORM & HOSPITAL REGISTRY MODULE
+# ==========================================
+@app.post("/api/hospitals/discover-bengaluru")
+def trigger_bengaluru_hospital_discovery(db: Session = Depends(get_db)):
+    """
+    Triggers Google Places API (New) discovery for Bengaluru hospitals.
+    Upserts real hospital records into DB table 'hospitals'.
+    """
+    result = sync_bengaluru_hospital_registry(db)
+    return result
+
+@app.get("/api/hospitals/nearby", response_model=List[schemas.GoogleHospitalResponse])
+def get_nearby_hospitals(
+    lat: float = Query(..., description="User current latitude"),
+    lon: float = Query(..., description="User current longitude"),
+    only_verified: bool = Query(False, description="Filter only verified ResQNet hospitals"),
+    db: Session = Depends(get_db)
+):
+    """
+    Returns real hospitals sorted strictly by Haversine distance from current user coordinates.
+    Calculates exact distance_km and estimated travel ETA.
+    """
+    query = db.query(Hospital).filter(Hospital.is_active == True)
+    if only_verified:
+        query = query.filter(
+            Hospital.is_registered_resqnet == True,
+            Hospital.verification_status == "VERIFIED"
+        )
+
+    hospitals_list = query.all()
+
+    enriched = []
+    for h in hospitals_list:
+        dist_km = calculate_haversine_distance(lat, lon, h.latitude, h.longitude)
+        eta_min = round(max(1.0, (dist_km / 35.0) * 60.0), 1)
+        h_dict = {
+            "id": h.id,
+            "google_place_id": h.google_place_id,
+            "name": h.name,
+            "address": h.address,
+            "latitude": h.latitude,
+            "longitude": h.longitude,
+            "phone": h.phone,
+            "website": h.website,
+            "maps_url": h.maps_url or f"https://www.google.com/maps/search/?api=1&query={h.latitude},{h.longitude}",
+            "rating": h.rating,
+            "place_type": h.place_type or "Hospital",
+            "is_active": h.is_active,
+            "is_registered_resqnet": h.is_registered_resqnet,
+            "verification_status": h.verification_status,
+            "user_id": h.user_id,
+            "distance_km": dist_km,
+            "eta_minutes": eta_min
+        }
+        enriched.append(h_dict)
+
+    enriched.sort(key=lambda x: x["distance_km"])
+    return enriched
+
+@app.get("/api/hospitals/discovered", response_model=List[schemas.GoogleHospitalResponse])
+def get_discovered_hospitals(
+    search: Optional[str] = Query(None),
+    lat: Optional[float] = Query(None),
+    lon: Optional[float] = Query(None),
+    db: Session = Depends(get_db)
+):
+    query = db.query(Hospital).filter(Hospital.is_active == True)
+    if search:
+        s_term = f"%{search.strip()}%"
+        query = query.filter(
+            (Hospital.name.ilike(s_term)) |
+            (Hospital.address.ilike(s_term)) |
+            (Hospital.google_place_id.ilike(s_term))
+        )
+
+    hospitals = query.all()
+
+    results = []
+    for h in hospitals:
+        dist_km = None
+        eta_min = None
+        if lat is not None and lon is not None:
+            dist_km = calculate_haversine_distance(lat, lon, h.latitude, h.longitude)
+            eta_min = round(max(1.0, (dist_km / 35.0) * 60.0), 1)
+
+        results.append({
+            "id": h.id,
+            "google_place_id": h.google_place_id,
+            "name": h.name,
+            "address": h.address,
+            "latitude": h.latitude,
+            "longitude": h.longitude,
+            "phone": h.phone,
+            "website": h.website,
+            "maps_url": h.maps_url or f"https://www.google.com/maps/search/?api=1&query={h.latitude},{h.longitude}",
+            "rating": h.rating,
+            "place_type": h.place_type or "Hospital",
+            "is_active": h.is_active,
+            "is_registered_resqnet": h.is_registered_resqnet,
+            "verification_status": h.verification_status,
+            "user_id": h.user_id,
+            "distance_km": dist_km,
+            "eta_minutes": eta_min
+        })
+
+    if lat is not None and lon is not None:
+        results.sort(key=lambda x: x["distance_km"] if x["distance_km"] is not None else 99999)
+
+    return results
+
+@app.post("/api/hospitals/register-claim")
+def register_hospital_claim(
+    claim: schemas.HospitalRegistrationClaim,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    hospital = db.query(Hospital).filter(Hospital.google_place_id == claim.google_place_id).first()
+    if not hospital:
+        hospital = Hospital(
+            google_place_id=claim.google_place_id,
+            name=claim.hospital_name,
+            address=claim.address,
+            latitude=12.9716,
+            longitude=77.5946,
+            phone=claim.phone,
+            is_active=True,
+            is_registered_resqnet=True,
+            verification_status="PENDING",
+            user_id=current_user.id
+        )
+        db.add(hospital)
+    else:
+        hospital.is_registered_resqnet = True
+        hospital.verification_status = "PENDING"
+        hospital.user_id = current_user.id
+        if claim.phone: hospital.phone = claim.phone
+        if claim.address: hospital.address = claim.address
+
+    db.commit()
+    db.refresh(hospital)
+
+    NotificationAndAuditService.record_audit(
+        db, current_user.id, "HOSPITAL_CLAIM_SUBMITTED",
+        f"Submitted verification claim for '{hospital.name}' (Place ID: {claim.google_place_id})"
+    )
+
+    return {
+        "status": "success",
+        "message": "Hospital verification claim submitted successfully. Pending Admin approval.",
+        "hospital_id": hospital.id,
+        "verification_status": hospital.verification_status
+    }
+
+@app.get("/api/admin/hospitals/registry")
+def get_admin_hospital_registry(
+    current_user: User = Depends(require_role("admin")),
+    db: Session = Depends(get_db)
+):
+    all_hospitals = db.query(Hospital).order_by(Hospital.id.desc()).all()
+
+    discovered_count = len(all_hospitals)
+    registered_count = sum(1 for h in all_hospitals if h.is_registered_resqnet)
+    pending_count = sum(1 for h in all_hospitals if h.verification_status == "PENDING")
+    verified_count = sum(1 for h in all_hospitals if h.verification_status == "VERIFIED")
+
+    h_list = []
+    for h in all_hospitals:
+        h_list.append({
+            "id": h.id,
+            "google_place_id": h.google_place_id,
+            "name": h.name,
+            "address": h.address,
+            "latitude": h.latitude,
+            "longitude": h.longitude,
+            "phone": h.phone,
+            "website": h.website,
+            "maps_url": h.maps_url or f"https://www.google.com/maps/search/?api=1&query={h.latitude},{h.longitude}",
+            "rating": h.rating,
+            "place_type": h.place_type or "Hospital",
+            "is_active": h.is_active,
+            "is_registered_resqnet": h.is_registered_resqnet,
+            "verification_status": h.verification_status,
+            "user_id": h.user_id,
+            "created_at": h.created_at.isoformat() if h.created_at else None,
+            "updated_at": h.updated_at.isoformat() if h.updated_at else None
+        })
+
+    return {
+        "discovered_count": discovered_count,
+        "registered_count": registered_count,
+        "pending_count": pending_count,
+        "verified_count": verified_count,
+        "hospitals": h_list
+    }
+
+@app.post("/api/admin/hospitals/verify")
+def verify_admin_hospital(
+    req: schemas.AdminHospitalVerifyAction,
+    current_user: User = Depends(require_role("admin")),
+    db: Session = Depends(get_db)
+):
+    hospital = db.query(Hospital).filter(Hospital.id == req.hospital_id).first()
+    if not hospital:
+        raise HTTPException(status_code=404, detail="Hospital not found")
+
+    action = req.action.strip().lower()
+    if action == "approve":
+        hospital.verification_status = "VERIFIED"
+        hospital.is_registered_resqnet = True
+        hospital.is_active = True
+    elif action == "reject":
+        hospital.verification_status = "REJECTED"
+        hospital.is_registered_resqnet = False
+    elif action == "disable":
+        hospital.is_active = False
+    elif action == "enable":
+        hospital.is_active = True
+
+    hospital.updated_at = datetime.utcnow()
+    db.commit()
+    db.refresh(hospital)
+
+    NotificationAndAuditService.record_audit(
+        db, current_user.id, "ADMIN_HOSPITAL_VERIFICATION_CHANGED",
+        f"Admin set hospital '{hospital.name}' status to {hospital.verification_status} (Action: {action})"
+    )
+
+    return {
+        "status": "success",
+        "hospital_id": hospital.id,
+        "verification_status": hospital.verification_status,
+        "is_registered_resqnet": hospital.is_registered_resqnet,
+        "is_active": hospital.is_active
+    }
+
 @app.get("/api/admin/overview")
 def get_admin_overview(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     if current_user.role != "admin":
@@ -405,7 +665,224 @@ def get_admin_overview(current_user: User = Depends(get_current_user), db: Sessi
         "audit_logs": [{"id": a.id, "action": a.action, "details": a.details, "timestamp": a.timestamp.isoformat() if a.timestamp else None} for a in audit_logs]
     }
 
+# ==========================================
+# ADMIN-ONLY: Fall Detection Evaluation Module (SMS Disabled)
+# ==========================================
+@app.post("/api/admin/evaluation/run-test", response_model=schemas.EvaluationTestResponse)
+def run_evaluation_test(
+    req: schemas.EvaluationTestCreate,
+    current_user: User = Depends(require_role("admin")),
+    db: Session = Depends(get_db)
+):
+    """
+    Executes controlled fall detection experiment in EVALUATION MODE.
+    Uses the EXACT SAME production fall detection algorithm (IntelligentFallDetector & FallDetectionStateMachine).
+    Record test metrics to evaluation_test_results.
+    DOES NOT trigger emergency events, notifications, or TextBee SMS.
+    """
+    start_time = datetime.utcnow()
 
+    # Format sensor samples for sliding window / state machine analysis
+    samples = []
+    for f in req.frames:
+        tot_accel = math.sqrt(f.ax**2 + f.ay**2 + f.az**2)
+        tot_gyro = math.sqrt(f.gx**2 + f.gy**2 + f.gz**2)
+        samples.append({
+            "ax": f.ax, "ay": f.ay, "az": f.az,
+            "gx": f.gx, "gy": f.gy, "gz": f.gz,
+            "total_accel": tot_accel,
+            "total_gyro": tot_gyro
+        })
+
+    # Run production fall detection algorithm
+    if not samples:
+        # Default empty frame sample if none provided
+        samples = [{"ax": 0.0, "ay": 0.0, "az": 9.8, "gx": 0.0, "gy": 0.0, "gz": 0.0, "total_accel": 9.8, "total_gyro": 0.0}]
+
+    algo_result = IntelligentFallDetector.analyze_window(samples)
+
+    end_time = datetime.utcnow()
+    latency_ms = req.detection_latency_ms if req.detection_latency_ms and req.detection_latency_ms > 0 else max(1.0, (end_time - start_time).total_seconds() * 1000.0)
+
+    max_accel = max(s["total_accel"] for s in samples)
+    min_accel = min(s["total_accel"] for s in samples)
+
+    is_fall_detected = bool(algo_result.get("is_fall", False))
+    detection_result = str(algo_result.get("status_label", "NORMAL"))
+    free_fall = bool(algo_result.get("free_fall", False))
+    impact = bool(algo_result.get("impact", False))
+    stillness = bool(algo_result.get("stillness", False))
+    rotation = bool(algo_result.get("rotation", False))
+
+    # Determine ground-truth classification (TP, TN, FP, FN)
+    is_ground_truth_fall = (req.test_type.strip().lower() == "fall")
+
+    if is_ground_truth_fall:
+        final_classification = "TP" if is_fall_detected else "FN"
+    else:
+        final_classification = "FP" if is_fall_detected else "TN"
+
+    is_correct = final_classification in ["TP", "TN"]
+
+    eval_result = EvaluationTestResult(
+        admin_id=current_user.id,
+        timestamp=start_time,
+        test_type="Fall" if is_ground_truth_fall else "Normal Activity",
+        detection_result=detection_result,
+        is_fall_detected=is_fall_detected,
+        max_acceleration=round(max_accel, 2),
+        min_acceleration=round(min_accel, 2),
+        free_fall=free_fall,
+        impact=impact,
+        inactivity=stillness,
+        orientation_change=rotation,
+        detection_latency_ms=round(latency_ms, 2),
+        final_classification=final_classification,
+        is_correct=is_correct,
+        activity_notes=req.activity_notes
+    )
+
+    db.add(eval_result)
+    db.commit()
+    db.refresh(eval_result)
+
+    NotificationAndAuditService.record_audit(
+        db, current_user.id, "EVALUATION_TEST_RECORDED",
+        f"Test #{eval_result.id} ({eval_result.test_type}): Result={detection_result}, Class={final_classification}"
+    )
+
+    return eval_result
+
+@app.get("/api/admin/evaluation/results", response_model=List[schemas.EvaluationTestResponse])
+def get_evaluation_results(
+    filter_type: Optional[str] = Query(None), # All, Normal, Fall, Correct, Incorrect
+    current_user: User = Depends(require_role("admin")),
+    db: Session = Depends(get_db)
+):
+    query = db.query(EvaluationTestResult)
+
+    if filter_type:
+        f_lower = filter_type.strip().lower()
+        if f_lower == "normal":
+            query = query.filter(EvaluationTestResult.test_type == "Normal Activity")
+        elif f_lower == "fall":
+            query = query.filter(EvaluationTestResult.test_type == "Fall")
+        elif f_lower == "correct":
+            query = query.filter(EvaluationTestResult.is_correct == True)
+        elif f_lower == "incorrect":
+            query = query.filter(EvaluationTestResult.is_correct == False)
+
+    results = query.order_by(EvaluationTestResult.timestamp.desc()).all()
+    return results
+
+@app.get("/api/admin/evaluation/metrics", response_model=schemas.EvaluationMetricsResponse)
+def get_evaluation_metrics(
+    current_user: User = Depends(require_role("admin")),
+    db: Session = Depends(get_db)
+):
+    records = db.query(EvaluationTestResult).all()
+
+    total_tests = len(records)
+    normal_count = sum(1 for r in records if r.test_type == "Normal Activity")
+    fall_count = sum(1 for r in records if r.test_type == "Fall")
+
+    tp = sum(1 for r in records if r.final_classification == "TP")
+    tn = sum(1 for r in records if r.final_classification == "TN")
+    fp = sum(1 for r in records if r.final_classification == "FP")
+    fn = sum(1 for r in records if r.final_classification == "FN")
+
+    correct_count = tp + tn
+    incorrect_count = fp + fn
+
+    accuracy = round((tp + tn) / total_tests, 4) if total_tests > 0 else None
+    precision = round(tp / (tp + fp), 4) if (tp + fp) > 0 else None
+    recall = round(tp / (tp + fn), 4) if (tp + fn) > 0 else None
+    specificity = round(tn / (tn + fp), 4) if (tn + fp) > 0 else None
+
+    if precision is not None and recall is not None and (precision + recall) > 0:
+        f1_score = round(2 * (precision * recall) / (precision + recall), 4)
+    else:
+        f1_score = None
+
+    false_positive_rate = round(fp / (fp + tn), 4) if (fp + tn) > 0 else None
+    avg_latency_ms = round(sum(r.detection_latency_ms for r in records) / total_tests, 2) if total_tests > 0 else None
+
+    return {
+        "total_tests": total_tests,
+        "normal_tests_count": normal_count,
+        "fall_tests_count": fall_count,
+        "correct_count": correct_count,
+        "incorrect_count": incorrect_count,
+        "tp": tp,
+        "tn": tn,
+        "fp": fp,
+        "fn": fn,
+        "accuracy": accuracy,
+        "precision": precision,
+        "recall": recall,
+        "specificity": specificity,
+        "f1_score": f1_score,
+        "false_positive_rate": false_positive_rate,
+        "avg_latency_ms": avg_latency_ms,
+        "has_sufficient_data": total_tests > 0
+    }
+
+@app.get("/api/admin/evaluation/export-csv")
+def export_evaluation_csv(
+    current_user: User = Depends(require_role("admin")),
+    db: Session = Depends(get_db)
+):
+    from fastapi.responses import Response
+    records = db.query(EvaluationTestResult).order_by(EvaluationTestResult.id.asc()).all()
+
+    headers = [
+        "Test ID", "Timestamp", "Test Type", "Detection Result", "Is Fall Detected",
+        "Max Acceleration (m/s2)", "Min Acceleration (m/s2)", "Free Fall", "Impact",
+        "Inactivity", "Orientation Change", "Detection Latency (ms)", "Final Classification",
+        "Is Correct", "Activity Notes"
+    ]
+
+    csv_lines = [",".join(f'"{h}"' for h in headers)]
+
+    for r in records:
+        row = [
+            f"EVAL-{r.id}",
+            r.timestamp.isoformat() if r.timestamp else "",
+            r.test_type,
+            r.detection_result,
+            "Yes" if r.is_fall_detected else "No",
+            f"{r.max_acceleration:.2f}",
+            f"{r.min_acceleration:.2f}",
+            "Yes" if r.free_fall else "No",
+            "Yes" if r.impact else "No",
+            "Yes" if r.inactivity else "No",
+            "Yes" if r.orientation_change else "No",
+            f"{r.detection_latency_ms:.2f}",
+            r.final_classification,
+            "Correct" if r.is_correct else "Incorrect",
+            r.activity_notes or ""
+        ]
+        csv_lines.append(",".join(f'"{str(val).replace(chr(34), chr(34)+chr(34))}"' for val in row))
+
+    csv_content = "\n".join(csv_lines)
+
+    return Response(
+        content=csv_content,
+        media_type="text/csv",
+        headers={
+            "Content-Disposition": f"attachment; filename=fall_detection_evaluation_results_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.csv"
+        }
+    )
+
+@app.delete("/api/admin/evaluation/clear")
+def clear_evaluation_results(
+    current_user: User = Depends(require_role("admin")),
+    db: Session = Depends(get_db)
+):
+    db.query(EvaluationTestResult).delete()
+    db.commit()
+    NotificationAndAuditService.record_audit(db, current_user.id, "EVALUATION_DATA_CLEARED", "Cleared all experimental test results.")
+    return {"status": "success", "message": "All evaluation test results cleared."}
 
 # ==========================================
 # MODULE 4 & 5 & 6: Sensor & Fall Detection
@@ -566,10 +1043,18 @@ def create_emergency(req: schemas.EmergencyCreate, current_user: User = Depends(
             print(f"WebSocket error: {ws_e}")
         print("WebSocket update sent")
 
-        # Auto-find nearest hospital if critical
+        # Auto-find nearest hospital if critical (Filter strictly for verified ResQNet hospitals)
         if initial_conf >= 80.0:
-            hospitals = db.query(Hospital).filter(Hospital.is_active == True).all()
-            h_dicts = [{"id": h.id, "name": h.name, "latitude": h.latitude, "longitude": h.longitude, "phone": h.phone, "address": h.address, "available_beds": h.available_beds, "specialities": h.specialities} for h in hospitals]
+            verified_hospitals = db.query(Hospital).filter(
+                Hospital.is_active == True,
+                Hospital.is_registered_resqnet == True,
+                Hospital.verification_status == "VERIFIED"
+            ).all()
+            if not verified_hospitals:
+                # Fallback to active hospitals if no verified hospital accounts registered yet
+                verified_hospitals = db.query(Hospital).filter(Hospital.is_active == True).all()
+
+            h_dicts = [{"id": h.id, "name": h.name, "latitude": h.latitude, "longitude": h.longitude, "phone": h.phone, "address": h.address, "available_beds": h.available_beds, "specialities": h.specialities} for h in verified_hospitals]
             if h_dicts:
                 routes = HospitalGraphRouter.dijkstra_routing(req.latitude, req.longitude, h_dicts)
                 best_h = routes[0]
