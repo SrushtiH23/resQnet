@@ -82,14 +82,14 @@ export const AdminHospitalRegistryTab = () => {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="px-3 py-1 bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 text-xs font-bold rounded-full uppercase tracking-wider flex items-center gap-1.5 font-mono">
-              <Building2 className="w-3.5 h-3.5" /> Real Google Places hospital directory — Bengaluru coverage
+              <Building2 className="w-3.5 h-3.5" /> Real Google Places Hospital Directory — Bengaluru Coverage
             </span>
           </div>
           <h2 className="text-xl md:text-3xl font-black text-white tracking-tight">
-            Real Google Places hospital directory — Bengaluru coverage
+            Real Google Places Hospital Directory — Bengaluru Coverage
           </h2>
           <p className="text-xs md:text-sm text-slate-400 mt-0.5">
-            Multi-zone discovery across Bengaluru. Cached database registry with explicit ResQNet status separation.
+            Multi-zone geographic discovery across 16 Bengaluru regions. Persistent database caching with ResQNet status isolation.
           </p>
         </div>
 
@@ -100,49 +100,78 @@ export const AdminHospitalRegistryTab = () => {
             className="px-5 py-2.5 bg-gradient-to-r from-cyan-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white font-extrabold text-xs rounded-xl flex items-center gap-2 shadow-lg shadow-indigo-600/20 transition-all cursor-pointer"
           >
             <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
-            {syncing ? 'Querying Google Places (12 Zones)...' : 'Refresh Bengaluru Hospitals'}
+            {syncing ? 'Querying Google Places (16 Regions)...' : 'Refresh Bengaluru Hospitals'}
           </button>
         </div>
       </div>
 
-      {/* 2. Multi-Zone Discovery Metrics Banner (When Refresh Triggered) */}
+      {/* 2. Admin Diagnostic Summary & 16-Region Diagnostic Table */}
       {syncMetrics && (
-        <div className="glass-panel p-6 rounded-3xl border border-cyan-500/40 bg-cyan-950/20 space-y-3 animate-fade-in">
-          <div className="flex items-center justify-between">
+        <div className="glass-panel p-6 rounded-3xl border border-cyan-500/40 bg-cyan-950/20 space-y-6 animate-fade-in shadow-2xl">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-cyan-500/30 pb-3">
             <h4 className="text-sm font-black text-cyan-300 uppercase tracking-wider flex items-center gap-2 font-mono">
-              <Activity className="w-4 h-4 text-cyan-400" /> Google Places Discovery Results — {syncMetrics.label}
+              <Activity className="w-4 h-4 text-cyan-400" /> Admin Diagnostic Summary — {syncMetrics.label}
             </h4>
-            <span className="text-[10px] text-cyan-400/80 font-mono">
-              {new Date().toLocaleTimeString()}
+            <span className="text-xs text-cyan-300 font-mono flex items-center gap-1">
+              <Clock className="w-3.5 h-3.5 text-cyan-400" /> Last Refreshed: <strong className="text-white">{syncMetrics.last_refreshed || new Date().toISOString()}</strong>
             </span>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-6 gap-3 text-center">
-            <div className="p-3 bg-slate-900/90 rounded-2xl border border-slate-800">
-              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Unique Discovered</span>
-              <span className="text-xl font-black text-white font-mono">{syncMetrics.unique_hospitals_discovered}</span>
+          {/* Diagnostic Totals Summary */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center font-mono">
+            <div className="p-4 bg-slate-900/90 rounded-2xl border border-slate-800">
+              <span className="text-xs text-slate-400 font-bold uppercase tracking-wider block">Total Raw Results</span>
+              <span className="text-2xl font-black text-purple-400">{syncMetrics.raw_results_received ?? 0}</span>
             </div>
-            <div className="p-3 bg-slate-900/90 rounded-2xl border border-slate-800">
-              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Search Areas</span>
-              <span className="text-xl font-black text-cyan-400 font-mono">{syncMetrics.search_zones_used} Areas</span>
+
+            <div className="p-4 bg-slate-900/90 rounded-2xl border border-slate-800">
+              <span className="text-xs text-slate-400 font-bold uppercase tracking-wider block">Total Duplicates Removed</span>
+              <span className="text-2xl font-black text-amber-400">{syncMetrics.duplicates_removed}</span>
             </div>
-            <div className="p-3 bg-slate-900/90 rounded-2xl border border-slate-800">
-              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">API Requests</span>
-              <span className="text-xl font-black text-indigo-400 font-mono">{syncMetrics.api_requests_made} Calls</span>
-            </div>
-            <div className="p-3 bg-slate-900/90 rounded-2xl border border-slate-800">
-              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Duplicates Removed</span>
-              <span className="text-xl font-black text-amber-400 font-mono">{syncMetrics.duplicates_removed}</span>
-            </div>
-            <div className="p-3 bg-slate-900/90 rounded-2xl border border-slate-800">
-              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Verified ResQNet</span>
-              <span className="text-xl font-black text-emerald-400 font-mono">{syncMetrics.verified_resqnet_hospitals ?? 0}</span>
-            </div>
-            <div className="p-3 bg-slate-900/90 rounded-2xl border border-slate-800">
-              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Unregistered</span>
-              <span className="text-xl font-black text-slate-400 font-mono">{syncMetrics.unregistered_hospitals ?? 0}</span>
+
+            <div className="p-4 bg-slate-900/90 rounded-2xl border border-slate-800">
+              <span className="text-xs text-slate-400 font-bold uppercase tracking-wider block">Total Unique Hospitals Stored</span>
+              <span className="text-2xl font-black text-emerald-400">{syncMetrics.unique_hospitals_discovered}</span>
             </div>
           </div>
+
+          {/* 16-Region Diagnostic Table */}
+          {syncMetrics.region_diagnostics && syncMetrics.region_diagnostics.length > 0 && (
+            <div className="space-y-3 pt-2">
+              <h5 className="text-xs font-black text-slate-300 uppercase tracking-wider font-mono">
+                16-Region Independent Execution Breakdown (Region | Search requests | Pages retrieved | Raw results | Unique hospitals)
+              </h5>
+              <div className="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-950/80">
+                <table className="w-full text-left text-xs font-mono">
+                  <thead>
+                    <tr className="border-b border-slate-800 bg-slate-900/80 text-cyan-400 font-bold uppercase tracking-wider">
+                      <th className="p-3">Region</th>
+                      <th className="p-3 text-center">Search requests</th>
+                      <th className="p-3 text-center">Pages retrieved</th>
+                      <th className="p-3 text-center">Raw results</th>
+                      <th className="p-3 text-center">Unique hospitals</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800/60">
+                    {syncMetrics.region_diagnostics.map((reg, idx) => (
+                      <tr key={reg.region_name || idx} className="hover:bg-slate-900/50 transition-colors">
+                        <td className="p-3 font-sans font-bold text-white flex items-center gap-2">
+                          <span className="w-5 h-5 rounded-full bg-slate-800 text-[10px] flex items-center justify-center font-mono text-cyan-400">
+                            {idx + 1}
+                          </span>
+                          {reg.region_name}
+                        </td>
+                        <td className="p-3 text-center text-indigo-300">{reg.search_requests}</td>
+                        <td className="p-3 text-center text-cyan-300">{reg.pages_retrieved}</td>
+                        <td className="p-3 text-center text-purple-300">{reg.raw_results}</td>
+                        <td className="p-3 text-center text-emerald-400 font-bold">{reg.unique_hospitals}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -151,7 +180,7 @@ export const AdminHospitalRegistryTab = () => {
         <div className="glass-panel p-5 rounded-2xl border border-slate-800 space-y-1">
           <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Total Discovered Hospitals</span>
           <p className="text-2xl font-black text-white font-mono">{registryData?.discovered_count ?? 0}</p>
-          <span className="text-[10px] text-slate-500 block">Google Places Places API (New)</span>
+          <span className="text-[10px] text-slate-500 block">Google Places Real Directory</span>
         </div>
 
         <div className="glass-panel p-5 rounded-2xl border border-slate-800 space-y-1">
@@ -215,7 +244,7 @@ export const AdminHospitalRegistryTab = () => {
         {loading ? (
           <div className="p-12 text-center text-slate-400 space-y-2">
             <RefreshCw className="w-8 h-8 text-indigo-400 animate-spin mx-auto" />
-            <p className="text-xs font-bold text-white">Loading Google Places Bengaluru Hospital Registry...</p>
+            <p className="text-xs font-bold text-white">Loading Real Google Places Hospital Directory...</p>
           </div>
         ) : filteredHospitals.length === 0 ? (
           <div className="p-12 text-center text-slate-400 space-y-3">
