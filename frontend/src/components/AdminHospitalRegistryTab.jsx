@@ -105,7 +105,7 @@ export const AdminHospitalRegistryTab = () => {
         </div>
       </div>
 
-      {/* 2. Admin Diagnostic Summary & 16-Region Diagnostic Table */}
+      {/* 2. Admin Diagnostic Summary & 16-Zone Diagnostic Breakdown (Requirement #11) */}
       {syncMetrics && (
         <div className="glass-panel p-6 rounded-3xl border border-cyan-500/40 bg-cyan-950/20 space-y-6 animate-fade-in shadow-2xl">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-cyan-500/30 pb-3">
@@ -117,61 +117,67 @@ export const AdminHospitalRegistryTab = () => {
             </span>
           </div>
 
-          {/* Diagnostic Totals Summary */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center font-mono">
-            <div className="p-4 bg-slate-900/90 rounded-2xl border border-slate-800">
-              <span className="text-xs text-slate-400 font-bold uppercase tracking-wider block">Total Raw Results</span>
-              <span className="text-2xl font-black text-purple-400">{syncMetrics.raw_results_received ?? 0}</span>
-            </div>
-
-            <div className="p-4 bg-slate-900/90 rounded-2xl border border-slate-800">
-              <span className="text-xs text-slate-400 font-bold uppercase tracking-wider block">Total Duplicates Removed</span>
-              <span className="text-2xl font-black text-amber-400">{syncMetrics.duplicates_removed}</span>
-            </div>
-
-            <div className="p-4 bg-slate-900/90 rounded-2xl border border-slate-800">
-              <span className="text-xs text-slate-400 font-bold uppercase tracking-wider block">Total Unique Hospitals Stored</span>
-              <span className="text-2xl font-black text-emerald-400">{syncMetrics.unique_hospitals_discovered}</span>
-            </div>
-          </div>
-
-          {/* 16-Region Diagnostic Table */}
+          {/* 16-Zone Independent Execution Report (Zone N: raw results / unique results) */}
           {syncMetrics.region_diagnostics && syncMetrics.region_diagnostics.length > 0 && (
-            <div className="space-y-3 pt-2">
-              <h5 className="text-xs font-black text-slate-300 uppercase tracking-wider font-mono">
-                16-Region Independent Execution Breakdown (Region | Search requests | Pages retrieved | Raw results | Unique hospitals)
+            <div className="space-y-3">
+              <h5 className="text-xs font-black text-slate-300 uppercase tracking-wider font-mono flex items-center gap-2">
+                <Layers className="w-4 h-4 text-indigo-400" /> 16-Zone Discovery Report (Zone N: raw results / unique results)
               </h5>
-              <div className="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-950/80">
-                <table className="w-full text-left text-xs font-mono">
-                  <thead>
-                    <tr className="border-b border-slate-800 bg-slate-900/80 text-cyan-400 font-bold uppercase tracking-wider">
-                      <th className="p-3">Region</th>
-                      <th className="p-3 text-center">Search requests</th>
-                      <th className="p-3 text-center">Pages retrieved</th>
-                      <th className="p-3 text-center">Raw results</th>
-                      <th className="p-3 text-center">Unique hospitals</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-800/60">
-                    {syncMetrics.region_diagnostics.map((reg, idx) => (
-                      <tr key={reg.region_name || idx} className="hover:bg-slate-900/50 transition-colors">
-                        <td className="p-3 font-sans font-bold text-white flex items-center gap-2">
-                          <span className="w-5 h-5 rounded-full bg-slate-800 text-[10px] flex items-center justify-center font-mono text-cyan-400">
-                            {idx + 1}
-                          </span>
-                          {reg.region_name}
-                        </td>
-                        <td className="p-3 text-center text-indigo-300">{reg.search_requests}</td>
-                        <td className="p-3 text-center text-cyan-300">{reg.pages_retrieved}</td>
-                        <td className="p-3 text-center text-purple-300">{reg.raw_results}</td>
-                        <td className="p-3 text-center text-emerald-400 font-bold">{reg.unique_hospitals}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 font-mono text-xs">
+                {syncMetrics.region_diagnostics.map((reg, idx) => (
+                  <div key={reg.region_name || idx} className="p-3 bg-slate-900/90 rounded-xl border border-slate-800 flex items-center justify-between">
+                    <span className="text-slate-300 font-bold flex items-center gap-1.5 truncate max-w-[170px]" title={reg.region_name}>
+                      <span className="w-4 h-4 rounded bg-indigo-500/20 text-indigo-300 text-[10px] flex items-center justify-center font-mono">
+                        {idx + 1}
+                      </span>
+                      {reg.region_name.split(' ')[0]} {reg.region_name.split(' ')[1] || ''}
+                    </span>
+                    <span className="text-cyan-400 font-bold whitespace-nowrap">
+                      <span className="text-purple-300">{reg.raw_results}</span> raw / <span className="text-emerald-400">{reg.unique_hospitals}</span> unique
+                    </span>
+                  </div>
+                ))}
               </div>
             </div>
           )}
+
+          {/* Diagnostic Totals & Matching Stage Counts (Requirement #11 & #13) */}
+          <div className="pt-2 border-t border-slate-800 space-y-2">
+            <h5 className="text-xs font-black text-slate-300 uppercase tracking-wider font-mono">
+              Pipeline Stage Count Consistency Verification
+            </h5>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 text-center font-mono">
+              <div className="p-3.5 bg-slate-900/90 rounded-2xl border border-slate-800">
+                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Total Raw Google Results</span>
+                <span className="text-xl font-black text-purple-400">{syncMetrics.raw_results_received ?? 0}</span>
+              </div>
+
+              <div className="p-3.5 bg-slate-900/90 rounded-2xl border border-slate-800">
+                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Total Duplicate Results</span>
+                <span className="text-xl font-black text-amber-400">{syncMetrics.duplicates_removed}</span>
+              </div>
+
+              <div className="p-3.5 bg-slate-900/90 rounded-2xl border border-slate-800">
+                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Total Unique Hospitals</span>
+                <span className="text-xl font-black text-emerald-400">{syncMetrics.unique_hospitals_discovered}</span>
+              </div>
+
+              <div className="p-3.5 bg-slate-900/90 rounded-2xl border border-slate-800">
+                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Total Database Hospitals</span>
+                <span className="text-xl font-black text-cyan-400">{syncMetrics.total_database_hospitals ?? registryData?.hospitals?.length ?? 0}</span>
+              </div>
+
+              <div className="p-3.5 bg-slate-900/90 rounded-2xl border border-slate-800">
+                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Total Backend API Hospitals</span>
+                <span className="text-xl font-black text-indigo-400">{syncMetrics.total_backend_api_hospitals ?? registryData?.hospitals?.length ?? 0}</span>
+              </div>
+
+              <div className="p-3.5 bg-slate-900/90 rounded-2xl border border-slate-800">
+                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Total Hospitals Rendered UI</span>
+                <span className="text-xl font-black text-teal-400">{registryData?.hospitals?.length ?? 0}</span>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
