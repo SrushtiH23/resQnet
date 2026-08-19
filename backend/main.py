@@ -715,7 +715,7 @@ def run_evaluation_test(
     rotation = bool(algo_result.get("rotation", False))
 
     # Determine ground-truth classification (TP, TN, FP, FN)
-    is_ground_truth_fall = (req.test_type.strip().lower() == "fall")
+    is_ground_truth_fall = ("fall" in req.test_type.strip().lower())
 
     if is_ground_truth_fall:
         final_classification = "TP" if is_fall_detected else "FN"
@@ -780,16 +780,35 @@ def get_evaluation_metrics(
     current_user: User = Depends(require_role("admin")),
     db: Session = Depends(get_db)
 ):
-    records = db.query(EvaluationTestResult).all()
+    records = db.query(EvaluationTestResult).order_by(EvaluationTestResult.id.asc()).all()
 
     total_tests = len(records)
-    normal_count = sum(1 for r in records if r.test_type == "Normal Activity")
-    fall_count = sum(1 for r in records if r.test_type == "Fall")
 
-    tp = sum(1 for r in records if r.final_classification == "TP")
-    tn = sum(1 for r in records if r.final_classification == "TN")
-    fp = sum(1 for r in records if r.final_classification == "FP")
-    fn = sum(1 for r in records if r.final_classification == "FN")
+    tp = 0
+    tn = 0
+    fp = 0
+    fn = 0
+
+    normal_count = 0
+    fall_count = 0
+
+    for r in records:
+        t_type = (r.test_type or "").strip().lower()
+        is_actual_fall = ("fall" in t_type)
+        is_pred_fall = bool(r.is_fall_detected)
+
+        if is_actual_fall:
+            fall_count += 1
+            if is_pred_fall:
+                tp += 1
+            else:
+                fn += 1
+        else:
+            normal_count += 1
+            if is_pred_fall:
+                fp += 1
+            else:
+                tn += 1
 
     correct_count = tp + tn
     incorrect_count = fp + fn
@@ -805,7 +824,9 @@ def get_evaluation_metrics(
         f1_score = None
 
     false_positive_rate = round(fp / (fp + tn), 4) if (fp + tn) > 0 else None
-    avg_latency_ms = round(sum(r.detection_latency_ms for r in records) / total_tests, 2) if total_tests > 0 else None
+    
+    latencies = [r.detection_latency_ms for r in records if r.detection_latency_ms is not None and r.detection_latency_ms > 0]
+    avg_latency_ms = round(sum(latencies) / len(latencies), 2) if latencies else None
 
     return {
         "total_tests": total_tests,

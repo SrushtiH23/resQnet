@@ -260,7 +260,15 @@ export const FallDetectionEvaluationTab = () => {
           </span>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+          <div className="glass-panel p-4 rounded-2xl border border-slate-800 space-y-1">
+            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Total Tests</span>
+            <p className="text-xl font-extrabold text-white font-mono">
+              {metrics?.total_tests ?? 0}
+            </p>
+            <span className="text-[9px] text-slate-500 block">TP + TN + FP + FN</span>
+          </div>
+
           <div className="glass-panel p-4 rounded-2xl border border-slate-800 space-y-1">
             <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Accuracy</span>
             <p className="text-xl font-extrabold text-cyan-400 font-mono">
@@ -309,7 +317,7 @@ export const FallDetectionEvaluationTab = () => {
             <span className="text-[9px] text-slate-500 block">FP / (FP + TN)</span>
           </div>
 
-          <div className="glass-panel p-4 rounded-2xl border border-slate-800 col-span-2 sm:col-span-1 space-y-1">
+          <div className="glass-panel p-4 rounded-2xl border border-slate-800 space-y-1">
             <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Avg Latency</span>
             <p className="text-xl font-extrabold text-rose-400 font-mono">
               {metrics?.avg_latency_ms ? `${metrics.avg_latency_ms} ms` : 'N/A'}

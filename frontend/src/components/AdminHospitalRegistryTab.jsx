@@ -2,15 +2,16 @@ import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import {
   Building2, ShieldCheck, Clock, CheckCircle2, XCircle, AlertTriangle,
-  Search, ExternalLink, RefreshCw, MapPin, Phone, Star, Filter, Eye, Check, X
+  Search, ExternalLink, RefreshCw, MapPin, Phone, Star, Filter, Eye, Check, X, Layers, Activity
 } from 'lucide-react';
 
 export const AdminHospitalRegistryTab = () => {
   const [registryData, setRegistryData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [activeSubTab, setActiveSubTab] = useState('all'); // all, pending, verified, discovered
+  const [activeSubTab, setActiveSubTab] = useState('all'); // all, pending, verified, unregistered
   const [searchQuery, setSearchQuery] = useState('');
   const [syncing, setSyncing] = useState(false);
+  const [syncMetrics, setSyncMetrics] = useState(null);
   const [actionLoading, setActionLoading] = useState(null);
 
   useEffect(() => {
@@ -29,14 +30,14 @@ export const AdminHospitalRegistryTab = () => {
     }
   };
 
-  const handleSyncBengaluru = async () => {
+  const handleRefreshBengaluruCoverage = async () => {
     setSyncing(true);
     try {
       const res = await api.post('/hospitals/discover-bengaluru');
-      alert(`Google Places Sync Complete! Added: ${res.data.added}, Updated: ${res.data.updated}, Total: ${res.data.total_in_db}`);
+      setSyncMetrics(res.data);
       fetchRegistry();
     } catch (err) {
-      console.error('Failed to sync Bengaluru hospitals:', err);
+      console.error('Failed to refresh Bengaluru hospitals dataset:', err);
       alert('Error triggering Google Places hospital discovery.');
     } finally {
       setSyncing(false);
@@ -69,48 +70,92 @@ export const AdminHospitalRegistryTab = () => {
 
     if (activeSubTab === 'pending') return h.verification_status === 'PENDING';
     if (activeSubTab === 'verified') return h.verification_status === 'VERIFIED';
-    if (activeSubTab === 'discovered') return !h.is_registered_resqnet;
-    if (activeSubTab === 'registered') return h.is_registered_resqnet;
+    if (activeSubTab === 'unregistered') return h.verification_status === 'UNREGISTERED' || !h.is_registered_resqnet;
 
     return true;
   });
 
   return (
     <div className="space-y-8 animate-fade-in">
-      {/* 1. Header & Actions */}
+      {/* 1. Official Header & Refresh Control */}
       <div className="glass-panel p-6 rounded-3xl border border-slate-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-2xl">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="px-3 py-1 bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 text-xs font-bold rounded-full uppercase tracking-wider flex items-center gap-1.5 font-mono">
-              <Building2 className="w-3.5 h-3.5" /> Official Google Places & ResQNet Hospital Registry
+              <Building2 className="w-3.5 h-3.5" /> Google Places Hospitals — Bengaluru Coverage
             </span>
           </div>
           <h2 className="text-xl md:text-3xl font-black text-white tracking-tight">
-            Bengaluru Hospital Management Portal
+            Google Places Hospitals — Bengaluru Coverage
           </h2>
           <p className="text-xs md:text-sm text-slate-400 mt-0.5">
-            Discovered Google Places hospitals, verification queue, and ResQNet emergency dispatch registry.
+            Multi-zone discovery across Bengaluru. Cached database registry with explicit ResQNet status separation.
           </p>
         </div>
 
         <div className="flex items-center gap-2">
           <button
-            onClick={handleSyncBengaluru}
+            onClick={handleRefreshBengaluruCoverage}
             disabled={syncing}
-            className="px-4 py-2.5 bg-gradient-to-r from-cyan-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white font-extrabold text-xs rounded-xl flex items-center gap-2 shadow-lg shadow-indigo-600/20 transition-all cursor-pointer"
+            className="px-5 py-2.5 bg-gradient-to-r from-cyan-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white font-extrabold text-xs rounded-xl flex items-center gap-2 shadow-lg shadow-indigo-600/20 transition-all cursor-pointer"
           >
             <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
-            {syncing ? 'Syncing Google Places...' : 'Discover Bengaluru Hospitals'}
+            {syncing ? 'Querying Google Places (12 Zones)...' : 'Refresh Bengaluru Hospitals'}
           </button>
         </div>
       </div>
 
-      {/* 2. KPI Cards */}
+      {/* 2. Multi-Zone Discovery Metrics Banner (When Refresh Triggered) */}
+      {syncMetrics && (
+        <div className="glass-panel p-6 rounded-3xl border border-cyan-500/40 bg-cyan-950/20 space-y-3 animate-fade-in">
+          <div className="flex items-center justify-between">
+            <h4 className="text-sm font-black text-cyan-300 uppercase tracking-wider flex items-center gap-2 font-mono">
+              <Activity className="w-4 h-4 text-cyan-400" /> Google Places Discovery Results — {syncMetrics.label}
+            </h4>
+            <span className="text-[10px] text-cyan-400/80 font-mono">
+              {new Date().toLocaleTimeString()}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-center">
+            <div className="p-3 bg-slate-900/90 rounded-2xl border border-slate-800">
+              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Unique Hospitals</span>
+              <span className="text-xl font-black text-white font-mono">{syncMetrics.unique_hospitals_discovered}</span>
+            </div>
+            <div className="p-3 bg-slate-900/90 rounded-2xl border border-slate-800">
+              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Search Zones Used</span>
+              <span className="text-xl font-black text-cyan-400 font-mono">{syncMetrics.search_zones_used} Zones</span>
+            </div>
+            <div className="p-3 bg-slate-900/90 rounded-2xl border border-slate-800">
+              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">API Requests Made</span>
+              <span className="text-xl font-black text-indigo-400 font-mono">{syncMetrics.api_requests_made} Calls</span>
+            </div>
+            <div className="p-3 bg-slate-900/90 rounded-2xl border border-slate-800">
+              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Duplicates Removed</span>
+              <span className="text-xl font-black text-amber-400 font-mono">{syncMetrics.duplicates_removed}</span>
+            </div>
+            <div className="p-3 bg-slate-900/90 rounded-2xl border border-slate-800">
+              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Stored in Database</span>
+              <span className="text-xl font-black text-emerald-400 font-mono">{syncMetrics.total_in_db} Records</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 3. KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div className="glass-panel p-5 rounded-2xl border border-slate-800 space-y-1">
-          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Discovered Google Hospitals</span>
+          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Total Discovered Hospitals</span>
           <p className="text-2xl font-black text-white font-mono">{registryData?.discovered_count ?? 0}</p>
-          <span className="text-[10px] text-slate-500 block">Real Places API records</span>
+          <span className="text-[10px] text-slate-500 block">Google Places Places API (New)</span>
+        </div>
+
+        <div className="glass-panel p-5 rounded-2xl border border-slate-800 space-y-1">
+          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Unregistered Hospitals</span>
+          <p className="text-2xl font-black text-slate-300 font-mono">
+            {(registryData?.discovered_count || 0) - (registryData?.registered_count || 0)}
+          </p>
+          <span className="text-[10px] text-slate-500 block">Discovered Google Places</span>
         </div>
 
         <div className="glass-panel p-5 rounded-2xl border border-amber-500/30 bg-amber-950/20 space-y-1">
@@ -122,25 +167,19 @@ export const AdminHospitalRegistryTab = () => {
         <div className="glass-panel p-5 rounded-2xl border border-emerald-500/30 bg-emerald-950/20 space-y-1">
           <span className="text-[10px] text-emerald-300 font-bold uppercase tracking-wider block">Verified ResQNet Hospitals</span>
           <p className="text-2xl font-black text-emerald-400 font-mono">{registryData?.verified_count ?? 0}</p>
-          <span className="text-[10px] text-emerald-400/80 block">Active Emergency Dispatch</span>
-        </div>
-
-        <div className="glass-panel p-5 rounded-2xl border border-slate-800 space-y-1">
-          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Total Registered Claims</span>
-          <p className="text-2xl font-black text-cyan-400 font-mono">{registryData?.registered_count ?? 0}</p>
-          <span className="text-[10px] text-slate-500 block">Linked ResQNet accounts</span>
+          <span className="text-[10px] text-emerald-400/80 block">Emergency Dispatch Active</span>
         </div>
       </div>
 
-      {/* 3. Filter Tabs & Search Bar */}
+      {/* 4. Filter Tabs & Search Bar */}
       <div className="glass-panel p-6 rounded-3xl border border-slate-800 space-y-4 shadow-xl">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
           <div className="flex items-center gap-2 overflow-x-auto text-xs w-full sm:w-auto">
             {[
               { id: 'all', label: `All Discovered (${registryData?.discovered_count || 0})` },
+              { id: 'unregistered', label: 'Unregistered' },
               { id: 'pending', label: `Pending Approval (${registryData?.pending_count || 0})` },
               { id: 'verified', label: `Verified ResQNet (${registryData?.verified_count || 0})` },
-              { id: 'discovered', label: 'Google Places Only' },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -168,18 +207,18 @@ export const AdminHospitalRegistryTab = () => {
           </div>
         </div>
 
-        {/* 4. Hospitals Table */}
+        {/* 5. Hospitals Table */}
         {loading ? (
           <div className="p-12 text-center text-slate-400 space-y-2">
             <RefreshCw className="w-8 h-8 text-indigo-400 animate-spin mx-auto" />
-            <p className="text-xs font-bold text-white">Loading Bengaluru Hospital Registry...</p>
+            <p className="text-xs font-bold text-white">Loading Google Places Bengaluru Hospital Registry...</p>
           </div>
         ) : filteredHospitals.length === 0 ? (
           <div className="p-12 text-center text-slate-400 space-y-3">
             <Building2 className="w-10 h-10 text-slate-600 mx-auto" />
             <p className="text-sm font-bold text-white">No Hospitals Match Filter</p>
             <p className="text-xs text-slate-500">
-              Click <strong className="text-cyan-400">[Discover Bengaluru Hospitals]</strong> above to fetch real hospitals from Google Places API (New).
+              Click <strong className="text-cyan-400">[Refresh Bengaluru Hospitals]</strong> above to execute multi-zone Google Places discovery.
             </p>
           </div>
         ) : (
@@ -202,11 +241,6 @@ export const AdminHospitalRegistryTab = () => {
                     <td className="p-3 font-sans font-bold text-white">
                       <div className="flex items-center gap-2">
                         <span className="font-extrabold text-sm text-slate-100">{h.name}</span>
-                        {h.is_registered_resqnet && h.verification_status === 'VERIFIED' && (
-                          <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-[9px] font-black rounded uppercase">
-                            ResQNet Verified
-                          </span>
-                        )}
                       </div>
                       <span className="text-[10px] text-slate-400 font-mono block mt-0.5">{h.place_type || 'Hospital'}</span>
                     </td>

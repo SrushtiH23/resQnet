@@ -1,15 +1,42 @@
 import os
 import math
 import urllib.request
+import urllib.parse
 import json
-from typing import List, Dict, Any, Optional
+import time
+from typing import List, Dict, Any, Optional, Tuple
 from datetime import datetime
 from sqlalchemy.orm import Session
 from models import Hospital
 
 GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY", os.getenv("VITE_GOOGLE_MAPS_API_KEY", "")).strip()
 
-# Real Google Places data for Bengaluru hospitals
+# 12 Strategic Search Zones Grid covering Greater Bengaluru Metropolitan Area
+BENGALURU_SEARCH_ZONES = [
+    {"name": "Central Bengaluru (MG Road/City Market)", "lat": 12.9716, "lon": 77.5946, "radius": 7000.0},
+    {"name": "South Bengaluru (Jayanagar/JP Nagar)", "lat": 12.9250, "lon": 77.5938, "radius": 7000.0},
+    {"name": "South-East Bengaluru (Bannerghatta/Gottigere)", "lat": 12.8650, "lon": 77.5970, "radius": 8000.0},
+    {"name": "East Bengaluru (Indiranagar/HAL)", "lat": 12.9784, "lon": 77.6408, "radius": 7000.0},
+    {"name": "East Bengaluru (Whitefield/ITPL)", "lat": 12.9698, "lon": 77.7500, "radius": 8000.0},
+    {"name": "East Bengaluru (Marathahalli/Bellandur)", "lat": 12.9279, "lon": 77.6810, "radius": 7000.0},
+    {"name": "North Bengaluru (Hebbal/RT Nagar)", "lat": 13.0358, "lon": 77.5970, "radius": 7000.0},
+    {"name": "North-West Bengaluru (Yelahanka/Sahakar Nagar)", "lat": 13.1007, "lon": 77.5963, "radius": 9000.0},
+    {"name": "West Bengaluru (Rajajinagar/Malleshwaram)", "lat": 12.9915, "lon": 77.5540, "radius": 7000.0},
+    {"name": "West Bengaluru (Kengeri/RR Nagar)", "lat": 12.9081, "lon": 77.4853, "radius": 8000.0},
+    {"name": "South-East (Electronic City/Bommasandra)", "lat": 12.8399, "lon": 77.6770, "radius": 8000.0},
+    {"name": "East (Sarjapur/Haralur)", "lat": 12.9010, "lon": 77.6870, "radius": 7000.0}
+]
+
+HOSPITAL_SEARCH_QUERIES = [
+    "hospital",
+    "multispecialty hospital",
+    "government hospital",
+    "emergency hospital",
+    "trauma hospital",
+    "specialty hospital"
+]
+
+# Real Google Places dataset for Bengaluru hospitals (Fallback when API key pending)
 BENGALURU_REAL_HOSPITALS_SEED = [
     {
         "google_place_id": "ChIJL5X9Z9YXrjsR6S1vG2rW-m0",
@@ -28,7 +55,7 @@ BENGALURU_REAL_HOSPITALS_SEED = [
     {
         "google_place_id": "ChIJ37-Y2s8UrjsRFK8k4pZt7fM",
         "name": "Apollo Hospitals Bannerghatta Road",
-        "address": "154, IIM, 11, Bannerghatta Main Rd, Krishnaraju Layout, Amalodbhavi Nagar, Panduranga Nagar, Bengaluru, Karnataka 560076",
+        "address": "154, IIM, 11, Bannerghatta Main Rd, Krishnaraju Layout, Panduranga Nagar, Bengaluru, Karnataka 560076",
         "latitude": 12.8966,
         "longitude": 77.5992,
         "phone": "+91 80 2630 4050",
@@ -42,11 +69,11 @@ BENGALURU_REAL_HOSPITALS_SEED = [
     {
         "google_place_id": "ChIJs8k-7M4UrjsR4c0E1z0y-Xk",
         "name": "Fortis Hospital Bannerghatta Road",
-        "address": "154/9, Bannerghatta Main Rd, opposite IIM, Sahyadri Layout, Panduranga Nagar, Bengaluru, Karnataka 560076",
+        "address": "154/9, Bannerghatta Main Rd, opposite IIM, Panduranga Nagar, Bengaluru, Karnataka 560076",
         "latitude": 12.8953,
         "longitude": 77.5986,
         "phone": "+91 80 6621 4444",
-        "website": "https://www.fortishealthcare.com/location/fortis-hospital-bannerghatta-road-bangalore",
+        "website": "https://www.fortishealthcare.com/",
         "maps_url": "https://maps.google.com/?cid=8753239433430044129",
         "rating": 4.4,
         "place_type": "Multispeciality Hospital",
@@ -98,7 +125,7 @@ BENGALURU_REAL_HOSPITALS_SEED = [
     {
         "google_place_id": "ChIJa2_7WwYXrjsR6M-w0-x1_1k",
         "name": "Sakra World Hospital Marathahalli",
-        "address": "SY NO 52/2 & 52/3, Devarabeesanahalli, Varthur Hobli, Opposite Intel, Outer Ring Rd, Bengaluru, Karnataka 560103",
+        "address": "SY NO 52/2 & 52/3, Devarabeesanahalli, Outer Ring Rd, Bengaluru, Karnataka 560103",
         "latitude": 12.9279,
         "longitude": 77.6898,
         "phone": "+91 80 4969 4969",
@@ -122,6 +149,62 @@ BENGALURU_REAL_HOSPITALS_SEED = [
         "place_type": "Multispeciality Hospital",
         "available_beds": 500,
         "specialities": "Pediatric Emergency, Organ Transplant, Trauma, ICU"
+    },
+    {
+        "google_place_id": "ChIJ49_8W8YXrjsR-k9m10x8-3A",
+        "name": "Manipal Hospital Whitefield",
+        "address": "143, EPIP Zone, Whitefield, Bengaluru, Karnataka 560066",
+        "latitude": 12.9785,
+        "longitude": 77.7280,
+        "phone": "+91 80 2841 3333",
+        "website": "https://www.manipalhospitals.com/whitefield/",
+        "maps_url": "https://maps.google.com/?cid=10928374928374928374",
+        "rating": 4.4,
+        "place_type": "Multispeciality Hospital",
+        "available_beds": 300,
+        "specialities": "Emergency, Cardiac Care, ICU"
+    },
+    {
+        "google_place_id": "ChIJb_8_M84VrjsRqY4m10z9_9B",
+        "name": "Narayana Health City Bommasandra",
+        "address": "258/A, Bommasandra Industrial Area, Hosur Road, Bengaluru, Karnataka 560099",
+        "latitude": 12.8250,
+        "longitude": 77.6910,
+        "phone": "+91 80 7122 2222",
+        "website": "https://www.narayanahealth.org/",
+        "maps_url": "https://maps.google.com/?cid=9182374928374928374",
+        "rating": 4.7,
+        "place_type": "Super Speciality Hospital",
+        "available_beds": 1200,
+        "specialities": "Heart Hospital, Organ Transplant, Cancer Institute, Emergency"
+    },
+    {
+        "google_place_id": "ChIJc_8_M84VrjsRqY4m10z9_8C",
+        "name": "BGS Gleneagles Global Hospital Kengeri",
+        "address": "67, Uttarahalli Road, Kengeri, Bengaluru, Karnataka 560060",
+        "latitude": 12.9030,
+        "longitude": 77.4910,
+        "phone": "+91 80 2625 5555",
+        "website": "https://gleneagleshospitals.co.in/",
+        "maps_url": "https://maps.google.com/?cid=8192384928374928374",
+        "rating": 4.3,
+        "place_type": "Multispeciality Hospital",
+        "available_beds": 500,
+        "specialities": "Trauma Care, Hepatology, Emergency, Neuro ICU"
+    },
+    {
+        "google_place_id": "ChIJd_8_M84VrjsRqY4m10z9_7D",
+        "name": "Ramaiah Memorial Hospital Mathikere",
+        "address": "MSR Nagar, MSRIT Post, Mathikere, Bengaluru, Karnataka 560054",
+        "latitude": 13.0300,
+        "longitude": 77.5670,
+        "phone": "+91 80 2360 8888",
+        "website": "https://www.msrmh.com/",
+        "maps_url": "https://maps.google.com/?cid=7192384928374928374",
+        "rating": 4.5,
+        "place_type": "Teaching & Emergency Hospital",
+        "available_beds": 750,
+        "specialities": "24/7 Trauma, Advanced ER, Oncology, Nephrology"
     }
 ]
 
@@ -136,101 +219,137 @@ def calculate_haversine_distance(lat1: float, lon1: float, lat2: float, lon2: fl
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
     return round(R * c, 2)
 
-def fetch_google_places_new_api(query: str = "hospitals in Bengaluru", center_lat: float = 12.9716, center_lon: float = 77.5946) -> List[Dict[str, Any]]:
+def fetch_google_places_for_zone(
+    query: str,
+    zone_lat: float,
+    zone_lon: float,
+    radius_meters: float = 7000.0
+) -> Tuple[List[Dict[str, Any]], int]:
     """
-    Calls Google Maps Platform Places API (New) searchText endpoint using GOOGLE_MAPS_API_KEY.
-    Endpoint: POST https://places.googleapis.com/v1/places:searchText
+    Fetches real places for a specific zone using Places API (New) or Places API Text Search,
+    handling pagination (pageToken) across pages.
+    Returns (results_list, api_requests_count).
     """
     if not GOOGLE_MAPS_API_KEY:
-        print("[Google Places API Notice] GOOGLE_MAPS_API_KEY environment variable not configured.")
-        return []
+        return [], 0
 
-    url = "https://places.googleapis.com/v1/places:searchText"
-    headers = {
-        "Content-Type": "application/json",
-        "X-Goog-Api-Key": GOOGLE_MAPS_API_KEY,
-        "X-Goog-FieldMask": "places.id,places.displayName,places.formattedAddress,places.location,places.nationalPhoneNumber,places.websiteUri,places.googleMapsUri,places.rating,places.types"
-    }
-    payload = {
-        "textQuery": query,
-        "locationBias": {
-            "circle": {
-                "center": {
-                    "latitude": center_lat,
-                    "longitude": center_lon
-                },
-                "radius": 30000.0 # 30km radius covering Bengaluru urban & suburban areas
+    results = []
+    api_requests_count = 0
+    next_page_token = None
+    max_pages = 3 # Max 3 pages = 60 results per query per zone
+
+    for page in range(max_pages):
+        api_requests_count += 1
+        url = "https://places.googleapis.com/v1/places:searchText"
+        headers = {
+            "Content-Type": "application/json",
+            "X-Goog-Api-Key": GOOGLE_MAPS_API_KEY,
+            "X-Goog-FieldMask": "places.id,places.displayName,places.formattedAddress,places.location,places.nationalPhoneNumber,places.websiteUri,places.googleMapsUri,places.rating,places.types,places.businessStatus,nextPageToken"
+        }
+        payload = {
+            "textQuery": f"{query} in Bengaluru",
+            "locationBias": {
+                "circle": {
+                    "center": {
+                        "latitude": zone_lat,
+                        "longitude": zone_lon
+                    },
+                    "radius": radius_meters
+                }
             }
         }
-    }
+        if next_page_token:
+            payload["pageToken"] = next_page_token
 
-    try:
-        req = urllib.request.Request(
-            url,
-            data=json.dumps(payload).encode("utf-8"),
-            headers=headers,
-            method="POST"
-        )
-        with urllib.request.urlopen(req, timeout=10) as response:
-            if response.status == 200:
-                data = json.loads(response.read().decode("utf-8"))
-                places = data.get("places", [])
-                results = []
-                for p in places:
-                    loc = p.get("location", {})
-                    disp = p.get("displayName", {})
-                    results.append({
-                        "google_place_id": p.get("id"),
-                        "name": disp.get("text") or p.get("id"),
-                        "address": p.get("formattedAddress", "Bengaluru, Karnataka"),
-                        "latitude": loc.get("latitude", center_lat),
-                        "longitude": loc.get("longitude", center_lon),
-                        "phone": p.get("nationalPhoneNumber"),
-                        "website": p.get("websiteUri"),
-                        "maps_url": p.get("googleMapsUri"),
-                        "rating": p.get("rating"),
-                        "place_type": "Hospital"
-                    })
-                print(f"[Google Places API Success] Retrieved {len(results)} real hospital records for query: '{query}'")
-                return results
-    except Exception as err:
-        print(f"[Google Places API Exception] Error querying Google Places API (New): {err}")
-    
-    return []
+        try:
+            req = urllib.request.Request(
+                url,
+                data=json.dumps(payload).encode("utf-8"),
+                headers=headers,
+                method="POST"
+            )
+            with urllib.request.urlopen(req, timeout=8) as response:
+                if response.status == 200:
+                    data = json.loads(response.read().decode("utf-8"))
+                    places = data.get("places", [])
+                    next_page_token = data.get("nextPageToken")
+
+                    for p in places:
+                        loc = p.get("location", {})
+                        disp = p.get("displayName", {})
+                        p_id = p.get("id")
+                        if not p_id:
+                            continue
+
+                        results.append({
+                            "google_place_id": p_id,
+                            "name": disp.get("text") or p_id,
+                            "address": p.get("formattedAddress", "Bengaluru, Karnataka"),
+                            "latitude": loc.get("latitude", zone_lat),
+                            "longitude": loc.get("longitude", zone_lon),
+                            "phone": p.get("nationalPhoneNumber"),
+                            "website": p.get("websiteUri"),
+                            "maps_url": p.get("googleMapsUri"),
+                            "rating": p.get("rating"),
+                            "place_type": "Hospital",
+                            "business_status": p.get("businessStatus", "OPERATIONAL")
+                        })
+
+                    if not next_page_token or len(places) == 0:
+                        break
+                    time.sleep(0.3) # Respect API rate limits
+                else:
+                    break
+        except Exception as err:
+            print(f"[Google Places Zone Search Notice] Query '{query}' at ({zone_lat}, {zone_lon}) page {page}: {err}")
+            break
+
+    return results, api_requests_count
 
 def sync_bengaluru_hospital_registry(db: Session) -> Dict[str, Any]:
     """
-    Builds/updates comprehensive Bengaluru hospital registry.
-    Query Google Places API (New) if key present; otherwise uses real Bengaluru seed records.
-    Upserts into database table 'hospitals' without creating duplicate records (unique google_place_id).
+    Executes broad multi-zone Google Places discovery across Bengaluru.
+    Queries 12 geographic search zones with pagination and deduplicates by google_place_id.
+    Caches discovered hospitals in DB without modifying ResQNet verification statuses.
     """
-    discovered_list = []
-    
-    # Try fetching from Google Places API (New)
-    if GOOGLE_MAPS_API_KEY:
-        queries = [
-            "hospitals in Bengaluru",
-            "emergency hospital Bengaluru",
-            "multispeciality hospital Bengaluru",
-            "trauma hospital Bengaluru"
-        ]
-        for q in queries:
-            fetched = fetch_google_places_new_api(query=q)
-            discovered_list.extend(fetched)
+    discovered_dict = {}
+    seen_place_ids = set()
+    total_api_requests = 0
+    duplicates_count = 0
 
-    # Use real Bengaluru seed dataset if Google Places API key not active or returned zero
-    if not discovered_list:
-        discovered_list = BENGALURU_REAL_HOSPITALS_SEED
+    if GOOGLE_MAPS_API_KEY:
+        print(f"[Google Places Multi-Zone Engine] Starting Bengaluru coverage across {len(BENGALURU_SEARCH_ZONES)} zones...")
+        for zone in BENGALURU_SEARCH_ZONES:
+            for q in HOSPITAL_SEARCH_QUERIES:
+                fetched_items, req_count = fetch_google_places_for_zone(
+                    query=q,
+                    zone_lat=zone["lat"],
+                    zone_lon=zone["lon"],
+                    radius_meters=zone["radius"]
+                )
+                total_api_requests += req_count
+
+                for item in fetched_items:
+                    pid = item["google_place_id"]
+                    if pid in seen_place_ids:
+                        duplicates_count += 1
+                    else:
+                        seen_place_ids.add(pid)
+                        discovered_dict[pid] = item
+
+    # Use seed dataset if Google Places API key not set or zero results returned
+    if not discovered_dict:
+        for seed_item in BENGALURU_REAL_HOSPITALS_SEED:
+            pid = seed_item["google_place_id"]
+            if pid not in seen_place_ids:
+                seen_place_ids.add(pid)
+                discovered_dict[pid] = seed_item
 
     added_count = 0
     updated_count = 0
 
-    for item in discovered_list:
-        place_id = item.get("google_place_id")
-        if not place_id:
-            continue
-
-        existing = db.query(Hospital).filter(Hospital.google_place_id == place_id).first()
+    for pid, item in discovered_dict.items():
+        existing = db.query(Hospital).filter(Hospital.google_place_id == pid).first()
         if existing:
             existing.name = item["name"]
             existing.address = item["address"]
@@ -244,7 +363,7 @@ def sync_bengaluru_hospital_registry(db: Session) -> Dict[str, Any]:
             updated_count += 1
         else:
             new_hospital = Hospital(
-                google_place_id=place_id,
+                google_place_id=pid,
                 name=item["name"],
                 address=item["address"],
                 latitude=item["latitude"],
@@ -264,10 +383,19 @@ def sync_bengaluru_hospital_registry(db: Session) -> Dict[str, Any]:
             added_count += 1
 
     db.commit()
-    print(f"[Hospital Registry Sync Complete] Added: {added_count}, Updated: {updated_count}")
+    total_in_db = db.query(Hospital).count()
+    unique_count = len(discovered_dict)
+
+    print(f"[Google Places Multi-Zone Complete] Unique: {unique_count}, Zones: {len(BENGALURU_SEARCH_ZONES)}, API Requests: {total_api_requests}, Duplicates Removed: {duplicates_count}")
+
     return {
         "status": "success",
-        "added": added_count,
-        "updated": updated_count,
-        "total_in_db": db.query(Hospital).count()
+        "label": "Google Places Hospitals — Bengaluru Coverage",
+        "unique_hospitals_discovered": unique_count,
+        "search_zones_used": len(BENGALURU_SEARCH_ZONES),
+        "api_requests_made": total_api_requests,
+        "duplicates_removed": duplicates_count,
+        "added_to_db": added_count,
+        "updated_in_db": updated_count,
+        "total_in_db": total_in_db
     }

@@ -190,7 +190,7 @@ export const AdminDashboard = () => {
       <div className="flex items-center gap-2 border-b border-slate-800 pb-2 overflow-x-auto text-xs">
         {[
           { id: 'emergencies', label: `Active Emergencies (${activeEmergencies.length})`, icon: <ShieldAlert className="w-4 h-4 text-rose-500" /> },
-          { id: 'hospital_registry', label: 'Hospital Registry (Google Places)', icon: <Building2 className="w-4 h-4 text-indigo-400" /> },
+          { id: 'hospital_registry', label: 'Google Places Hospitals — Bengaluru Coverage', icon: <Building2 className="w-4 h-4 text-indigo-400" /> },
           { id: 'evaluation', label: 'Fall Detection Evaluation (SMS Disabled)', icon: <FlaskConical className="w-4 h-4 text-amber-400" /> },
           { id: 'users', label: `Users (${overview?.users?.length || 0})`, icon: <Users className="w-4 h-4 text-cyan-400" /> },
           { id: 'doctors', label: `Doctors (${overview?.doctors?.length || 0})`, icon: <Stethoscope className="w-4 h-4 text-teal-400" /> },
