@@ -32,15 +32,20 @@ export const UserDashboard = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Fetch real nearby Bengaluru hospitals sorted by distance when coordinates are updated
+  // Fetch all real discovered Bengaluru hospitals from database; sort by distance when coordinates are updated
   useEffect(() => {
-    if (gpsData.available && gpsData.latitude !== null && gpsData.longitude !== null) {
-      api.get('/hospitals/nearby', {
-        params: { lat: gpsData.latitude, lon: gpsData.longitude }
-      }).then((res) => {
+    const fetchHospitals = async () => {
+      try {
+        const params = (gpsData.available && gpsData.latitude !== null && gpsData.longitude !== null)
+          ? { lat: gpsData.latitude, lon: gpsData.longitude }
+          : {};
+        const res = await api.get('/hospitals/discovered', { params });
         if (res.data) setNearbyHospitals(res.data);
-      }).catch((err) => console.warn('Failed to fetch nearby hospitals:', err));
-    }
+      } catch (err) {
+        console.warn('Failed to fetch discovered hospitals for dashboard map:', err);
+      }
+    };
+    fetchHospitals();
   }, [gpsData.latitude, gpsData.longitude, gpsData.available]);
 
   // Request Device Location Permission & Current Position
