@@ -21,6 +21,7 @@ import { DoctorProfilePage } from './pages/DoctorProfilePage';
 import { ActiveEmergenciesPage } from './pages/ActiveEmergenciesPage';
 import { QRScannerPage } from './pages/QRScannerPage';
 import { QRPatientResultPage } from './pages/QRPatientResultPage';
+import { MobiActResearchEvaluationPage } from './pages/MobiActResearchEvaluationPage';
 
 function FallbackRedirect() {
   const { user, role, loading } = useAuth();
@@ -111,6 +112,14 @@ function AppRoutes() {
             element={
               <ProtectedRoute allowedRoles={['user', 'admin']}>
                 <AIDecisionEnginePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/mobiact-research-evaluation"
+            element={
+              <ProtectedRoute allowedRoles={['user', 'doctor', 'hospital', 'admin']}>
+                <MobiActResearchEvaluationPage />
               </ProtectedRoute>
             }
           />

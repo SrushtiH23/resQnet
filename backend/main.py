@@ -905,6 +905,11 @@ def clear_evaluation_results(
     NotificationAndAuditService.record_audit(db, current_user.id, "EVALUATION_DATA_CLEARED", "Cleared all experimental test results.")
     return {"status": "success", "message": "All evaluation test results cleared."}
 
+@app.get("/api/research/mobiact")
+def get_mobiact_research_evaluation():
+    from services.research_service import get_mobiact_evaluation_data
+    return get_mobiact_evaluation_data()
+
 # ==========================================
 # MODULE 4 & 5 & 6: Sensor & Fall Detection
 # ==========================================
