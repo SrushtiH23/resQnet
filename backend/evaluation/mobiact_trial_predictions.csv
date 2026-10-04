@@ -1,0 +1,631 @@
+subject_id,activity_code,activity_type,trial_id,actual_label,predicted_label,detection_status,is_correct,detection_latency_ms,number_of_windows_processed,total_frames_20hz,raw_duration_sec,first_fall_stage,first_fall_details
+1,BSC,Back-Sitting-Chair Fall,BSC_sub1_t1,FALL,FALL,TP,Yes,3900.0,178,197,9.8,Stage 3: Impact with Violent Rotation,"Min Accel: 6.1 m/s², Max Accel: 26.4 m/s², Max Gyro: 177.8 °/s"
+1,BSC,Back-Sitting-Chair Fall,BSC_sub1_t2,FALL,FALL,TP,Yes,4100.0,178,197,9.84,Stage 3: Impact with Violent Rotation,"Min Accel: 4.9 m/s², Max Accel: 20.6 m/s², Max Gyro: 187.0 °/s"
+1,BSC,Back-Sitting-Chair Fall,BSC_sub1_t3,FALL,FALL,TP,Yes,3600.0,179,198,9.86,Stage 3: Impact with Violent Rotation,"Min Accel: 6.6 m/s², Max Accel: 21.0 m/s², Max Gyro: 207.9 °/s"
+2,BSC,Back-Sitting-Chair Fall,BSC_sub2_t1,FALL,FALL,TP,Yes,4700.0,181,200,9.95,Stage 3: Impact with Violent Rotation,"Min Accel: 5.2 m/s², Max Accel: 23.7 m/s², Max Gyro: 384.0 °/s"
+2,BSC,Back-Sitting-Chair Fall,BSC_sub2_t2,FALL,FALL,TP,Yes,4200.0,180,199,9.93,Stage 4/5: Critical Fall & Post-Impact Stillness,"Min Accel: 2.3 m/s², Max Accel: 21.3 m/s², Max Gyro: 324.6 °/s"
+2,BSC,Back-Sitting-Chair Fall,BSC_sub2_t3,FALL,FALL,TP,Yes,4350.0,181,200,9.97,Stage 3: Impact with Violent Rotation,"Min Accel: 3.2 m/s², Max Accel: 22.6 m/s², Max Gyro: 348.5 °/s"
+3,BSC,Back-Sitting-Chair Fall,BSC_sub3_t1,FALL,FALL,TP,Yes,3700.0,281,300,14.97,Stage 3: Impact with Violent Rotation,"Min Accel: 5.7 m/s², Max Accel: 24.8 m/s², Max Gyro: 194.9 °/s"
+3,BSC,Back-Sitting-Chair Fall,BSC_sub3_t2,FALL,FALL,TP,Yes,2700.0,113,132,6.6,Stage 3: Impact with Violent Rotation,"Min Accel: 5.9 m/s², Max Accel: 17.4 m/s², Max Gyro: 245.8 °/s"
+3,BSC,Back-Sitting-Chair Fall,BSC_sub3_t3,FALL,FALL,TP,Yes,3400.0,181,200,9.97,Stage 3: Impact with Violent Rotation,"Min Accel: 6.5 m/s², Max Accel: 19.5 m/s², Max Gyro: 226.6 °/s"
+4,BSC,Back-Sitting-Chair Fall,BSC_sub4_t1,FALL,FALL,TP,Yes,4750.0,178,197,9.81,Stage 3: Impact with Violent Rotation,"Min Accel: 4.1 m/s², Max Accel: 27.9 m/s², Max Gyro: 309.2 °/s"
+4,BSC,Back-Sitting-Chair Fall,BSC_sub4_t2,FALL,FALL,TP,Yes,6100.0,179,198,9.88,Stage 3: Impact with Violent Rotation,"Min Accel: 4.7 m/s², Max Accel: 24.0 m/s², Max Gyro: 339.7 °/s"
+4,BSC,Back-Sitting-Chair Fall,BSC_sub4_t3,FALL,FALL,TP,Yes,5750.0,179,198,9.89,Stage 3: Impact with Violent Rotation,"Min Accel: 3.2 m/s², Max Accel: 25.6 m/s², Max Gyro: 372.7 °/s"
+5,BSC,Back-Sitting-Chair Fall,BSC_sub5_t1,FALL,FALL,TP,Yes,4200.0,179,198,9.88,Stage 3: Impact with Violent Rotation,"Min Accel: 5.6 m/s², Max Accel: 18.5 m/s², Max Gyro: 289.7 °/s"
+5,BSC,Back-Sitting-Chair Fall,BSC_sub5_t2,FALL,FALL,TP,Yes,4750.0,181,200,10.0,Stage 3: Impact with Violent Rotation,"Min Accel: 5.7 m/s², Max Accel: 18.6 m/s², Max Gyro: 346.8 °/s"
+5,BSC,Back-Sitting-Chair Fall,BSC_sub5_t3,FALL,FALL,TP,Yes,4700.0,181,200,9.96,Stage 3: Impact with Violent Rotation,"Min Accel: 3.8 m/s², Max Accel: 25.6 m/s², Max Gyro: 263.9 °/s"
+6,BSC,Back-Sitting-Chair Fall,BSC_sub6_t1,FALL,FALL,TP,Yes,3500.0,181,200,9.97,Stage 3: Impact with Violent Rotation,"Min Accel: 4.7 m/s², Max Accel: 22.8 m/s², Max Gyro: 190.7 °/s"
+6,BSC,Back-Sitting-Chair Fall,BSC_sub6_t2,FALL,FALL,TP,Yes,3350.0,181,200,9.98,Stage 4/5: Critical Fall & Post-Impact Stillness,"Min Accel: 6.2 m/s², Max Accel: 25.0 m/s², Max Gyro: 190.8 °/s"
+6,BSC,Back-Sitting-Chair Fall,BSC_sub6_t3,FALL,FALL,TP,Yes,2850.0,177,196,9.8,Stage 3: Impact with Violent Rotation,"Min Accel: 4.9 m/s², Max Accel: 26.2 m/s², Max Gyro: 158.8 °/s"
+7,BSC,Back-Sitting-Chair Fall,BSC_sub7_t1,FALL,FALL,TP,Yes,4600.0,178,197,9.82,Stage 3: Impact with Violent Rotation,"Min Accel: 3.8 m/s², Max Accel: 28.2 m/s², Max Gyro: 248.2 °/s"
+7,BSC,Back-Sitting-Chair Fall,BSC_sub7_t2,FALL,FALL,TP,Yes,4200.0,179,198,9.89,Stage 3: Impact with Violent Rotation,"Min Accel: 4.9 m/s², Max Accel: 25.7 m/s², Max Gyro: 295.9 °/s"
+7,BSC,Back-Sitting-Chair Fall,BSC_sub7_t3,FALL,FALL,TP,Yes,4250.0,178,197,9.84,Stage 3: Impact with Violent Rotation,"Min Accel: 6.7 m/s², Max Accel: 21.9 m/s², Max Gyro: 167.3 °/s"
+8,BSC,Back-Sitting-Chair Fall,BSC_sub8_t1,FALL,FALL,TP,Yes,2600.0,180,199,9.91,Stage 3: Impact with Violent Rotation,"Min Accel: 5.6 m/s², Max Accel: 24.1 m/s², Max Gyro: 156.8 °/s"
+8,BSC,Back-Sitting-Chair Fall,BSC_sub8_t2,FALL,FALL,TP,Yes,3600.0,178,197,9.83,Stage 3: Impact with Violent Rotation,"Min Accel: 5.3 m/s², Max Accel: 25.6 m/s², Max Gyro: 143.4 °/s"
+8,BSC,Back-Sitting-Chair Fall,BSC_sub8_t3,FALL,FALL,TP,Yes,4200.0,180,199,9.91,Stage 3: Impact with Violent Rotation,"Min Accel: 5.9 m/s², Max Accel: 21.9 m/s², Max Gyro: 166.8 °/s"
+9,BSC,Back-Sitting-Chair Fall,BSC_sub9_t1,FALL,FALL,TP,Yes,5300.0,180,199,9.92,Stage 3: Impact with Violent Rotation,"Min Accel: 3.8 m/s², Max Accel: 23.2 m/s², Max Gyro: 271.9 °/s"
+9,BSC,Back-Sitting-Chair Fall,BSC_sub9_t2,FALL,FALL,TP,Yes,5250.0,179,198,9.86,Stage 3: Impact with Violent Rotation,"Min Accel: 5.0 m/s², Max Accel: 19.7 m/s², Max Gyro: 260.3 °/s"
+9,BSC,Back-Sitting-Chair Fall,BSC_sub9_t3,FALL,FALL,TP,Yes,4700.0,180,199,9.95,Stage 4/5: Critical Fall & Post-Impact Stillness,"Min Accel: 3.7 m/s², Max Accel: 18.8 m/s², Max Gyro: 281.5 °/s"
+10,BSC,Back-Sitting-Chair Fall,BSC_sub10_t1,FALL,FALL,TP,Yes,4050.0,179,198,9.89,Stage 3: Impact with Violent Rotation,"Min Accel: 6.3 m/s², Max Accel: 21.2 m/s², Max Gyro: 239.7 °/s"
+10,BSC,Back-Sitting-Chair Fall,BSC_sub10_t2,FALL,FALL,TP,Yes,3250.0,178,197,9.84,Stage 3: Impact with Violent Rotation,"Min Accel: 6.3 m/s², Max Accel: 21.4 m/s², Max Gyro: 550.9 °/s"
+10,BSC,Back-Sitting-Chair Fall,BSC_sub10_t3,FALL,FALL,TP,Yes,3400.0,178,197,9.82,Stage 3: Impact with Violent Rotation,"Min Accel: 5.8 m/s², Max Accel: 21.7 m/s², Max Gyro: 385.3 °/s"
+11,BSC,Back-Sitting-Chair Fall,BSC_sub11_t1,FALL,FALL,TP,Yes,2900.0,181,200,9.97,Stage 3: Impact with Violent Rotation,"Min Accel: 1.6 m/s², Max Accel: 27.1 m/s², Max Gyro: 216.9 °/s"
+11,BSC,Back-Sitting-Chair Fall,BSC_sub11_t2,FALL,FALL,TP,Yes,2750.0,180,199,9.91,Stage 3: Impact with Violent Rotation,"Min Accel: 2.9 m/s², Max Accel: 31.2 m/s², Max Gyro: 209.0 °/s"
+11,BSC,Back-Sitting-Chair Fall,BSC_sub11_t3,FALL,FALL,TP,Yes,2900.0,181,200,9.97,Stage 3: Impact with Violent Rotation,"Min Accel: 1.3 m/s², Max Accel: 30.4 m/s², Max Gyro: 208.0 °/s"
+12,BSC,Back-Sitting-Chair Fall,BSC_sub12_t1,FALL,FALL,TP,Yes,3350.0,179,198,9.85,Stage 3: Impact with Violent Rotation,"Min Accel: 2.2 m/s², Max Accel: 29.3 m/s², Max Gyro: 256.6 °/s"
+12,BSC,Back-Sitting-Chair Fall,BSC_sub12_t2,FALL,FALL,TP,Yes,3700.0,179,198,9.86,Stage 4/5: Critical Fall & Post-Impact Stillness,"Min Accel: 5.4 m/s², Max Accel: 28.4 m/s², Max Gyro: 342.1 °/s"
+12,BSC,Back-Sitting-Chair Fall,BSC_sub12_t3,FALL,FALL,TP,Yes,3100.0,180,199,9.94,Stage 3: Impact with Violent Rotation,"Min Accel: 4.9 m/s², Max Accel: 25.0 m/s², Max Gyro: 246.1 °/s"
+13,BSC,Back-Sitting-Chair Fall,BSC_sub13_t1,FALL,FALL,TP,Yes,3900.0,178,197,9.84,Stage 4/5: Critical Fall & Post-Impact Stillness,"Min Accel: 5.7 m/s², Max Accel: 25.8 m/s², Max Gyro: 183.7 °/s"
+13,BSC,Back-Sitting-Chair Fall,BSC_sub13_t2,FALL,FALL,TP,Yes,4750.0,178,197,9.84,Stage 3: Impact with Violent Rotation,"Min Accel: 4.9 m/s², Max Accel: 29.1 m/s², Max Gyro: 281.8 °/s"
+13,BSC,Back-Sitting-Chair Fall,BSC_sub13_t3,FALL,FALL,TP,Yes,4350.0,179,198,9.86,Stage 4/5: Critical Fall & Post-Impact Stillness,"Min Accel: 3.0 m/s², Max Accel: 26.3 m/s², Max Gyro: 243.5 °/s"
+14,BSC,Back-Sitting-Chair Fall,BSC_sub14_t1,FALL,FALL,TP,Yes,3700.0,179,198,9.88,Stage 3: Impact with Violent Rotation,"Min Accel: 5.9 m/s², Max Accel: 19.0 m/s², Max Gyro: 154.9 °/s"
+14,BSC,Back-Sitting-Chair Fall,BSC_sub14_t2,FALL,FALL,TP,Yes,3250.0,178,197,9.84,Stage 3: Impact with Violent Rotation,"Min Accel: 6.6 m/s², Max Accel: 21.2 m/s², Max Gyro: 157.9 °/s"
+14,BSC,Back-Sitting-Chair Fall,BSC_sub14_t3,FALL,NORMAL,FN,No,N/A,179,198,9.87,N/A,N/A
+15,BSC,Back-Sitting-Chair Fall,BSC_sub15_t1,FALL,FALL,TP,Yes,4000.0,181,200,9.98,Stage 3: Impact with Violent Rotation,"Min Accel: 4.5 m/s², Max Accel: 23.6 m/s², Max Gyro: 201.5 °/s"
+15,BSC,Back-Sitting-Chair Fall,BSC_sub15_t2,FALL,FALL,TP,Yes,3550.0,181,200,9.96,Stage 3: Impact with Violent Rotation,"Min Accel: 6.6 m/s², Max Accel: 19.7 m/s², Max Gyro: 207.9 °/s"
+15,BSC,Back-Sitting-Chair Fall,BSC_sub15_t3,FALL,FALL,TP,Yes,3550.0,181,200,9.96,Stage 4/5: Critical Fall & Post-Impact Stillness,"Min Accel: 4.5 m/s², Max Accel: 24.8 m/s², Max Gyro: 271.0 °/s"
+16,BSC,Back-Sitting-Chair Fall,BSC_sub16_t1,FALL,FALL,TP,Yes,2850.0,179,198,9.87,Stage 4/5: Critical Fall & Post-Impact Stillness,"Min Accel: 6.3 m/s², Max Accel: 25.2 m/s², Max Gyro: 169.5 °/s"
+16,BSC,Back-Sitting-Chair Fall,BSC_sub16_t2,FALL,FALL,TP,Yes,2500.0,179,198,9.85,Stage 3: Impact with Violent Rotation,"Min Accel: 5.0 m/s², Max Accel: 21.7 m/s², Max Gyro: 162.3 °/s"
+16,BSC,Back-Sitting-Chair Fall,BSC_sub16_t3,FALL,FALL,TP,Yes,2600.0,177,196,9.8,Stage 4/5: Critical Fall & Post-Impact Stillness,"Min Accel: 5.5 m/s², Max Accel: 23.3 m/s², Max Gyro: 157.7 °/s"
+17,BSC,Back-Sitting-Chair Fall,BSC_sub17_t1,FALL,FALL,TP,Yes,3050.0,178,197,9.82,Stage 3: Impact with Violent Rotation,"Min Accel: 3.5 m/s², Max Accel: 26.6 m/s², Max Gyro: 206.3 °/s"
+17,BSC,Back-Sitting-Chair Fall,BSC_sub17_t2,FALL,FALL,TP,Yes,3500.0,181,200,9.97,Stage 3: Impact with Violent Rotation,"Min Accel: 2.6 m/s², Max Accel: 26.9 m/s², Max Gyro: 198.3 °/s"
+17,BSC,Back-Sitting-Chair Fall,BSC_sub17_t3,FALL,FALL,TP,Yes,4000.0,178,197,9.83,Stage 3: Impact with Violent Rotation,"Min Accel: 4.4 m/s², Max Accel: 21.6 m/s², Max Gyro: 202.3 °/s"
+18,BSC,Back-Sitting-Chair Fall,BSC_sub18_t1,FALL,FALL,TP,Yes,3600.0,179,198,9.85,Stage 4/5: Critical Fall & Post-Impact Stillness,"Min Accel: 2.7 m/s², Max Accel: 29.6 m/s², Max Gyro: 272.6 °/s"
+18,BSC,Back-Sitting-Chair Fall,BSC_sub18_t2,FALL,FALL,TP,Yes,4100.0,181,200,9.96,Stage 3: Impact with Violent Rotation,"Min Accel: 2.6 m/s², Max Accel: 24.2 m/s², Max Gyro: 234.8 °/s"
+18,BSC,Back-Sitting-Chair Fall,BSC_sub18_t3,FALL,FALL,TP,Yes,4100.0,178,197,9.8,Stage 3: Impact with Violent Rotation,"Min Accel: 1.7 m/s², Max Accel: 27.2 m/s², Max Gyro: 397.2 °/s"
+19,BSC,Back-Sitting-Chair Fall,BSC_sub19_t1,FALL,FALL,TP,Yes,3000.0,179,198,9.86,Stage 3: Impact with Violent Rotation,"Min Accel: 5.4 m/s², Max Accel: 25.3 m/s², Max Gyro: 280.4 °/s"
+19,BSC,Back-Sitting-Chair Fall,BSC_sub19_t2,FALL,FALL,TP,Yes,2700.0,179,198,9.87,Stage 3: Impact with Violent Rotation,"Min Accel: 3.7 m/s², Max Accel: 24.4 m/s², Max Gyro: 245.9 °/s"
+19,BSC,Back-Sitting-Chair Fall,BSC_sub19_t3,FALL,FALL,TP,Yes,3000.0,180,199,9.91,Stage 4/5: Critical Fall & Post-Impact Stillness,"Min Accel: 2.2 m/s², Max Accel: 24.5 m/s², Max Gyro: 299.8 °/s"
+20,BSC,Back-Sitting-Chair Fall,BSC_sub20_t1,FALL,FALL,TP,Yes,3250.0,179,198,9.86,Stage 4/5: Critical Fall & Post-Impact Stillness,"Min Accel: 4.1 m/s², Max Accel: 22.6 m/s², Max Gyro: 214.1 °/s"
+20,BSC,Back-Sitting-Chair Fall,BSC_sub20_t2,FALL,FALL,TP,Yes,4750.0,178,197,9.81,Stage 3: Impact with Violent Rotation,"Min Accel: 3.3 m/s², Max Accel: 25.5 m/s², Max Gyro: 250.7 °/s"
+20,BSC,Back-Sitting-Chair Fall,BSC_sub20_t3,FALL,FALL,TP,Yes,5200.0,181,200,9.96,Stage 4/5: Critical Fall & Post-Impact Stillness,"Min Accel: 3.5 m/s², Max Accel: 29.2 m/s², Max Gyro: 214.3 °/s"
+21,BSC,Back-Sitting-Chair Fall,BSC_sub21_t1,FALL,FALL,TP,Yes,4850.0,180,199,9.94,Stage 3: Impact with Violent Rotation,"Min Accel: 4.0 m/s², Max Accel: 25.6 m/s², Max Gyro: 380.5 °/s"
+21,BSC,Back-Sitting-Chair Fall,BSC_sub21_t2,FALL,FALL,TP,Yes,4750.0,181,200,9.97,Stage 3: Impact with Violent Rotation,"Min Accel: 3.3 m/s², Max Accel: 24.0 m/s², Max Gyro: 490.2 °/s"
+21,BSC,Back-Sitting-Chair Fall,BSC_sub21_t3,FALL,FALL,TP,Yes,4350.0,179,198,9.89,Stage 3: Impact with Violent Rotation,"Min Accel: 3.7 m/s², Max Accel: 30.7 m/s², Max Gyro: 384.2 °/s"
+29,BSC,Back-Sitting-Chair Fall,BSC_sub29_t1,FALL,NORMAL,FN,No,N/A,180,199,9.95,N/A,N/A
+29,BSC,Back-Sitting-Chair Fall,BSC_sub29_t2,FALL,FALL,TP,Yes,3750.0,178,197,9.83,Stage 3: Impact with Violent Rotation,"Min Accel: 6.6 m/s², Max Accel: 20.8 m/s², Max Gyro: 186.2 °/s"
+29,BSC,Back-Sitting-Chair Fall,BSC_sub29_t3,FALL,FALL,TP,Yes,4050.0,180,199,9.94,Stage 3: Impact with Violent Rotation,"Min Accel: 6.0 m/s², Max Accel: 27.1 m/s², Max Gyro: 206.0 °/s"
+30,BSC,Back-Sitting-Chair Fall,BSC_sub30_t1,FALL,FALL,TP,Yes,4500.0,179,198,9.86,Stage 4/5: Critical Fall & Post-Impact Stillness,"Min Accel: 3.8 m/s², Max Accel: 28.5 m/s², Max Gyro: 232.1 °/s"
+30,BSC,Back-Sitting-Chair Fall,BSC_sub30_t2,FALL,FALL,TP,Yes,5350.0,178,197,9.84,Stage 3: Impact with Violent Rotation,"Min Accel: 3.8 m/s², Max Accel: 28.3 m/s², Max Gyro: 290.7 °/s"
+30,BSC,Back-Sitting-Chair Fall,BSC_sub30_t3,FALL,FALL,TP,Yes,3350.0,180,199,9.94,Stage 3: Impact with Violent Rotation,"Min Accel: 4.9 m/s², Max Accel: 19.5 m/s², Max Gyro: 349.3 °/s"
+31,BSC,Back-Sitting-Chair Fall,BSC_sub31_t1,FALL,FALL,TP,Yes,4100.0,181,200,9.98,Stage 3: Impact with Violent Rotation,"Min Accel: 5.7 m/s², Max Accel: 23.5 m/s², Max Gyro: 435.3 °/s"
+31,BSC,Back-Sitting-Chair Fall,BSC_sub31_t2,FALL,FALL,TP,Yes,4050.0,181,200,9.99,Stage 3: Impact with Violent Rotation,"Min Accel: 6.2 m/s², Max Accel: 20.6 m/s², Max Gyro: 646.4 °/s"
+31,BSC,Back-Sitting-Chair Fall,BSC_sub31_t3,FALL,FALL,TP,Yes,3550.0,180,199,9.94,Stage 3: Impact with Violent Rotation,"Min Accel: 4.6 m/s², Max Accel: 25.0 m/s², Max Gyro: 184.1 °/s"
+1,FKL,Front-Knees-Lying Fall,FKL_sub1_t1,FALL,FALL,TP,Yes,5250.0,179,198,9.9,Stage 3: Impact with Violent Rotation,"Min Accel: 3.6 m/s², Max Accel: 21.6 m/s², Max Gyro: 256.0 °/s"
+1,FKL,Front-Knees-Lying Fall,FKL_sub1_t2,FALL,FALL,TP,Yes,4550.0,180,199,9.9,Stage 3: Impact with Violent Rotation,"Min Accel: 3.3 m/s², Max Accel: 22.4 m/s², Max Gyro: 285.1 °/s"
+1,FKL,Front-Knees-Lying Fall,FKL_sub1_t3,FALL,FALL,TP,Yes,4400.0,178,197,9.84,Stage 3: Impact with Violent Rotation,"Min Accel: 2.7 m/s², Max Accel: 22.5 m/s², Max Gyro: 238.7 °/s"
+2,FKL,Front-Knees-Lying Fall,FKL_sub2_t1,FALL,FALL,TP,Yes,3500.0,181,200,9.96,Stage 3: Impact with Violent Rotation,"Min Accel: 3.9 m/s², Max Accel: 22.5 m/s², Max Gyro: 398.7 °/s"
+2,FKL,Front-Knees-Lying Fall,FKL_sub2_t2,FALL,FALL,TP,Yes,3500.0,179,198,9.89,Stage 4/5: Critical Fall & Post-Impact Stillness,"Min Accel: 1.8 m/s², Max Accel: 22.2 m/s², Max Gyro: 437.2 °/s"
+2,FKL,Front-Knees-Lying Fall,FKL_sub2_t3,FALL,FALL,TP,Yes,3600.0,177,196,9.8,Stage 3: Impact with Violent Rotation,"Min Accel: 5.7 m/s², Max Accel: 22.3 m/s², Max Gyro: 366.6 °/s"
+3,FKL,Front-Knees-Lying Fall,FKL_sub3_t1,FALL,FALL,TP,Yes,3500.0,279,298,14.86,Stage 3: Impact with Violent Rotation,"Min Accel: 1.4 m/s², Max Accel: 21.9 m/s², Max Gyro: 243.1 °/s"
+3,FKL,Front-Knees-Lying Fall,FKL_sub3_t2,FALL,FALL,TP,Yes,3350.0,179,198,9.89,Stage 3: Impact with Violent Rotation,"Min Accel: 2.5 m/s², Max Accel: 23.5 m/s², Max Gyro: 222.0 °/s"
+3,FKL,Front-Knees-Lying Fall,FKL_sub3_t3,FALL,FALL,TP,Yes,4200.0,178,197,9.84,Stage 3: Impact with Violent Rotation,"Min Accel: 2.0 m/s², Max Accel: 20.5 m/s², Max Gyro: 231.6 °/s"
+4,FKL,Front-Knees-Lying Fall,FKL_sub4_t1,FALL,FALL,TP,Yes,4400.0,180,199,9.93,Stage 3: Impact with Violent Rotation,"Min Accel: 3.0 m/s², Max Accel: 21.2 m/s², Max Gyro: 434.2 °/s"
+4,FKL,Front-Knees-Lying Fall,FKL_sub4_t2,FALL,FALL,TP,Yes,4050.0,180,199,9.91,Stage 3: Impact with Violent Rotation,"Min Accel: 3.2 m/s², Max Accel: 25.6 m/s², Max Gyro: 415.3 °/s"
+4,FKL,Front-Knees-Lying Fall,FKL_sub4_t3,FALL,FALL,TP,Yes,4200.0,180,199,9.91,Stage 3: Impact with Violent Rotation,"Min Accel: 4.5 m/s², Max Accel: 21.7 m/s², Max Gyro: 441.7 °/s"
+5,FKL,Front-Knees-Lying Fall,FKL_sub5_t1,FALL,FALL,TP,Yes,3600.0,181,200,9.96,Stage 3: Impact with Violent Rotation,"Min Accel: 1.8 m/s², Max Accel: 24.7 m/s², Max Gyro: 441.2 °/s"
+5,FKL,Front-Knees-Lying Fall,FKL_sub5_t2,FALL,FALL,TP,Yes,3700.0,179,198,9.85,Stage 3: Impact with Violent Rotation,"Min Accel: 2.8 m/s², Max Accel: 25.4 m/s², Max Gyro: 256.9 °/s"
+5,FKL,Front-Knees-Lying Fall,FKL_sub5_t3,FALL,FALL,TP,Yes,3700.0,179,198,9.85,Stage 3: Impact with Violent Rotation,"Min Accel: 3.2 m/s², Max Accel: 27.7 m/s², Max Gyro: 468.3 °/s"
+6,FKL,Front-Knees-Lying Fall,FKL_sub6_t1,FALL,FALL,TP,Yes,4000.0,180,199,9.93,Stage 3: Impact with Violent Rotation,"Min Accel: 1.9 m/s², Max Accel: 25.4 m/s², Max Gyro: 221.3 °/s"
+6,FKL,Front-Knees-Lying Fall,FKL_sub6_t2,FALL,FALL,TP,Yes,4500.0,178,197,9.82,Stage 3: Impact with Violent Rotation,"Min Accel: 2.7 m/s², Max Accel: 24.1 m/s², Max Gyro: 227.4 °/s"
+6,FKL,Front-Knees-Lying Fall,FKL_sub6_t3,FALL,FALL,TP,Yes,1600.0,178,197,9.85,Stage 3: Impact with Violent Rotation,"Min Accel: 5.4 m/s², Max Accel: 15.1 m/s², Max Gyro: 131.2 °/s"
+7,FKL,Front-Knees-Lying Fall,FKL_sub7_t1,FALL,FALL,TP,Yes,3750.0,181,200,9.99,Stage 3: Impact with Violent Rotation,"Min Accel: 1.6 m/s², Max Accel: 20.3 m/s², Max Gyro: 279.5 °/s"
+7,FKL,Front-Knees-Lying Fall,FKL_sub7_t2,FALL,FALL,TP,Yes,4400.0,180,199,9.93,Stage 4/5: Critical Fall & Post-Impact Stillness,"Min Accel: 4.1 m/s², Max Accel: 25.3 m/s², Max Gyro: 237.4 °/s"
+7,FKL,Front-Knees-Lying Fall,FKL_sub7_t3,FALL,FALL,TP,Yes,4050.0,180,199,9.94,Stage 3: Impact with Violent Rotation,"Min Accel: 3.4 m/s², Max Accel: 21.4 m/s², Max Gyro: 255.3 °/s"
+8,FKL,Front-Knees-Lying Fall,FKL_sub8_t1,FALL,FALL,TP,Yes,4350.0,181,200,10.0,Stage 3: Impact with Violent Rotation,"Min Accel: 4.2 m/s², Max Accel: 19.5 m/s², Max Gyro: 236.4 °/s"
+8,FKL,Front-Knees-Lying Fall,FKL_sub8_t2,FALL,FALL,TP,Yes,3900.0,179,198,9.87,Stage 3: Impact with Violent Rotation,"Min Accel: 3.6 m/s², Max Accel: 21.0 m/s², Max Gyro: 202.0 °/s"
+8,FKL,Front-Knees-Lying Fall,FKL_sub8_t3,FALL,FALL,TP,Yes,3600.0,180,199,9.94,Stage 3: Impact with Violent Rotation,"Min Accel: 4.2 m/s², Max Accel: 20.9 m/s², Max Gyro: 243.1 °/s"
+9,FKL,Front-Knees-Lying Fall,FKL_sub9_t1,FALL,FALL,TP,Yes,4200.0,179,198,9.87,Stage 3: Impact with Violent Rotation,"Min Accel: 6.6 m/s², Max Accel: 22.1 m/s², Max Gyro: 508.4 °/s"
+9,FKL,Front-Knees-Lying Fall,FKL_sub9_t2,FALL,FALL,TP,Yes,4500.0,179,198,9.89,Stage 3: Impact with Violent Rotation,"Min Accel: 5.7 m/s², Max Accel: 19.1 m/s², Max Gyro: 527.3 °/s"
+9,FKL,Front-Knees-Lying Fall,FKL_sub9_t3,FALL,FALL,TP,Yes,3850.0,180,199,9.9,Stage 3: Impact with Violent Rotation,"Min Accel: 5.6 m/s², Max Accel: 18.8 m/s², Max Gyro: 313.1 °/s"
+10,FKL,Front-Knees-Lying Fall,FKL_sub10_t1,FALL,FALL,TP,Yes,4000.0,181,200,9.98,Stage 3: Impact with Violent Rotation,"Min Accel: 1.9 m/s², Max Accel: 19.7 m/s², Max Gyro: 239.5 °/s"
+10,FKL,Front-Knees-Lying Fall,FKL_sub10_t2,FALL,FALL,TP,Yes,3700.0,179,198,9.85,Stage 3: Impact with Violent Rotation,"Min Accel: 5.6 m/s², Max Accel: 21.2 m/s², Max Gyro: 221.5 °/s"
+10,FKL,Front-Knees-Lying Fall,FKL_sub10_t3,FALL,FALL,TP,Yes,4400.0,181,200,9.97,Stage 3: Impact with Violent Rotation,"Min Accel: 5.5 m/s², Max Accel: 20.4 m/s², Max Gyro: 288.1 °/s"
+11,FKL,Front-Knees-Lying Fall,FKL_sub11_t1,FALL,FALL,TP,Yes,3400.0,178,197,9.83,Stage 3: Impact with Violent Rotation,"Min Accel: 5.2 m/s², Max Accel: 21.0 m/s², Max Gyro: 240.3 °/s"
+11,FKL,Front-Knees-Lying Fall,FKL_sub11_t2,FALL,FALL,TP,Yes,4100.0,181,200,9.97,Stage 3: Impact with Violent Rotation,"Min Accel: 3.6 m/s², Max Accel: 18.4 m/s², Max Gyro: 204.2 °/s"
+11,FKL,Front-Knees-Lying Fall,FKL_sub11_t3,FALL,FALL,TP,Yes,4050.0,180,199,9.94,Stage 3: Impact with Violent Rotation,"Min Accel: 5.1 m/s², Max Accel: 21.1 m/s², Max Gyro: 234.3 °/s"
+12,FKL,Front-Knees-Lying Fall,FKL_sub12_t1,FALL,FALL,TP,Yes,3350.0,180,199,9.95,Stage 3: Impact with Violent Rotation,"Min Accel: 4.6 m/s², Max Accel: 23.7 m/s², Max Gyro: 522.1 °/s"
+12,FKL,Front-Knees-Lying Fall,FKL_sub12_t2,FALL,FALL,TP,Yes,2900.0,181,200,9.96,Stage 3: Impact with Violent Rotation,"Min Accel: 5.5 m/s², Max Accel: 22.0 m/s², Max Gyro: 514.4 °/s"
+12,FKL,Front-Knees-Lying Fall,FKL_sub12_t3,FALL,FALL,TP,Yes,3100.0,179,198,9.88,Stage 3: Impact with Violent Rotation,"Min Accel: 3.4 m/s², Max Accel: 23.0 m/s², Max Gyro: 573.6 °/s"
+13,FKL,Front-Knees-Lying Fall,FKL_sub13_t1,FALL,FALL,TP,Yes,3900.0,178,197,9.8,Stage 3: Impact with Violent Rotation,"Min Accel: 4.2 m/s², Max Accel: 26.0 m/s², Max Gyro: 436.9 °/s"
+13,FKL,Front-Knees-Lying Fall,FKL_sub13_t2,FALL,FALL,TP,Yes,3350.0,179,198,9.86,Stage 3: Impact with Violent Rotation,"Min Accel: 3.6 m/s², Max Accel: 22.8 m/s², Max Gyro: 358.2 °/s"
+13,FKL,Front-Knees-Lying Fall,FKL_sub13_t3,FALL,FALL,TP,Yes,3750.0,180,199,9.95,Stage 3: Impact with Violent Rotation,"Min Accel: 4.5 m/s², Max Accel: 22.9 m/s², Max Gyro: 426.3 °/s"
+14,FKL,Front-Knees-Lying Fall,FKL_sub14_t1,FALL,FALL,TP,Yes,3500.0,180,199,9.91,Stage 3: Impact with Violent Rotation,"Min Accel: 1.1 m/s², Max Accel: 19.1 m/s², Max Gyro: 218.3 °/s"
+14,FKL,Front-Knees-Lying Fall,FKL_sub14_t2,FALL,FALL,TP,Yes,3250.0,180,199,9.91,Stage 3: Impact with Violent Rotation,"Min Accel: 4.3 m/s², Max Accel: 18.6 m/s², Max Gyro: 225.6 °/s"
+14,FKL,Front-Knees-Lying Fall,FKL_sub14_t3,FALL,FALL,TP,Yes,4500.0,181,200,9.98,Stage 3: Impact with Violent Rotation,"Min Accel: 3.2 m/s², Max Accel: 18.9 m/s², Max Gyro: 464.7 °/s"
+15,FKL,Front-Knees-Lying Fall,FKL_sub15_t1,FALL,FALL,TP,Yes,3750.0,181,200,9.97,Stage 4/5: Critical Fall & Post-Impact Stillness,"Min Accel: 1.8 m/s², Max Accel: 22.6 m/s², Max Gyro: 594.4 °/s"
+15,FKL,Front-Knees-Lying Fall,FKL_sub15_t2,FALL,FALL,TP,Yes,3850.0,178,197,9.84,Stage 3: Impact with Violent Rotation,"Min Accel: 1.7 m/s², Max Accel: 19.2 m/s², Max Gyro: 567.4 °/s"
+15,FKL,Front-Knees-Lying Fall,FKL_sub15_t3,FALL,FALL,TP,Yes,3900.0,180,199,9.94,Stage 3: Impact with Violent Rotation,"Min Accel: 3.6 m/s², Max Accel: 22.7 m/s², Max Gyro: 553.4 °/s"
+16,FKL,Front-Knees-Lying Fall,FKL_sub16_t1,FALL,FALL,TP,Yes,4000.0,179,198,9.85,Stage 3: Impact with Violent Rotation,"Min Accel: 3.4 m/s², Max Accel: 17.5 m/s², Max Gyro: 181.8 °/s"
+16,FKL,Front-Knees-Lying Fall,FKL_sub16_t2,FALL,FALL,TP,Yes,3750.0,180,199,9.93,Stage 3: Impact with Violent Rotation,"Min Accel: 5.8 m/s², Max Accel: 19.0 m/s², Max Gyro: 215.8 °/s"
+16,FKL,Front-Knees-Lying Fall,FKL_sub16_t3,FALL,FALL,TP,Yes,3900.0,179,198,9.89,Stage 3: Impact with Violent Rotation,"Min Accel: 4.2 m/s², Max Accel: 20.1 m/s², Max Gyro: 198.7 °/s"
+17,FKL,Front-Knees-Lying Fall,FKL_sub17_t1,FALL,FALL,TP,Yes,3700.0,180,199,9.94,Stage 3: Impact with Violent Rotation,"Min Accel: 4.3 m/s², Max Accel: 22.8 m/s², Max Gyro: 351.1 °/s"
+17,FKL,Front-Knees-Lying Fall,FKL_sub17_t2,FALL,FALL,TP,Yes,4250.0,180,199,9.93,Stage 3: Impact with Violent Rotation,"Min Accel: 3.9 m/s², Max Accel: 18.3 m/s², Max Gyro: 199.6 °/s"
+17,FKL,Front-Knees-Lying Fall,FKL_sub17_t3,FALL,FALL,TP,Yes,3850.0,180,199,9.92,Stage 3: Impact with Violent Rotation,"Min Accel: 4.1 m/s², Max Accel: 21.2 m/s², Max Gyro: 317.4 °/s"
+18,FKL,Front-Knees-Lying Fall,FKL_sub18_t1,FALL,FALL,TP,Yes,4000.0,181,200,9.97,Stage 3: Impact with Violent Rotation,"Min Accel: 3.0 m/s², Max Accel: 25.4 m/s², Max Gyro: 262.5 °/s"
+18,FKL,Front-Knees-Lying Fall,FKL_sub18_t2,FALL,FALL,TP,Yes,4000.0,180,199,9.92,Stage 3: Impact with Violent Rotation,"Min Accel: 5.7 m/s², Max Accel: 23.5 m/s², Max Gyro: 225.2 °/s"
+18,FKL,Front-Knees-Lying Fall,FKL_sub18_t3,FALL,FALL,TP,Yes,3550.0,180,199,9.95,Stage 3: Impact with Violent Rotation,"Min Accel: 4.5 m/s², Max Accel: 26.6 m/s², Max Gyro: 282.1 °/s"
+19,FKL,Front-Knees-Lying Fall,FKL_sub19_t1,FALL,FALL,TP,Yes,3100.0,178,197,9.81,Stage 3: Impact with Violent Rotation,"Min Accel: 5.1 m/s², Max Accel: 26.2 m/s², Max Gyro: 245.4 °/s"
+19,FKL,Front-Knees-Lying Fall,FKL_sub19_t2,FALL,FALL,TP,Yes,3050.0,179,198,9.86,Stage 3: Impact with Violent Rotation,"Min Accel: 4.0 m/s², Max Accel: 27.7 m/s², Max Gyro: 323.8 °/s"
+19,FKL,Front-Knees-Lying Fall,FKL_sub19_t3,FALL,FALL,TP,Yes,3250.0,177,196,9.8,Stage 4/5: Critical Fall & Post-Impact Stillness,"Min Accel: 1.8 m/s², Max Accel: 24.0 m/s², Max Gyro: 290.9 °/s"
+20,FKL,Front-Knees-Lying Fall,FKL_sub20_t1,FALL,FALL,TP,Yes,3500.0,180,199,9.95,Stage 3: Impact with Violent Rotation,"Min Accel: 2.5 m/s², Max Accel: 24.8 m/s², Max Gyro: 274.2 °/s"
+20,FKL,Front-Knees-Lying Fall,FKL_sub20_t2,FALL,FALL,TP,Yes,3500.0,179,198,9.9,Stage 3: Impact with Violent Rotation,"Min Accel: 4.5 m/s², Max Accel: 20.1 m/s², Max Gyro: 306.7 °/s"
+20,FKL,Front-Knees-Lying Fall,FKL_sub20_t3,FALL,FALL,TP,Yes,4000.0,180,199,9.93,Stage 4/5: Critical Fall & Post-Impact Stillness,"Min Accel: 3.4 m/s², Max Accel: 19.3 m/s², Max Gyro: 350.1 °/s"
+21,FKL,Front-Knees-Lying Fall,FKL_sub21_t1,FALL,FALL,TP,Yes,3000.0,178,197,9.8,Stage 3: Impact with Violent Rotation,"Min Accel: 2.5 m/s², Max Accel: 26.2 m/s², Max Gyro: 284.7 °/s"
+21,FKL,Front-Knees-Lying Fall,FKL_sub21_t2,FALL,FALL,TP,Yes,4100.0,178,197,9.85,Stage 4/5: Critical Fall & Post-Impact Stillness,"Min Accel: 2.1 m/s², Max Accel: 20.4 m/s², Max Gyro: 312.0 °/s"
+21,FKL,Front-Knees-Lying Fall,FKL_sub21_t3,FALL,FALL,TP,Yes,3400.0,181,200,9.98,Stage 3: Impact with Violent Rotation,"Min Accel: 3.9 m/s², Max Accel: 19.3 m/s², Max Gyro: 456.6 °/s"
+29,FKL,Front-Knees-Lying Fall,FKL_sub29_t1,FALL,FALL,TP,Yes,4200.0,179,198,9.88,Stage 3: Impact with Violent Rotation,"Min Accel: 2.4 m/s², Max Accel: 23.1 m/s², Max Gyro: 205.8 °/s"
+29,FKL,Front-Knees-Lying Fall,FKL_sub29_t2,FALL,FALL,TP,Yes,4200.0,181,200,10.0,Stage 4/5: Critical Fall & Post-Impact Stillness,"Min Accel: 2.7 m/s², Max Accel: 24.6 m/s², Max Gyro: 697.6 °/s"
+29,FKL,Front-Knees-Lying Fall,FKL_sub29_t3,FALL,FALL,TP,Yes,4600.0,181,200,9.97,Stage 3: Impact with Violent Rotation,"Min Accel: 3.5 m/s², Max Accel: 18.4 m/s², Max Gyro: 203.6 °/s"
+30,FKL,Front-Knees-Lying Fall,FKL_sub30_t1,FALL,FALL,TP,Yes,4550.0,178,197,9.84,Stage 4/5: Critical Fall & Post-Impact Stillness,"Min Accel: 3.8 m/s², Max Accel: 25.2 m/s², Max Gyro: 249.3 °/s"
+30,FKL,Front-Knees-Lying Fall,FKL_sub30_t2,FALL,FALL,TP,Yes,4550.0,180,199,9.91,Stage 3: Impact with Violent Rotation,"Min Accel: 2.9 m/s², Max Accel: 21.0 m/s², Max Gyro: 231.0 °/s"
+30,FKL,Front-Knees-Lying Fall,FKL_sub30_t3,FALL,FALL,TP,Yes,5050.0,178,197,9.82,Stage 3: Impact with Violent Rotation,"Min Accel: 1.7 m/s², Max Accel: 24.1 m/s², Max Gyro: 300.6 °/s"
+31,FKL,Front-Knees-Lying Fall,FKL_sub31_t1,FALL,FALL,TP,Yes,4400.0,178,197,9.84,Stage 3: Impact with Violent Rotation,"Min Accel: 5.4 m/s², Max Accel: 19.2 m/s², Max Gyro: 321.0 °/s"
+31,FKL,Front-Knees-Lying Fall,FKL_sub31_t2,FALL,FALL,TP,Yes,3500.0,179,198,9.86,Stage 3: Impact with Violent Rotation,"Min Accel: 4.0 m/s², Max Accel: 25.8 m/s², Max Gyro: 312.0 °/s"
+31,FKL,Front-Knees-Lying Fall,FKL_sub31_t3,FALL,FALL,TP,Yes,4250.0,181,200,9.96,Stage 4/5: Critical Fall & Post-Impact Stillness,"Min Accel: 6.2 m/s², Max Accel: 20.5 m/s², Max Gyro: 333.7 °/s"
+1,FOL,Forward-Lying Fall,FOL_sub1_t1,FALL,FALL,TP,Yes,4200.0,179,198,9.86,Stage 3: Impact with Violent Rotation,"Min Accel: 2.4 m/s², Max Accel: 28.1 m/s², Max Gyro: 453.7 °/s"
+1,FOL,Forward-Lying Fall,FOL_sub1_t2,FALL,FALL,TP,Yes,4250.0,179,198,9.87,Stage 3: Impact with Violent Rotation,"Min Accel: 2.9 m/s², Max Accel: 30.2 m/s², Max Gyro: 541.6 °/s"
+1,FOL,Forward-Lying Fall,FOL_sub1_t3,FALL,FALL,TP,Yes,4400.0,179,198,9.87,Stage 3: Impact with Violent Rotation,"Min Accel: 2.3 m/s², Max Accel: 26.6 m/s², Max Gyro: 286.8 °/s"
+2,FOL,Forward-Lying Fall,FOL_sub2_t1,FALL,FALL,TP,Yes,3550.0,177,196,9.8,Stage 3: Impact with Violent Rotation,"Min Accel: 2.3 m/s², Max Accel: 20.3 m/s², Max Gyro: 295.9 °/s"
+2,FOL,Forward-Lying Fall,FOL_sub2_t2,FALL,FALL,TP,Yes,3400.0,180,199,9.94,Stage 3: Impact with Violent Rotation,"Min Accel: 4.0 m/s², Max Accel: 30.1 m/s², Max Gyro: 267.8 °/s"
+2,FOL,Forward-Lying Fall,FOL_sub2_t3,FALL,FALL,TP,Yes,3750.0,181,200,9.96,Stage 3: Impact with Violent Rotation,"Min Accel: 3.8 m/s², Max Accel: 23.9 m/s², Max Gyro: 307.5 °/s"
+3,FOL,Forward-Lying Fall,FOL_sub3_t1,FALL,FALL,TP,Yes,3600.0,181,200,9.97,Stage 3: Impact with Violent Rotation,"Min Accel: 1.2 m/s², Max Accel: 32.5 m/s², Max Gyro: 341.4 °/s"
+3,FOL,Forward-Lying Fall,FOL_sub3_t2,FALL,FALL,TP,Yes,3200.0,178,197,9.81,Stage 3: Impact with Violent Rotation,"Min Accel: 4.1 m/s², Max Accel: 19.9 m/s², Max Gyro: 186.2 °/s"
+3,FOL,Forward-Lying Fall,FOL_sub3_t3,FALL,FALL,TP,Yes,3500.0,180,199,9.94,Stage 3: Impact with Violent Rotation,"Min Accel: 3.8 m/s², Max Accel: 26.7 m/s², Max Gyro: 197.4 °/s"
+4,FOL,Forward-Lying Fall,FOL_sub4_t1,FALL,FALL,TP,Yes,5100.0,178,197,9.8,Stage 3: Impact with Violent Rotation,"Min Accel: 2.2 m/s², Max Accel: 25.1 m/s², Max Gyro: 191.7 °/s"
+4,FOL,Forward-Lying Fall,FOL_sub4_t2,FALL,FALL,TP,Yes,4200.0,177,196,9.76,Stage 3: Impact with Violent Rotation,"Min Accel: 2.8 m/s², Max Accel: 22.9 m/s², Max Gyro: 427.5 °/s"
+4,FOL,Forward-Lying Fall,FOL_sub4_t3,FALL,FALL,TP,Yes,4500.0,180,199,9.91,Stage 3: Impact with Violent Rotation,"Min Accel: 2.1 m/s², Max Accel: 24.3 m/s², Max Gyro: 616.1 °/s"
+5,FOL,Forward-Lying Fall,FOL_sub5_t1,FALL,FALL,TP,Yes,3850.0,179,198,9.87,Stage 3: Impact with Violent Rotation,"Min Accel: 4.5 m/s², Max Accel: 20.3 m/s², Max Gyro: 642.5 °/s"
+5,FOL,Forward-Lying Fall,FOL_sub5_t2,FALL,FALL,TP,Yes,3900.0,181,200,9.96,Stage 3: Impact with Violent Rotation,"Min Accel: 5.9 m/s², Max Accel: 28.6 m/s², Max Gyro: 358.5 °/s"
+5,FOL,Forward-Lying Fall,FOL_sub5_t3,FALL,FALL,TP,Yes,4050.0,181,200,10.0,Stage 3: Impact with Violent Rotation,"Min Accel: 6.5 m/s², Max Accel: 22.9 m/s², Max Gyro: 694.6 °/s"
+6,FOL,Forward-Lying Fall,FOL_sub6_t1,FALL,FALL,TP,Yes,3600.0,181,200,9.99,Stage 3: Impact with Violent Rotation,"Min Accel: 3.7 m/s², Max Accel: 24.0 m/s², Max Gyro: 777.9 °/s"
+6,FOL,Forward-Lying Fall,FOL_sub6_t2,FALL,FALL,TP,Yes,3850.0,180,199,9.93,Stage 3: Impact with Violent Rotation,"Min Accel: 6.3 m/s², Max Accel: 26.4 m/s², Max Gyro: 364.5 °/s"
+6,FOL,Forward-Lying Fall,FOL_sub6_t3,FALL,FALL,TP,Yes,3850.0,180,199,9.92,Stage 3: Impact with Violent Rotation,"Min Accel: 5.9 m/s², Max Accel: 22.8 m/s², Max Gyro: 348.3 °/s"
+7,FOL,Forward-Lying Fall,FOL_sub7_t1,FALL,FALL,TP,Yes,1900.0,180,199,9.9,Stage 3: Impact with Violent Rotation,"Min Accel: 4.6 m/s², Max Accel: 14.5 m/s², Max Gyro: 163.0 °/s"
+7,FOL,Forward-Lying Fall,FOL_sub7_t2,FALL,FALL,TP,Yes,3500.0,178,197,9.82,Stage 3: Impact with Violent Rotation,"Min Accel: 1.5 m/s², Max Accel: 25.7 m/s², Max Gyro: 242.3 °/s"
+7,FOL,Forward-Lying Fall,FOL_sub7_t3,FALL,FALL,TP,Yes,3600.0,178,197,9.82,Stage 3: Impact with Violent Rotation,"Min Accel: 5.8 m/s², Max Accel: 23.8 m/s², Max Gyro: 207.2 °/s"
+8,FOL,Forward-Lying Fall,FOL_sub8_t1,FALL,FALL,TP,Yes,3750.0,180,199,9.92,Stage 3: Impact with Violent Rotation,"Min Accel: 1.1 m/s², Max Accel: 23.6 m/s², Max Gyro: 255.2 °/s"
+8,FOL,Forward-Lying Fall,FOL_sub8_t2,FALL,FALL,TP,Yes,4050.0,180,199,9.94,Stage 3: Impact with Violent Rotation,"Min Accel: 5.7 m/s², Max Accel: 17.0 m/s², Max Gyro: 197.9 °/s"
+8,FOL,Forward-Lying Fall,FOL_sub8_t3,FALL,FALL,TP,Yes,3900.0,179,198,9.88,Stage 3: Impact with Violent Rotation,"Min Accel: 3.0 m/s², Max Accel: 20.9 m/s², Max Gyro: 196.1 °/s"
+9,FOL,Forward-Lying Fall,FOL_sub9_t1,FALL,FALL,TP,Yes,3500.0,180,199,9.93,Stage 3: Impact with Violent Rotation,"Min Accel: 4.3 m/s², Max Accel: 25.4 m/s², Max Gyro: 441.8 °/s"
+9,FOL,Forward-Lying Fall,FOL_sub9_t2,FALL,FALL,TP,Yes,3750.0,179,198,9.87,Stage 4/5: Critical Fall & Post-Impact Stillness,"Min Accel: 2.0 m/s², Max Accel: 23.2 m/s², Max Gyro: 367.7 °/s"
+9,FOL,Forward-Lying Fall,FOL_sub9_t3,FALL,FALL,TP,Yes,3700.0,182,201,10.0,Stage 3: Impact with Violent Rotation,"Min Accel: 5.5 m/s², Max Accel: 21.3 m/s², Max Gyro: 317.9 °/s"
+10,FOL,Forward-Lying Fall,FOL_sub10_t1,FALL,FALL,TP,Yes,5450.0,178,197,9.84,Stage 3: Impact with Violent Rotation,"Min Accel: 3.2 m/s², Max Accel: 24.1 m/s², Max Gyro: 530.1 °/s"
+10,FOL,Forward-Lying Fall,FOL_sub10_t2,FALL,FALL,TP,Yes,4700.0,178,197,9.84,Stage 3: Impact with Violent Rotation,"Min Accel: 4.3 m/s², Max Accel: 18.1 m/s², Max Gyro: 222.6 °/s"
+10,FOL,Forward-Lying Fall,FOL_sub10_t3,FALL,FALL,TP,Yes,4400.0,180,199,9.91,Stage 3: Impact with Violent Rotation,"Min Accel: 4.7 m/s², Max Accel: 17.2 m/s², Max Gyro: 206.2 °/s"
+11,FOL,Forward-Lying Fall,FOL_sub11_t1,FALL,FALL,TP,Yes,3700.0,178,197,9.82,Stage 3: Impact with Violent Rotation,"Min Accel: 5.2 m/s², Max Accel: 22.6 m/s², Max Gyro: 390.7 °/s"
+11,FOL,Forward-Lying Fall,FOL_sub11_t2,FALL,FALL,TP,Yes,3900.0,180,199,9.94,Stage 3: Impact with Violent Rotation,"Min Accel: 2.0 m/s², Max Accel: 21.5 m/s², Max Gyro: 295.2 °/s"
+11,FOL,Forward-Lying Fall,FOL_sub11_t3,FALL,FALL,TP,Yes,4000.0,180,199,9.94,Stage 3: Impact with Violent Rotation,"Min Accel: 4.1 m/s², Max Accel: 20.1 m/s², Max Gyro: 335.1 °/s"
+12,FOL,Forward-Lying Fall,FOL_sub12_t1,FALL,FALL,TP,Yes,3050.0,179,198,9.88,Stage 3: Impact with Violent Rotation,"Min Accel: 2.1 m/s², Max Accel: 28.1 m/s², Max Gyro: 328.7 °/s"
+12,FOL,Forward-Lying Fall,FOL_sub12_t2,FALL,FALL,TP,Yes,2900.0,181,200,9.98,Stage 3: Impact with Violent Rotation,"Min Accel: 3.3 m/s², Max Accel: 24.3 m/s², Max Gyro: 175.2 °/s"
+12,FOL,Forward-Lying Fall,FOL_sub12_t3,FALL,FALL,TP,Yes,3100.0,179,198,9.89,Stage 3: Impact with Violent Rotation,"Min Accel: 2.7 m/s², Max Accel: 27.6 m/s², Max Gyro: 196.6 °/s"
+13,FOL,Forward-Lying Fall,FOL_sub13_t1,FALL,FALL,TP,Yes,4350.0,179,198,9.88,Stage 3: Impact with Violent Rotation,"Min Accel: 0.7 m/s², Max Accel: 29.0 m/s², Max Gyro: 360.9 °/s"
+13,FOL,Forward-Lying Fall,FOL_sub13_t2,FALL,FALL,TP,Yes,4050.0,180,199,9.91,Stage 3: Impact with Violent Rotation,"Min Accel: 3.9 m/s², Max Accel: 25.3 m/s², Max Gyro: 409.4 °/s"
+13,FOL,Forward-Lying Fall,FOL_sub13_t3,FALL,FALL,TP,Yes,4000.0,181,200,9.96,Stage 3: Impact with Violent Rotation,"Min Accel: 3.4 m/s², Max Accel: 25.3 m/s², Max Gyro: 566.3 °/s"
+14,FOL,Forward-Lying Fall,FOL_sub14_t1,FALL,FALL,TP,Yes,3350.0,178,197,9.81,Stage 3: Impact with Violent Rotation,"Min Accel: 2.7 m/s², Max Accel: 22.0 m/s², Max Gyro: 192.2 °/s"
+14,FOL,Forward-Lying Fall,FOL_sub14_t2,FALL,NORMAL,FN,No,N/A,178,197,9.8,N/A,N/A
+14,FOL,Forward-Lying Fall,FOL_sub14_t3,FALL,FALL,TP,Yes,3600.0,180,199,9.91,Stage 3: Impact with Violent Rotation,"Min Accel: 4.2 m/s², Max Accel: 21.3 m/s², Max Gyro: 185.5 °/s"
+15,FOL,Forward-Lying Fall,FOL_sub15_t1,FALL,FALL,TP,Yes,2850.0,178,197,9.85,Stage 3: Impact with Violent Rotation,"Min Accel: 3.4 m/s², Max Accel: 25.9 m/s², Max Gyro: 462.3 °/s"
+15,FOL,Forward-Lying Fall,FOL_sub15_t2,FALL,FALL,TP,Yes,3400.0,180,199,9.93,Stage 3: Impact with Violent Rotation,"Min Accel: 1.8 m/s², Max Accel: 21.9 m/s², Max Gyro: 616.2 °/s"
+15,FOL,Forward-Lying Fall,FOL_sub15_t3,FALL,FALL,TP,Yes,3350.0,181,200,9.95,Stage 3: Impact with Violent Rotation,"Min Accel: 2.8 m/s², Max Accel: 28.3 m/s², Max Gyro: 568.6 °/s"
+16,FOL,Forward-Lying Fall,FOL_sub16_t1,FALL,FALL,TP,Yes,3100.0,181,200,9.98,Stage 3: Impact with Violent Rotation,"Min Accel: 5.1 m/s², Max Accel: 21.6 m/s², Max Gyro: 171.8 °/s"
+16,FOL,Forward-Lying Fall,FOL_sub16_t2,FALL,FALL,TP,Yes,3100.0,179,198,9.88,Stage 3: Impact with Violent Rotation,"Min Accel: 4.7 m/s², Max Accel: 20.2 m/s², Max Gyro: 165.7 °/s"
+16,FOL,Forward-Lying Fall,FOL_sub16_t3,FALL,FALL,TP,Yes,3350.0,178,197,9.8,Stage 3: Impact with Violent Rotation,"Min Accel: 3.6 m/s², Max Accel: 19.9 m/s², Max Gyro: 211.4 °/s"
+17,FOL,Forward-Lying Fall,FOL_sub17_t1,FALL,FALL,TP,Yes,3350.0,181,200,9.98,Stage 3: Impact with Violent Rotation,"Min Accel: 2.7 m/s², Max Accel: 24.4 m/s², Max Gyro: 246.9 °/s"
+17,FOL,Forward-Lying Fall,FOL_sub17_t2,FALL,FALL,TP,Yes,3500.0,181,200,9.98,Stage 3: Impact with Violent Rotation,"Min Accel: 2.5 m/s², Max Accel: 29.6 m/s², Max Gyro: 492.2 °/s"
+17,FOL,Forward-Lying Fall,FOL_sub17_t3,FALL,FALL,TP,Yes,3350.0,178,197,9.81,Stage 3: Impact with Violent Rotation,"Min Accel: 2.9 m/s², Max Accel: 30.8 m/s², Max Gyro: 444.1 °/s"
+18,FOL,Forward-Lying Fall,FOL_sub18_t1,FALL,FALL,TP,Yes,3550.0,179,198,9.87,Stage 4/5: Critical Fall & Post-Impact Stillness,"Min Accel: 2.1 m/s², Max Accel: 26.2 m/s², Max Gyro: 366.5 °/s"
+18,FOL,Forward-Lying Fall,FOL_sub18_t2,FALL,FALL,TP,Yes,3100.0,180,199,9.92,Stage 3: Impact with Violent Rotation,"Min Accel: 3.9 m/s², Max Accel: 24.5 m/s², Max Gyro: 526.0 °/s"
+18,FOL,Forward-Lying Fall,FOL_sub18_t3,FALL,FALL,TP,Yes,3550.0,179,198,9.85,Stage 4/5: Critical Fall & Post-Impact Stillness,"Min Accel: 1.9 m/s², Max Accel: 22.8 m/s², Max Gyro: 306.8 °/s"
+19,FOL,Forward-Lying Fall,FOL_sub19_t1,FALL,FALL,TP,Yes,3200.0,179,198,9.88,Stage 3: Impact with Violent Rotation,"Min Accel: 3.3 m/s², Max Accel: 26.1 m/s², Max Gyro: 331.2 °/s"
+19,FOL,Forward-Lying Fall,FOL_sub19_t2,FALL,FALL,TP,Yes,3100.0,181,200,9.97,Stage 3: Impact with Violent Rotation,"Min Accel: 2.4 m/s², Max Accel: 27.3 m/s², Max Gyro: 279.8 °/s"
+19,FOL,Forward-Lying Fall,FOL_sub19_t3,FALL,FALL,TP,Yes,3350.0,179,198,9.87,Stage 4/5: Critical Fall & Post-Impact Stillness,"Min Accel: 3.8 m/s², Max Accel: 24.5 m/s², Max Gyro: 353.7 °/s"
+20,FOL,Forward-Lying Fall,FOL_sub20_t1,FALL,FALL,TP,Yes,4100.0,180,199,9.9,Stage 3: Impact with Violent Rotation,"Min Accel: 0.8 m/s², Max Accel: 25.9 m/s², Max Gyro: 252.5 °/s"
+20,FOL,Forward-Lying Fall,FOL_sub20_t2,FALL,FALL,TP,Yes,3600.0,178,197,9.85,Stage 3: Impact with Violent Rotation,"Min Accel: 2.2 m/s², Max Accel: 25.1 m/s², Max Gyro: 428.3 °/s"
+20,FOL,Forward-Lying Fall,FOL_sub20_t3,FALL,FALL,TP,Yes,4000.0,181,200,9.95,Stage 3: Impact with Violent Rotation,"Min Accel: 2.5 m/s², Max Accel: 22.9 m/s², Max Gyro: 207.8 °/s"
+21,FOL,Forward-Lying Fall,FOL_sub21_t1,FALL,FALL,TP,Yes,1600.0,179,198,9.86,Stage 3: Impact with Violent Rotation,"Min Accel: 6.4 m/s², Max Accel: 16.1 m/s², Max Gyro: 248.4 °/s"
+21,FOL,Forward-Lying Fall,FOL_sub21_t2,FALL,FALL,TP,Yes,1600.0,180,199,9.93,Stage 3: Impact with Violent Rotation,"Min Accel: 6.9 m/s², Max Accel: 15.7 m/s², Max Gyro: 176.1 °/s"
+21,FOL,Forward-Lying Fall,FOL_sub21_t3,FALL,FALL,TP,Yes,3750.0,181,200,9.96,Stage 3: Impact with Violent Rotation,"Min Accel: 3.9 m/s², Max Accel: 23.0 m/s², Max Gyro: 518.2 °/s"
+29,FOL,Forward-Lying Fall,FOL_sub29_t1,FALL,FALL,TP,Yes,4550.0,179,198,9.86,Stage 3: Impact with Violent Rotation,"Min Accel: 3.7 m/s², Max Accel: 24.9 m/s², Max Gyro: 274.6 °/s"
+29,FOL,Forward-Lying Fall,FOL_sub29_t2,FALL,FALL,TP,Yes,4400.0,180,199,9.92,Stage 3: Impact with Violent Rotation,"Min Accel: 3.6 m/s², Max Accel: 23.4 m/s², Max Gyro: 282.1 °/s"
+29,FOL,Forward-Lying Fall,FOL_sub29_t3,FALL,FALL,TP,Yes,4500.0,180,199,9.91,Stage 3: Impact with Violent Rotation,"Min Accel: 1.2 m/s², Max Accel: 25.3 m/s², Max Gyro: 295.8 °/s"
+30,FOL,Forward-Lying Fall,FOL_sub30_t1,FALL,FALL,TP,Yes,4200.0,178,197,9.84,Stage 4/5: Critical Fall & Post-Impact Stillness,"Min Accel: 1.0 m/s², Max Accel: 22.0 m/s², Max Gyro: 275.4 °/s"
+30,FOL,Forward-Lying Fall,FOL_sub30_t2,FALL,FALL,TP,Yes,3700.0,181,200,9.98,Stage 3: Impact with Violent Rotation,"Min Accel: 2.5 m/s², Max Accel: 23.9 m/s², Max Gyro: 258.0 °/s"
+30,FOL,Forward-Lying Fall,FOL_sub30_t3,FALL,FALL,TP,Yes,3750.0,179,198,9.87,Stage 3: Impact with Violent Rotation,"Min Accel: 1.1 m/s², Max Accel: 23.6 m/s², Max Gyro: 286.0 °/s"
+31,FOL,Forward-Lying Fall,FOL_sub31_t1,FALL,FALL,TP,Yes,3550.0,179,198,9.88,Stage 3: Impact with Violent Rotation,"Min Accel: 2.6 m/s², Max Accel: 23.5 m/s², Max Gyro: 298.9 °/s"
+31,FOL,Forward-Lying Fall,FOL_sub31_t2,FALL,FALL,TP,Yes,3550.0,180,199,9.93,Stage 3: Impact with Violent Rotation,"Min Accel: 1.4 m/s², Max Accel: 21.1 m/s², Max Gyro: 291.7 °/s"
+31,FOL,Forward-Lying Fall,FOL_sub31_t3,FALL,FALL,TP,Yes,4100.0,178,197,9.83,Stage 3: Impact with Violent Rotation,"Min Accel: 5.1 m/s², Max Accel: 23.1 m/s², Max Gyro: 267.6 °/s"
+1,SDL,Sideward-Lying Fall,SDL_sub1_t1,FALL,FALL,TP,Yes,3350.0,179,198,9.87,Stage 3: Impact with Violent Rotation,"Min Accel: 1.3 m/s², Max Accel: 25.7 m/s², Max Gyro: 287.0 °/s"
+1,SDL,Sideward-Lying Fall,SDL_sub1_t2,FALL,FALL,TP,Yes,3850.0,179,198,9.89,Stage 3: Impact with Violent Rotation,"Min Accel: 5.2 m/s², Max Accel: 21.3 m/s², Max Gyro: 358.9 °/s"
+1,SDL,Sideward-Lying Fall,SDL_sub1_t3,FALL,FALL,TP,Yes,4400.0,178,197,9.81,Stage 3: Impact with Violent Rotation,"Min Accel: 6.6 m/s², Max Accel: 19.1 m/s², Max Gyro: 227.2 °/s"
+2,SDL,Sideward-Lying Fall,SDL_sub2_t1,FALL,FALL,TP,Yes,4550.0,180,199,9.9,Stage 3: Impact with Violent Rotation,"Min Accel: 4.9 m/s², Max Accel: 24.2 m/s², Max Gyro: 381.2 °/s"
+2,SDL,Sideward-Lying Fall,SDL_sub2_t2,FALL,FALL,TP,Yes,5100.0,181,200,9.99,Stage 4/5: Critical Fall & Post-Impact Stillness,"Min Accel: 4.0 m/s², Max Accel: 22.9 m/s², Max Gyro: 515.6 °/s"
+2,SDL,Sideward-Lying Fall,SDL_sub2_t3,FALL,FALL,TP,Yes,3700.0,179,198,9.86,Stage 3: Impact with Violent Rotation,"Min Accel: 3.8 m/s², Max Accel: 25.7 m/s², Max Gyro: 412.4 °/s"
+3,SDL,Sideward-Lying Fall,SDL_sub3_t1,FALL,FALL,TP,Yes,3050.0,180,199,9.92,Stage 3: Impact with Violent Rotation,"Min Accel: 5.3 m/s², Max Accel: 26.2 m/s², Max Gyro: 221.9 °/s"
+3,SDL,Sideward-Lying Fall,SDL_sub3_t2,FALL,FALL,TP,Yes,3250.0,179,198,9.89,Stage 3: Impact with Violent Rotation,"Min Accel: 4.3 m/s², Max Accel: 23.5 m/s², Max Gyro: 207.7 °/s"
+3,SDL,Sideward-Lying Fall,SDL_sub3_t3,FALL,FALL,TP,Yes,3550.0,178,197,9.85,Stage 3: Impact with Violent Rotation,"Min Accel: 4.8 m/s², Max Accel: 28.3 m/s², Max Gyro: 241.5 °/s"
+4,SDL,Sideward-Lying Fall,SDL_sub4_t1,FALL,FALL,TP,Yes,5300.0,177,196,9.8,Stage 3: Impact with Violent Rotation,"Min Accel: 3.4 m/s², Max Accel: 21.9 m/s², Max Gyro: 334.5 °/s"
+4,SDL,Sideward-Lying Fall,SDL_sub4_t2,FALL,FALL,TP,Yes,5150.0,180,199,9.93,Stage 3: Impact with Violent Rotation,"Min Accel: 2.1 m/s², Max Accel: 26.3 m/s², Max Gyro: 785.4 °/s"
+4,SDL,Sideward-Lying Fall,SDL_sub4_t3,FALL,FALL,TP,Yes,5100.0,181,200,9.96,Stage 3: Impact with Violent Rotation,"Min Accel: 3.0 m/s², Max Accel: 19.1 m/s², Max Gyro: 340.0 °/s"
+5,SDL,Sideward-Lying Fall,SDL_sub5_t1,FALL,FALL,TP,Yes,3550.0,179,198,9.88,Stage 3: Impact with Violent Rotation,"Min Accel: 5.8 m/s², Max Accel: 26.1 m/s², Max Gyro: 353.2 °/s"
+5,SDL,Sideward-Lying Fall,SDL_sub5_t2,FALL,FALL,TP,Yes,4350.0,180,199,9.92,Stage 3: Impact with Violent Rotation,"Min Accel: 5.1 m/s², Max Accel: 23.1 m/s², Max Gyro: 421.8 °/s"
+5,SDL,Sideward-Lying Fall,SDL_sub5_t3,FALL,FALL,TP,Yes,4000.0,180,199,9.91,Stage 3: Impact with Violent Rotation,"Min Accel: 4.0 m/s², Max Accel: 27.1 m/s², Max Gyro: 442.0 °/s"
+6,SDL,Sideward-Lying Fall,SDL_sub6_t1,FALL,FALL,TP,Yes,2850.0,179,198,9.85,Stage 3: Impact with Violent Rotation,"Min Accel: 6.4 m/s², Max Accel: 17.6 m/s², Max Gyro: 254.9 °/s"
+6,SDL,Sideward-Lying Fall,SDL_sub6_t2,FALL,FALL,TP,Yes,3600.0,181,200,9.95,Stage 3: Impact with Violent Rotation,"Min Accel: 5.6 m/s², Max Accel: 23.5 m/s², Max Gyro: 265.6 °/s"
+6,SDL,Sideward-Lying Fall,SDL_sub6_t3,FALL,FALL,TP,Yes,3100.0,178,197,9.84,Stage 3: Impact with Violent Rotation,"Min Accel: 5.1 m/s², Max Accel: 22.6 m/s², Max Gyro: 309.2 °/s"
+7,SDL,Sideward-Lying Fall,SDL_sub7_t1,FALL,FALL,TP,Yes,3700.0,179,198,9.86,Stage 3: Impact with Violent Rotation,"Min Accel: 4.6 m/s², Max Accel: 26.2 m/s², Max Gyro: 240.6 °/s"
+7,SDL,Sideward-Lying Fall,SDL_sub7_t2,FALL,FALL,TP,Yes,4050.0,179,198,9.88,Stage 3: Impact with Violent Rotation,"Min Accel: 5.4 m/s², Max Accel: 23.5 m/s², Max Gyro: 222.5 °/s"
+7,SDL,Sideward-Lying Fall,SDL_sub7_t3,FALL,FALL,TP,Yes,3700.0,178,197,9.82,Stage 3: Impact with Violent Rotation,"Min Accel: 5.0 m/s², Max Accel: 21.6 m/s², Max Gyro: 228.8 °/s"
+8,SDL,Sideward-Lying Fall,SDL_sub8_t1,FALL,FALL,TP,Yes,3550.0,180,199,9.92,Stage 3: Impact with Violent Rotation,"Min Accel: 3.3 m/s², Max Accel: 24.8 m/s², Max Gyro: 245.3 °/s"
+8,SDL,Sideward-Lying Fall,SDL_sub8_t2,FALL,FALL,TP,Yes,3550.0,179,198,9.86,Stage 3: Impact with Violent Rotation,"Min Accel: 2.9 m/s², Max Accel: 18.1 m/s², Max Gyro: 231.1 °/s"
+8,SDL,Sideward-Lying Fall,SDL_sub8_t3,FALL,NORMAL,FN,No,N/A,179,198,9.88,N/A,N/A
+9,SDL,Sideward-Lying Fall,SDL_sub9_t1,FALL,FALL,TP,Yes,3900.0,181,200,9.97,Stage 3: Impact with Violent Rotation,"Min Accel: 3.6 m/s², Max Accel: 23.0 m/s², Max Gyro: 260.6 °/s"
+9,SDL,Sideward-Lying Fall,SDL_sub9_t2,FALL,FALL,TP,Yes,3850.0,181,200,9.95,Stage 3: Impact with Violent Rotation,"Min Accel: 2.2 m/s², Max Accel: 22.1 m/s², Max Gyro: 272.5 °/s"
+9,SDL,Sideward-Lying Fall,SDL_sub9_t3,FALL,FALL,TP,Yes,3750.0,178,197,9.81,Stage 3: Impact with Violent Rotation,"Min Accel: 3.3 m/s², Max Accel: 21.6 m/s², Max Gyro: 377.9 °/s"
+10,SDL,Sideward-Lying Fall,SDL_sub10_t1,FALL,FALL,TP,Yes,4900.0,179,198,9.88,Stage 3: Impact with Violent Rotation,"Min Accel: 4.5 m/s², Max Accel: 27.2 m/s², Max Gyro: 334.0 °/s"
+10,SDL,Sideward-Lying Fall,SDL_sub10_t2,FALL,FALL,TP,Yes,4550.0,180,199,9.91,Stage 3: Impact with Violent Rotation,"Min Accel: 3.6 m/s², Max Accel: 22.4 m/s², Max Gyro: 242.0 °/s"
+10,SDL,Sideward-Lying Fall,SDL_sub10_t3,FALL,FALL,TP,Yes,2250.0,181,200,9.97,Stage 3: Impact with Violent Rotation,"Min Accel: 6.0 m/s², Max Accel: 14.4 m/s², Max Gyro: 184.3 °/s"
+11,SDL,Sideward-Lying Fall,SDL_sub11_t1,FALL,FALL,TP,Yes,3000.0,178,197,9.84,Stage 4/5: Critical Fall & Post-Impact Stillness,"Min Accel: 4.5 m/s², Max Accel: 21.6 m/s², Max Gyro: 243.2 °/s"
+11,SDL,Sideward-Lying Fall,SDL_sub11_t2,FALL,FALL,TP,Yes,3200.0,178,197,9.83,Stage 3: Impact with Violent Rotation,"Min Accel: 5.4 m/s², Max Accel: 23.3 m/s², Max Gyro: 237.1 °/s"
+11,SDL,Sideward-Lying Fall,SDL_sub11_t3,FALL,FALL,TP,Yes,3550.0,179,198,9.88,Stage 3: Impact with Violent Rotation,"Min Accel: 3.0 m/s², Max Accel: 22.8 m/s², Max Gyro: 247.8 °/s"
+12,SDL,Sideward-Lying Fall,SDL_sub12_t1,FALL,FALL,TP,Yes,2600.0,178,197,9.82,Stage 3: Impact with Violent Rotation,"Min Accel: 4.0 m/s², Max Accel: 21.8 m/s², Max Gyro: 468.0 °/s"
+12,SDL,Sideward-Lying Fall,SDL_sub12_t2,FALL,FALL,TP,Yes,3400.0,181,200,9.96,Stage 3: Impact with Violent Rotation,"Min Accel: 4.3 m/s², Max Accel: 20.4 m/s², Max Gyro: 416.9 °/s"
+12,SDL,Sideward-Lying Fall,SDL_sub12_t3,FALL,FALL,TP,Yes,3400.0,180,199,9.9,Stage 4/5: Critical Fall & Post-Impact Stillness,"Min Accel: 5.7 m/s², Max Accel: 22.8 m/s², Max Gyro: 289.9 °/s"
+13,SDL,Sideward-Lying Fall,SDL_sub13_t1,FALL,FALL,TP,Yes,3400.0,179,198,9.87,Stage 3: Impact with Violent Rotation,"Min Accel: 5.3 m/s², Max Accel: 24.6 m/s², Max Gyro: 625.3 °/s"
+13,SDL,Sideward-Lying Fall,SDL_sub13_t2,FALL,FALL,TP,Yes,4050.0,179,198,9.89,Stage 3: Impact with Violent Rotation,"Min Accel: 4.1 m/s², Max Accel: 19.0 m/s², Max Gyro: 577.6 °/s"
+13,SDL,Sideward-Lying Fall,SDL_sub13_t3,FALL,FALL,TP,Yes,3400.0,180,199,9.91,Stage 3: Impact with Violent Rotation,"Min Accel: 5.7 m/s², Max Accel: 27.3 m/s², Max Gyro: 326.2 °/s"
+14,SDL,Sideward-Lying Fall,SDL_sub14_t1,FALL,FALL,TP,Yes,3750.0,179,198,9.89,Stage 3: Impact with Violent Rotation,"Min Accel: 4.6 m/s², Max Accel: 24.7 m/s², Max Gyro: 250.9 °/s"
+14,SDL,Sideward-Lying Fall,SDL_sub14_t2,FALL,FALL,TP,Yes,3750.0,180,199,9.93,Stage 4/5: Critical Fall & Post-Impact Stillness,"Min Accel: 5.5 m/s², Max Accel: 22.8 m/s², Max Gyro: 241.0 °/s"
+14,SDL,Sideward-Lying Fall,SDL_sub14_t3,FALL,FALL,TP,Yes,3350.0,181,200,9.99,Stage 3: Impact with Violent Rotation,"Min Accel: 7.0 m/s², Max Accel: 18.6 m/s², Max Gyro: 351.0 °/s"
+15,SDL,Sideward-Lying Fall,SDL_sub15_t1,FALL,FALL,TP,Yes,3000.0,181,200,9.96,Stage 4/5: Critical Fall & Post-Impact Stillness,"Min Accel: 4.8 m/s², Max Accel: 21.6 m/s², Max Gyro: 361.7 °/s"
+15,SDL,Sideward-Lying Fall,SDL_sub15_t2,FALL,FALL,TP,Yes,2600.0,179,198,9.86,Stage 3: Impact with Violent Rotation,"Min Accel: 3.0 m/s², Max Accel: 20.6 m/s², Max Gyro: 334.3 °/s"
+15,SDL,Sideward-Lying Fall,SDL_sub15_t3,FALL,FALL,TP,Yes,3000.0,179,198,9.9,Stage 4/5: Critical Fall & Post-Impact Stillness,"Min Accel: 5.4 m/s², Max Accel: 24.5 m/s², Max Gyro: 379.9 °/s"
+16,SDL,Sideward-Lying Fall,SDL_sub16_t1,FALL,FALL,TP,Yes,2250.0,179,198,9.85,Stage 3: Impact with Violent Rotation,"Min Accel: 6.9 m/s², Max Accel: 16.9 m/s², Max Gyro: 188.1 °/s"
+16,SDL,Sideward-Lying Fall,SDL_sub16_t2,FALL,FALL,TP,Yes,3200.0,179,198,9.88,Stage 3: Impact with Violent Rotation,"Min Accel: 5.0 m/s², Max Accel: 28.4 m/s², Max Gyro: 200.6 °/s"
+16,SDL,Sideward-Lying Fall,SDL_sub16_t3,FALL,FALL,TP,Yes,3050.0,179,198,9.89,Stage 3: Impact with Violent Rotation,"Min Accel: 6.0 m/s², Max Accel: 20.3 m/s², Max Gyro: 200.7 °/s"
+17,SDL,Sideward-Lying Fall,SDL_sub17_t1,FALL,FALL,TP,Yes,3550.0,179,198,9.86,Stage 3: Impact with Violent Rotation,"Min Accel: 4.2 m/s², Max Accel: 25.4 m/s², Max Gyro: 534.4 °/s"
+17,SDL,Sideward-Lying Fall,SDL_sub17_t2,FALL,FALL,TP,Yes,3350.0,179,198,9.89,Stage 4/5: Critical Fall & Post-Impact Stillness,"Min Accel: 2.2 m/s², Max Accel: 23.1 m/s², Max Gyro: 578.3 °/s"
+17,SDL,Sideward-Lying Fall,SDL_sub17_t3,FALL,FALL,TP,Yes,3550.0,180,199,9.93,Stage 3: Impact with Violent Rotation,"Min Accel: 2.4 m/s², Max Accel: 23.2 m/s², Max Gyro: 516.8 °/s"
+18,SDL,Sideward-Lying Fall,SDL_sub18_t1,FALL,FALL,TP,Yes,3550.0,180,199,9.93,Stage 3: Impact with Violent Rotation,"Min Accel: 3.8 m/s², Max Accel: 19.2 m/s², Max Gyro: 364.9 °/s"
+18,SDL,Sideward-Lying Fall,SDL_sub18_t2,FALL,FALL,TP,Yes,3500.0,178,197,9.85,Stage 3: Impact with Violent Rotation,"Min Accel: 5.1 m/s², Max Accel: 21.1 m/s², Max Gyro: 333.8 °/s"
+18,SDL,Sideward-Lying Fall,SDL_sub18_t3,FALL,FALL,TP,Yes,3350.0,180,199,9.93,Stage 3: Impact with Violent Rotation,"Min Accel: 5.2 m/s², Max Accel: 20.7 m/s², Max Gyro: 377.3 °/s"
+19,SDL,Sideward-Lying Fall,SDL_sub19_t1,FALL,FALL,TP,Yes,3000.0,178,197,9.83,Stage 4/5: Critical Fall & Post-Impact Stillness,"Min Accel: 3.8 m/s², Max Accel: 24.3 m/s², Max Gyro: 313.4 °/s"
+19,SDL,Sideward-Lying Fall,SDL_sub19_t2,FALL,FALL,TP,Yes,2900.0,180,199,9.93,Stage 3: Impact with Violent Rotation,"Min Accel: 5.1 m/s², Max Accel: 20.9 m/s², Max Gyro: 326.1 °/s"
+19,SDL,Sideward-Lying Fall,SDL_sub19_t3,FALL,FALL,TP,Yes,2700.0,179,198,9.89,Stage 3: Impact with Violent Rotation,"Min Accel: 5.3 m/s², Max Accel: 30.0 m/s², Max Gyro: 332.9 °/s"
+20,SDL,Sideward-Lying Fall,SDL_sub20_t1,FALL,FALL,TP,Yes,3350.0,178,197,9.81,Stage 3: Impact with Violent Rotation,"Min Accel: 5.0 m/s², Max Accel: 25.8 m/s², Max Gyro: 705.5 °/s"
+20,SDL,Sideward-Lying Fall,SDL_sub20_t2,FALL,FALL,TP,Yes,3500.0,179,198,9.85,Stage 3: Impact with Violent Rotation,"Min Accel: 4.7 m/s², Max Accel: 22.3 m/s², Max Gyro: 393.7 °/s"
+20,SDL,Sideward-Lying Fall,SDL_sub20_t3,FALL,FALL,TP,Yes,3850.0,181,200,9.99,Stage 3: Impact with Violent Rotation,"Min Accel: 5.5 m/s², Max Accel: 21.0 m/s², Max Gyro: 450.3 °/s"
+21,SDL,Sideward-Lying Fall,SDL_sub21_t1,FALL,FALL,TP,Yes,3100.0,177,196,9.8,Stage 4/5: Critical Fall & Post-Impact Stillness,"Min Accel: 6.3 m/s², Max Accel: 26.3 m/s², Max Gyro: 360.5 °/s"
+21,SDL,Sideward-Lying Fall,SDL_sub21_t2,FALL,FALL,TP,Yes,3550.0,179,198,9.9,Stage 3: Impact with Violent Rotation,"Min Accel: 2.7 m/s², Max Accel: 25.3 m/s², Max Gyro: 542.5 °/s"
+21,SDL,Sideward-Lying Fall,SDL_sub21_t3,FALL,FALL,TP,Yes,3850.0,178,197,9.82,Stage 4/5: Critical Fall & Post-Impact Stillness,"Min Accel: 2.1 m/s², Max Accel: 29.0 m/s², Max Gyro: 683.5 °/s"
+29,SDL,Sideward-Lying Fall,SDL_sub29_t1,FALL,FALL,TP,Yes,1700.0,179,198,9.86,Stage 4/5: Critical Fall & Post-Impact Stillness,"Min Accel: 5.9 m/s², Max Accel: 15.1 m/s², Max Gyro: 116.1 °/s"
+29,SDL,Sideward-Lying Fall,SDL_sub29_t2,FALL,FALL,TP,Yes,4000.0,181,200,9.97,Stage 3: Impact with Violent Rotation,"Min Accel: 6.1 m/s², Max Accel: 25.6 m/s², Max Gyro: 168.7 °/s"
+29,SDL,Sideward-Lying Fall,SDL_sub29_t3,FALL,NORMAL,FN,No,N/A,179,198,9.88,N/A,N/A
+30,SDL,Sideward-Lying Fall,SDL_sub30_t1,FALL,FALL,TP,Yes,3900.0,179,198,9.86,Stage 3: Impact with Violent Rotation,"Min Accel: 5.3 m/s², Max Accel: 21.8 m/s², Max Gyro: 265.9 °/s"
+30,SDL,Sideward-Lying Fall,SDL_sub30_t2,FALL,FALL,TP,Yes,3850.0,178,197,9.83,Stage 3: Impact with Violent Rotation,"Min Accel: 6.3 m/s², Max Accel: 24.8 m/s², Max Gyro: 263.9 °/s"
+30,SDL,Sideward-Lying Fall,SDL_sub30_t3,FALL,FALL,TP,Yes,3500.0,179,198,9.86,Stage 3: Impact with Violent Rotation,"Min Accel: 4.5 m/s², Max Accel: 20.9 m/s², Max Gyro: 408.3 °/s"
+31,SDL,Sideward-Lying Fall,SDL_sub31_t1,FALL,FALL,TP,Yes,3700.0,178,197,9.83,Stage 3: Impact with Violent Rotation,"Min Accel: 3.6 m/s², Max Accel: 21.8 m/s², Max Gyro: 298.6 °/s"
+31,SDL,Sideward-Lying Fall,SDL_sub31_t2,FALL,FALL,TP,Yes,3750.0,180,199,9.92,Stage 4/5: Critical Fall & Post-Impact Stillness,"Min Accel: 5.5 m/s², Max Accel: 18.9 m/s², Max Gyro: 399.1 °/s"
+31,SDL,Sideward-Lying Fall,SDL_sub31_t3,FALL,FALL,TP,Yes,4000.0,180,199,9.9,Stage 3: Impact with Violent Rotation,"Min Accel: 4.8 m/s², Max Accel: 22.1 m/s², Max Gyro: 378.9 °/s"
+2,CSI,Car-step In,CSI_sub2_t1,NORMAL,FALL,FP,No,950.0,98,117,5.82,Stage 3: Impact with Violent Rotation,"Min Accel: 6.0 m/s², Max Accel: 15.2 m/s², Max Gyro: 251.0 °/s"
+2,CSI,Car-step In,CSI_sub2_t2,NORMAL,FALL,FP,No,4550.0,98,117,5.83,Stage 3: Impact with Violent Rotation,"Min Accel: 4.1 m/s², Max Accel: 17.4 m/s², Max Gyro: 275.4 °/s"
+2,CSI,Car-step In,CSI_sub2_t3,NORMAL,FALL,FP,No,4600.0,101,120,5.95,Stage 3: Impact with Violent Rotation,"Min Accel: 5.5 m/s², Max Accel: 16.6 m/s², Max Gyro: 200.9 °/s"
+2,CSI,Car-step In,CSI_sub2_t4,NORMAL,FALL,FP,No,4100.0,101,120,5.97,Stage 3: Impact with Violent Rotation,"Min Accel: 4.8 m/s², Max Accel: 21.3 m/s², Max Gyro: 305.4 °/s"
+2,CSI,Car-step In,CSI_sub2_t5,NORMAL,FALL,FP,No,3700.0,101,120,5.96,Stage 3: Impact with Violent Rotation,"Min Accel: 3.2 m/s², Max Accel: 16.3 m/s², Max Gyro: 257.4 °/s"
+2,CSI,Car-step In,CSI_sub2_t6,NORMAL,FALL,FP,No,4250.0,101,120,5.97,Stage 3: Impact with Violent Rotation,"Min Accel: 4.7 m/s², Max Accel: 16.4 m/s², Max Gyro: 291.2 °/s"
+3,CSI,Car-step In,CSI_sub3_t1,NORMAL,NORMAL,TN,Yes,N/A,99,118,5.88,N/A,N/A
+3,CSI,Car-step In,CSI_sub3_t2,NORMAL,NORMAL,TN,Yes,N/A,99,118,5.88,N/A,N/A
+3,CSI,Car-step In,CSI_sub3_t3,NORMAL,NORMAL,TN,Yes,N/A,100,119,5.93,N/A,N/A
+3,CSI,Car-step In,CSI_sub3_t4,NORMAL,NORMAL,TN,Yes,N/A,98,117,5.8,N/A,N/A
+3,CSI,Car-step In,CSI_sub3_t5,NORMAL,NORMAL,TN,Yes,N/A,101,120,5.96,N/A,N/A
+3,CSI,Car-step In,CSI_sub3_t6,NORMAL,NORMAL,TN,Yes,N/A,99,118,5.89,N/A,N/A
+4,CSI,Car-step In,CSI_sub4_t1,NORMAL,NORMAL,TN,Yes,N/A,97,116,5.8,N/A,N/A
+4,CSI,Car-step In,CSI_sub4_t2,NORMAL,NORMAL,TN,Yes,N/A,101,120,5.98,N/A,N/A
+4,CSI,Car-step In,CSI_sub4_t3,NORMAL,NORMAL,TN,Yes,N/A,98,117,5.84,N/A,N/A
+4,CSI,Car-step In,CSI_sub4_t4,NORMAL,NORMAL,TN,Yes,N/A,101,120,5.96,N/A,N/A
+4,CSI,Car-step In,CSI_sub4_t5,NORMAL,NORMAL,TN,Yes,N/A,98,117,5.84,N/A,N/A
+4,CSI,Car-step In,CSI_sub4_t6,NORMAL,FALL,FP,No,4900.0,101,120,5.98,Stage 3: Impact with Violent Rotation,"Min Accel: 6.7 m/s², Max Accel: 14.7 m/s², Max Gyro: 385.3 °/s"
+5,CSI,Car-step In,CSI_sub5_t1,NORMAL,NORMAL,TN,Yes,N/A,102,121,6.01,N/A,N/A
+5,CSI,Car-step In,CSI_sub5_t2,NORMAL,NORMAL,TN,Yes,N/A,98,117,5.83,N/A,N/A
+5,CSI,Car-step In,CSI_sub5_t3,NORMAL,FALL,FP,No,4100.0,98,117,5.8,Stage 3: Impact with Violent Rotation,"Min Accel: 6.4 m/s², Max Accel: 16.0 m/s², Max Gyro: 162.6 °/s"
+5,CSI,Car-step In,CSI_sub5_t4,NORMAL,FALL,FP,No,3750.0,101,120,5.95,Stage 4/5: Critical Fall & Post-Impact Stillness,"Min Accel: 6.5 m/s², Max Accel: 16.1 m/s², Max Gyro: 152.6 °/s"
+5,CSI,Car-step In,CSI_sub5_t5,NORMAL,NORMAL,TN,Yes,N/A,100,119,5.92,N/A,N/A
+5,CSI,Car-step In,CSI_sub5_t6,NORMAL,NORMAL,TN,Yes,N/A,97,116,5.79,N/A,N/A
+7,CSI,Car-step In,CSI_sub7_t1,NORMAL,FALL,FP,No,3400.0,98,117,5.84,Stage 4/5: Critical Fall & Post-Impact Stillness,"Min Accel: 6.5 m/s², Max Accel: 19.4 m/s², Max Gyro: 193.8 °/s"
+7,CSI,Car-step In,CSI_sub7_t2,NORMAL,FALL,FP,No,1250.0,101,120,5.97,Stage 3: Impact with Violent Rotation,"Min Accel: 6.6 m/s², Max Accel: 14.7 m/s², Max Gyro: 225.1 °/s"
+7,CSI,Car-step In,CSI_sub7_t3,NORMAL,FALL,FP,No,3400.0,99,118,5.9,Stage 3: Impact with Violent Rotation,"Min Accel: 6.6 m/s², Max Accel: 19.6 m/s², Max Gyro: 185.9 °/s"
+7,CSI,Car-step In,CSI_sub7_t4,NORMAL,FALL,FP,No,1250.0,100,119,5.93,Stage 3: Impact with Violent Rotation,"Min Accel: 5.7 m/s², Max Accel: 15.2 m/s², Max Gyro: 280.0 °/s"
+7,CSI,Car-step In,CSI_sub7_t5,NORMAL,NORMAL,TN,Yes,N/A,100,119,5.93,N/A,N/A
+7,CSI,Car-step In,CSI_sub7_t6,NORMAL,FALL,FP,No,2500.0,98,117,5.84,Stage 3: Impact with Violent Rotation,"Min Accel: 6.3 m/s², Max Accel: 17.0 m/s², Max Gyro: 180.2 °/s"
+8,CSI,Car-step In,CSI_sub8_t1,NORMAL,FALL,FP,No,1100.0,101,120,5.96,Stage 3: Impact with Violent Rotation,"Min Accel: 2.9 m/s², Max Accel: 17.9 m/s², Max Gyro: 275.8 °/s"
+8,CSI,Car-step In,CSI_sub8_t2,NORMAL,FALL,FP,No,1250.0,99,118,5.85,Stage 4/5: Critical Fall & Post-Impact Stillness,"Min Accel: 5.1 m/s², Max Accel: 16.9 m/s², Max Gyro: 260.4 °/s"
+8,CSI,Car-step In,CSI_sub8_t3,NORMAL,FALL,FP,No,2750.0,102,121,6.01,Stage 4/5: Critical Fall & Post-Impact Stillness,"Min Accel: 5.0 m/s², Max Accel: 15.5 m/s², Max Gyro: 723.0 °/s"
+8,CSI,Car-step In,CSI_sub8_t4,NORMAL,FALL,FP,No,3250.0,99,118,5.89,Stage 4/5: Critical Fall & Post-Impact Stillness,"Min Accel: 6.4 m/s², Max Accel: 17.3 m/s², Max Gyro: 182.7 °/s"
+8,CSI,Car-step In,CSI_sub8_t5,NORMAL,FALL,FP,No,950.0,98,117,5.85,Stage 3: Impact with Violent Rotation,"Min Accel: 5.4 m/s², Max Accel: 14.1 m/s², Max Gyro: 215.6 °/s"
+8,CSI,Car-step In,CSI_sub8_t6,NORMAL,FALL,FP,No,950.0,98,117,5.81,Stage 4/5: Critical Fall & Post-Impact Stillness,"Min Accel: 5.0 m/s², Max Accel: 14.9 m/s², Max Gyro: 200.7 °/s"
+9,CSI,Car-step In,CSI_sub9_t1,NORMAL,FALL,FP,No,3550.0,101,120,5.97,Stage 3: Impact with Violent Rotation,"Min Accel: 1.0 m/s², Max Accel: 19.6 m/s², Max Gyro: 325.8 °/s"
+9,CSI,Car-step In,CSI_sub9_t2,NORMAL,FALL,FP,No,4000.0,97,116,5.8,Stage 3: Impact with Violent Rotation,"Min Accel: 2.9 m/s², Max Accel: 20.6 m/s², Max Gyro: 433.0 °/s"
+9,CSI,Car-step In,CSI_sub9_t3,NORMAL,FALL,FP,No,2350.0,97,116,5.79,Stage 3: Impact with Violent Rotation,"Min Accel: 6.3 m/s², Max Accel: 22.4 m/s², Max Gyro: 244.8 °/s"
+9,CSI,Car-step In,CSI_sub9_t4,NORMAL,FALL,FP,No,3700.0,101,120,5.98,Stage 3: Impact with Violent Rotation,"Min Accel: 5.4 m/s², Max Accel: 24.4 m/s², Max Gyro: 305.7 °/s"
+9,CSI,Car-step In,CSI_sub9_t5,NORMAL,FALL,FP,No,2550.0,98,117,5.81,Stage 3: Impact with Violent Rotation,"Min Accel: 6.2 m/s², Max Accel: 21.0 m/s², Max Gyro: 275.0 °/s"
+9,CSI,Car-step In,CSI_sub9_t6,NORMAL,FALL,FP,No,4600.0,97,116,5.8,Stage 4/5: Critical Fall & Post-Impact Stillness,"Min Accel: 4.8 m/s², Max Accel: 18.1 m/s², Max Gyro: 420.0 °/s"
+10,CSI,Car-step In,CSI_sub10_t1,NORMAL,NORMAL,TN,Yes,N/A,99,118,5.85,N/A,N/A
+10,CSI,Car-step In,CSI_sub10_t2,NORMAL,NORMAL,TN,Yes,N/A,100,119,5.91,N/A,N/A
+10,CSI,Car-step In,CSI_sub10_t3,NORMAL,NORMAL,TN,Yes,N/A,82,101,5.05,N/A,N/A
+10,CSI,Car-step In,CSI_sub10_t4,NORMAL,NORMAL,TN,Yes,N/A,100,119,5.92,N/A,N/A
+10,CSI,Car-step In,CSI_sub10_t5,NORMAL,NORMAL,TN,Yes,N/A,98,117,5.84,N/A,N/A
+10,CSI,Car-step In,CSI_sub10_t6,NORMAL,NORMAL,TN,Yes,N/A,99,118,5.89,N/A,N/A
+11,CSI,Car-step In,CSI_sub11_t1,NORMAL,FALL,FP,No,2100.0,100,119,5.9,Stage 3: Impact with Violent Rotation,"Min Accel: 4.8 m/s², Max Accel: 15.2 m/s², Max Gyro: 238.7 °/s"
+11,CSI,Car-step In,CSI_sub11_t2,NORMAL,FALL,FP,No,3000.0,100,119,5.92,Stage 3: Impact with Violent Rotation,"Min Accel: 3.8 m/s², Max Accel: 15.6 m/s², Max Gyro: 253.0 °/s"
+11,CSI,Car-step In,CSI_sub11_t3,NORMAL,FALL,FP,No,2350.0,99,118,5.87,Stage 3: Impact with Violent Rotation,"Min Accel: 4.7 m/s², Max Accel: 15.6 m/s², Max Gyro: 228.9 °/s"
+11,CSI,Car-step In,CSI_sub11_t4,NORMAL,FALL,FP,No,3200.0,98,117,5.81,Stage 3: Impact with Violent Rotation,"Min Accel: 4.6 m/s², Max Accel: 15.8 m/s², Max Gyro: 209.9 °/s"
+11,CSI,Car-step In,CSI_sub11_t5,NORMAL,FALL,FP,No,3500.0,101,120,5.96,Stage 3: Impact with Violent Rotation,"Min Accel: 3.4 m/s², Max Accel: 17.2 m/s², Max Gyro: 246.0 °/s"
+11,CSI,Car-step In,CSI_sub11_t6,NORMAL,FALL,FP,No,2900.0,99,118,5.85,Stage 4/5: Critical Fall & Post-Impact Stillness,"Min Accel: 3.5 m/s², Max Accel: 15.9 m/s², Max Gyro: 221.3 °/s"
+2,CSO,Car-step Out,CSO_sub2_t1,NORMAL,FALL,FP,No,4600.0,101,120,5.98,Stage 3: Impact with Violent Rotation,"Min Accel: 6.5 m/s², Max Accel: 16.6 m/s², Max Gyro: 327.3 °/s"
+2,CSO,Car-step Out,CSO_sub2_t2,NORMAL,FALL,FP,No,4600.0,99,118,5.85,Stage 3: Impact with Violent Rotation,"Min Accel: 4.7 m/s², Max Accel: 17.5 m/s², Max Gyro: 270.7 °/s"
+2,CSO,Car-step Out,CSO_sub2_t3,NORMAL,NORMAL,TN,Yes,N/A,100,119,5.94,N/A,N/A
+2,CSO,Car-step Out,CSO_sub2_t4,NORMAL,NORMAL,TN,Yes,N/A,98,117,5.82,N/A,N/A
+2,CSO,Car-step Out,CSO_sub2_t5,NORMAL,FALL,FP,No,2400.0,98,117,5.8,Stage 3: Impact with Violent Rotation,"Min Accel: 6.3 m/s², Max Accel: 15.7 m/s², Max Gyro: 200.9 °/s"
+2,CSO,Car-step Out,CSO_sub2_t6,NORMAL,FALL,FP,No,3700.0,100,119,5.93,Stage 3: Impact with Violent Rotation,"Min Accel: 5.6 m/s², Max Accel: 17.9 m/s², Max Gyro: 312.7 °/s"
+3,CSO,Car-step Out,CSO_sub3_t1,NORMAL,NORMAL,TN,Yes,N/A,99,118,5.85,N/A,N/A
+3,CSO,Car-step Out,CSO_sub3_t2,NORMAL,NORMAL,TN,Yes,N/A,99,118,5.88,N/A,N/A
+3,CSO,Car-step Out,CSO_sub3_t3,NORMAL,NORMAL,TN,Yes,N/A,100,119,5.95,N/A,N/A
+3,CSO,Car-step Out,CSO_sub3_t4,NORMAL,NORMAL,TN,Yes,N/A,101,120,5.99,N/A,N/A
+3,CSO,Car-step Out,CSO_sub3_t5,NORMAL,FALL,FP,No,3750.0,100,119,5.93,Stage 3: Impact with Violent Rotation,"Min Accel: 6.3 m/s², Max Accel: 14.1 m/s², Max Gyro: 121.9 °/s"
+3,CSO,Car-step Out,CSO_sub3_t6,NORMAL,NORMAL,TN,Yes,N/A,98,117,5.83,N/A,N/A
+4,CSO,Car-step Out,CSO_sub4_t1,NORMAL,NORMAL,TN,Yes,N/A,101,120,5.98,N/A,N/A
+4,CSO,Car-step Out,CSO_sub4_t2,NORMAL,NORMAL,TN,Yes,N/A,100,119,5.93,N/A,N/A
+4,CSO,Car-step Out,CSO_sub4_t3,NORMAL,FALL,FP,No,4050.0,100,119,5.92,Stage 4/5: Critical Fall & Post-Impact Stillness,"Min Accel: 6.9 m/s², Max Accel: 15.5 m/s², Max Gyro: 191.3 °/s"
+4,CSO,Car-step Out,CSO_sub4_t4,NORMAL,FALL,FP,No,2700.0,98,117,5.85,Stage 3: Impact with Violent Rotation,"Min Accel: 5.1 m/s², Max Accel: 15.6 m/s², Max Gyro: 242.9 °/s"
+4,CSO,Car-step Out,CSO_sub4_t5,NORMAL,NORMAL,TN,Yes,N/A,83,102,5.06,N/A,N/A
+4,CSO,Car-step Out,CSO_sub4_t6,NORMAL,NORMAL,TN,Yes,N/A,101,120,5.97,N/A,N/A
+5,CSO,Car-step Out,CSO_sub5_t1,NORMAL,NORMAL,TN,Yes,N/A,99,118,5.89,N/A,N/A
+5,CSO,Car-step Out,CSO_sub5_t2,NORMAL,NORMAL,TN,Yes,N/A,99,118,5.86,N/A,N/A
+5,CSO,Car-step Out,CSO_sub5_t3,NORMAL,NORMAL,TN,Yes,N/A,99,118,5.89,N/A,N/A
+5,CSO,Car-step Out,CSO_sub5_t4,NORMAL,NORMAL,TN,Yes,N/A,100,119,5.94,N/A,N/A
+5,CSO,Car-step Out,CSO_sub5_t5,NORMAL,NORMAL,TN,Yes,N/A,98,117,5.85,N/A,N/A
+5,CSO,Car-step Out,CSO_sub5_t6,NORMAL,NORMAL,TN,Yes,N/A,100,119,5.9,N/A,N/A
+7,CSO,Car-step Out,CSO_sub7_t1,NORMAL,NORMAL,TN,Yes,N/A,99,118,5.85,N/A,N/A
+7,CSO,Car-step Out,CSO_sub7_t2,NORMAL,FALL,FP,No,4750.0,101,120,5.98,Stage 4/5: Critical Fall & Post-Impact Stillness,"Min Accel: 6.2 m/s², Max Accel: 20.2 m/s², Max Gyro: 221.6 °/s"
+7,CSO,Car-step Out,CSO_sub7_t3,NORMAL,FALL,FP,No,4900.0,83,102,5.07,Stage 3: Impact with Violent Rotation,"Min Accel: 6.6 m/s², Max Accel: 15.7 m/s², Max Gyro: 262.3 °/s"
+7,CSO,Car-step Out,CSO_sub7_t4,NORMAL,FALL,FP,No,4850.0,100,119,5.95,Stage 3: Impact with Violent Rotation,"Min Accel: 6.5 m/s², Max Accel: 20.1 m/s², Max Gyro: 333.7 °/s"
+7,CSO,Car-step Out,CSO_sub7_t5,NORMAL,FALL,FP,No,5200.0,98,117,5.83,Stage 3: Impact with Violent Rotation,"Min Accel: 3.1 m/s², Max Accel: 18.9 m/s², Max Gyro: 252.6 °/s"
+7,CSO,Car-step Out,CSO_sub7_t6,NORMAL,NORMAL,TN,Yes,N/A,100,119,5.92,N/A,N/A
+8,CSO,Car-step Out,CSO_sub8_t1,NORMAL,FALL,FP,No,5050.0,98,117,5.8,Stage 3: Impact with Violent Rotation,"Min Accel: 5.5 m/s², Max Accel: 22.1 m/s², Max Gyro: 288.5 °/s"
+8,CSO,Car-step Out,CSO_sub8_t2,NORMAL,NORMAL,TN,Yes,N/A,99,118,5.85,N/A,N/A
+8,CSO,Car-step Out,CSO_sub8_t3,NORMAL,FALL,FP,No,5200.0,99,118,5.87,Stage 3: Impact with Violent Rotation,"Min Accel: 6.6 m/s², Max Accel: 16.0 m/s², Max Gyro: 273.4 °/s"
+8,CSO,Car-step Out,CSO_sub8_t4,NORMAL,NORMAL,TN,Yes,N/A,100,119,5.94,N/A,N/A
+8,CSO,Car-step Out,CSO_sub8_t5,NORMAL,NORMAL,TN,Yes,N/A,100,119,5.93,N/A,N/A
+8,CSO,Car-step Out,CSO_sub8_t6,NORMAL,FALL,FP,No,5250.0,100,119,5.92,Stage 4/5: Critical Fall & Post-Impact Stillness,"Min Accel: 5.9 m/s², Max Accel: 16.2 m/s², Max Gyro: 233.0 °/s"
+9,CSO,Car-step Out,CSO_sub9_t1,NORMAL,FALL,FP,No,4700.0,99,118,5.86,Stage 3: Impact with Violent Rotation,"Min Accel: 6.8 m/s², Max Accel: 15.8 m/s², Max Gyro: 210.4 °/s"
+9,CSO,Car-step Out,CSO_sub9_t2,NORMAL,FALL,FP,No,4750.0,98,117,5.83,Stage 3: Impact with Violent Rotation,"Min Accel: 6.9 m/s², Max Accel: 19.9 m/s², Max Gyro: 316.8 °/s"
+9,CSO,Car-step Out,CSO_sub9_t3,NORMAL,FALL,FP,No,5000.0,99,118,5.88,Stage 3: Impact with Violent Rotation,"Min Accel: 6.2 m/s², Max Accel: 19.6 m/s², Max Gyro: 247.4 °/s"
+9,CSO,Car-step Out,CSO_sub9_t4,NORMAL,FALL,FP,No,5550.0,99,118,5.85,Stage 4/5: Critical Fall & Post-Impact Stillness,"Min Accel: 4.7 m/s², Max Accel: 20.5 m/s², Max Gyro: 306.3 °/s"
+9,CSO,Car-step Out,CSO_sub9_t5,NORMAL,FALL,FP,No,4550.0,98,117,5.82,Stage 4/5: Critical Fall & Post-Impact Stillness,"Min Accel: 5.7 m/s², Max Accel: 20.8 m/s², Max Gyro: 249.6 °/s"
+9,CSO,Car-step Out,CSO_sub9_t6,NORMAL,FALL,FP,No,4850.0,99,118,5.88,Stage 3: Impact with Violent Rotation,"Min Accel: 5.9 m/s², Max Accel: 16.8 m/s², Max Gyro: 260.5 °/s"
+10,CSO,Car-step Out,CSO_sub10_t1,NORMAL,NORMAL,TN,Yes,N/A,98,117,5.81,N/A,N/A
+10,CSO,Car-step Out,CSO_sub10_t2,NORMAL,FALL,FP,No,4600.0,100,119,5.94,Stage 4/5: Critical Fall & Post-Impact Stillness,"Min Accel: 5.3 m/s², Max Accel: 23.5 m/s², Max Gyro: 133.1 °/s"
+10,CSO,Car-step Out,CSO_sub10_t3,NORMAL,FALL,FP,No,5050.0,98,117,5.84,Stage 4/5: Critical Fall & Post-Impact Stillness,"Min Accel: 5.9 m/s², Max Accel: 19.9 m/s², Max Gyro: 115.5 °/s"
+10,CSO,Car-step Out,CSO_sub10_t4,NORMAL,NORMAL,TN,Yes,N/A,98,117,5.81,N/A,N/A
+10,CSO,Car-step Out,CSO_sub10_t5,NORMAL,FALL,FP,No,5250.0,98,117,5.81,Stage 3: Impact with Violent Rotation,"Min Accel: 6.8 m/s², Max Accel: 16.2 m/s², Max Gyro: 306.2 °/s"
+10,CSO,Car-step Out,CSO_sub10_t6,NORMAL,NORMAL,TN,Yes,N/A,101,120,5.99,N/A,N/A
+11,CSO,Car-step Out,CSO_sub11_t1,NORMAL,NORMAL,TN,Yes,N/A,99,118,5.89,N/A,N/A
+11,CSO,Car-step Out,CSO_sub11_t2,NORMAL,FALL,FP,No,5200.0,100,119,5.93,Stage 3: Impact with Violent Rotation,"Min Accel: 5.3 m/s², Max Accel: 15.1 m/s², Max Gyro: 208.1 °/s"
+11,CSO,Car-step Out,CSO_sub11_t3,NORMAL,NORMAL,TN,Yes,N/A,100,119,5.92,N/A,N/A
+11,CSO,Car-step Out,CSO_sub11_t4,NORMAL,FALL,FP,No,5300.0,101,120,5.97,Stage 3: Impact with Violent Rotation,"Min Accel: 3.9 m/s², Max Accel: 16.2 m/s², Max Gyro: 188.3 °/s"
+11,CSO,Car-step Out,CSO_sub11_t5,NORMAL,FALL,FP,No,5600.0,101,120,5.96,Stage 3: Impact with Violent Rotation,"Min Accel: 3.2 m/s², Max Accel: 15.1 m/s², Max Gyro: 217.8 °/s"
+11,CSO,Car-step Out,CSO_sub11_t6,NORMAL,FALL,FP,No,5250.0,100,119,5.94,Stage 3: Impact with Violent Rotation,"Min Accel: 6.2 m/s², Max Accel: 14.3 m/s², Max Gyro: 164.8 °/s"
+2,JOG,Jogging,JOG_sub2_t1,NORMAL,NORMAL,TN,Yes,N/A,581,600,29.99,N/A,N/A
+2,JOG,Jogging,JOG_sub2_t2,NORMAL,NORMAL,TN,Yes,N/A,582,601,30.01,N/A,N/A
+2,JOG,Jogging,JOG_sub2_t3,NORMAL,NORMAL,TN,Yes,N/A,580,599,29.91,N/A,N/A
+3,JOG,Jogging,JOG_sub3_t1,NORMAL,NORMAL,TN,Yes,N/A,580,599,29.91,N/A,N/A
+3,JOG,Jogging,JOG_sub3_t2,NORMAL,NORMAL,TN,Yes,N/A,580,599,29.92,N/A,N/A
+3,JOG,Jogging,JOG_sub3_t3,NORMAL,NORMAL,TN,Yes,N/A,581,600,29.98,N/A,N/A
+4,JOG,Jogging,JOG_sub4_t1,NORMAL,NORMAL,TN,Yes,N/A,580,599,29.93,N/A,N/A
+4,JOG,Jogging,JOG_sub4_t2,NORMAL,NORMAL,TN,Yes,N/A,580,599,29.92,N/A,N/A
+4,JOG,Jogging,JOG_sub4_t3,NORMAL,NORMAL,TN,Yes,N/A,580,599,29.92,N/A,N/A
+5,JOG,Jogging,JOG_sub5_t1,NORMAL,NORMAL,TN,Yes,N/A,578,597,29.81,N/A,N/A
+5,JOG,Jogging,JOG_sub5_t2,NORMAL,NORMAL,TN,Yes,N/A,577,596,29.79,N/A,N/A
+5,JOG,Jogging,JOG_sub5_t3,NORMAL,NORMAL,TN,Yes,N/A,580,599,29.95,N/A,N/A
+7,JOG,Jogging,JOG_sub7_t1,NORMAL,NORMAL,TN,Yes,N/A,578,597,29.84,N/A,N/A
+7,JOG,Jogging,JOG_sub7_t2,NORMAL,NORMAL,TN,Yes,N/A,579,598,29.86,N/A,N/A
+7,JOG,Jogging,JOG_sub7_t3,NORMAL,NORMAL,TN,Yes,N/A,579,598,29.87,N/A,N/A
+8,JOG,Jogging,JOG_sub8_t1,NORMAL,NORMAL,TN,Yes,N/A,578,597,29.84,N/A,N/A
+8,JOG,Jogging,JOG_sub8_t2,NORMAL,NORMAL,TN,Yes,N/A,579,598,29.88,N/A,N/A
+8,JOG,Jogging,JOG_sub8_t3,NORMAL,NORMAL,TN,Yes,N/A,581,600,29.99,N/A,N/A
+9,JOG,Jogging,JOG_sub9_t1,NORMAL,NORMAL,TN,Yes,N/A,580,599,29.91,N/A,N/A
+9,JOG,Jogging,JOG_sub9_t2,NORMAL,NORMAL,TN,Yes,N/A,578,597,29.84,N/A,N/A
+9,JOG,Jogging,JOG_sub9_t3,NORMAL,NORMAL,TN,Yes,N/A,579,598,29.89,N/A,N/A
+10,JOG,Jogging,JOG_sub10_t1,NORMAL,NORMAL,TN,Yes,N/A,581,600,29.99,N/A,N/A
+10,JOG,Jogging,JOG_sub10_t2,NORMAL,NORMAL,TN,Yes,N/A,581,600,29.95,N/A,N/A
+10,JOG,Jogging,JOG_sub10_t3,NORMAL,FALL,FP,No,1250.0,581,600,29.96,Stage 3: Impact with Violent Rotation,"Min Accel: 6.6 m/s², Max Accel: 15.3 m/s², Max Gyro: 137.8 °/s"
+11,JOG,Jogging,JOG_sub11_t1,NORMAL,NORMAL,TN,Yes,N/A,581,600,29.98,N/A,N/A
+11,JOG,Jogging,JOG_sub11_t2,NORMAL,NORMAL,TN,Yes,N/A,581,600,29.97,N/A,N/A
+11,JOG,Jogging,JOG_sub11_t3,NORMAL,NORMAL,TN,Yes,N/A,578,597,29.85,N/A,N/A
+2,JUM,Jumping,JUM_sub2_t1,NORMAL,NORMAL,TN,Yes,N/A,580,599,29.91,N/A,N/A
+2,JUM,Jumping,JUM_sub2_t2,NORMAL,NORMAL,TN,Yes,N/A,578,597,29.81,N/A,N/A
+2,JUM,Jumping,JUM_sub2_t3,NORMAL,NORMAL,TN,Yes,N/A,581,600,29.98,N/A,N/A
+3,JUM,Jumping,JUM_sub3_t1,NORMAL,NORMAL,TN,Yes,N/A,579,598,29.9,N/A,N/A
+3,JUM,Jumping,JUM_sub3_t2,NORMAL,NORMAL,TN,Yes,N/A,580,599,29.95,N/A,N/A
+3,JUM,Jumping,JUM_sub3_t3,NORMAL,NORMAL,TN,Yes,N/A,578,597,29.84,N/A,N/A
+4,JUM,Jumping,JUM_sub4_t1,NORMAL,NORMAL,TN,Yes,N/A,579,598,29.86,N/A,N/A
+4,JUM,Jumping,JUM_sub4_t2,NORMAL,NORMAL,TN,Yes,N/A,579,598,29.86,N/A,N/A
+4,JUM,Jumping,JUM_sub4_t3,NORMAL,NORMAL,TN,Yes,N/A,578,597,29.82,N/A,N/A
+5,JUM,Jumping,JUM_sub5_t1,NORMAL,NORMAL,TN,Yes,N/A,579,598,29.87,N/A,N/A
+5,JUM,Jumping,JUM_sub5_t2,NORMAL,NORMAL,TN,Yes,N/A,581,600,29.98,N/A,N/A
+5,JUM,Jumping,JUM_sub5_t3,NORMAL,FALL,FP,No,1250.0,578,597,29.81,Stage 3: Impact with Violent Rotation,"Min Accel: 0.9 m/s², Max Accel: 19.7 m/s², Max Gyro: 78.5 °/s"
+7,JUM,Jumping,JUM_sub7_t1,NORMAL,NORMAL,TN,Yes,N/A,579,598,29.88,N/A,N/A
+7,JUM,Jumping,JUM_sub7_t2,NORMAL,NORMAL,TN,Yes,N/A,578,597,29.81,N/A,N/A
+7,JUM,Jumping,JUM_sub7_t3,NORMAL,NORMAL,TN,Yes,N/A,578,597,29.81,N/A,N/A
+8,JUM,Jumping,JUM_sub8_t1,NORMAL,NORMAL,TN,Yes,N/A,579,598,29.89,N/A,N/A
+8,JUM,Jumping,JUM_sub8_t2,NORMAL,NORMAL,TN,Yes,N/A,581,600,29.98,N/A,N/A
+8,JUM,Jumping,JUM_sub8_t3,NORMAL,NORMAL,TN,Yes,N/A,579,598,29.88,N/A,N/A
+9,JUM,Jumping,JUM_sub9_t1,NORMAL,NORMAL,TN,Yes,N/A,578,597,29.83,N/A,N/A
+9,JUM,Jumping,JUM_sub9_t2,NORMAL,NORMAL,TN,Yes,N/A,580,599,29.92,N/A,N/A
+9,JUM,Jumping,JUM_sub9_t3,NORMAL,NORMAL,TN,Yes,N/A,578,597,29.8,N/A,N/A
+10,JUM,Jumping,JUM_sub10_t1,NORMAL,NORMAL,TN,Yes,N/A,581,600,29.98,N/A,N/A
+10,JUM,Jumping,JUM_sub10_t2,NORMAL,NORMAL,TN,Yes,N/A,580,599,29.92,N/A,N/A
+10,JUM,Jumping,JUM_sub10_t3,NORMAL,NORMAL,TN,Yes,N/A,578,597,29.84,N/A,N/A
+11,JUM,Jumping,JUM_sub11_t1,NORMAL,NORMAL,TN,Yes,N/A,578,597,29.85,N/A,N/A
+11,JUM,Jumping,JUM_sub11_t2,NORMAL,NORMAL,TN,Yes,N/A,580,599,29.94,N/A,N/A
+11,JUM,Jumping,JUM_sub11_t3,NORMAL,NORMAL,TN,Yes,N/A,580,599,29.9,N/A,N/A
+2,SCH,Sit Chair,SCH_sub2_t1,NORMAL,NORMAL,TN,Yes,N/A,98,117,5.81,N/A,N/A
+2,SCH,Sit Chair,SCH_sub2_t2,NORMAL,NORMAL,TN,Yes,N/A,99,118,5.86,N/A,N/A
+2,SCH,Sit Chair,SCH_sub2_t3,NORMAL,NORMAL,TN,Yes,N/A,100,119,5.92,N/A,N/A
+2,SCH,Sit Chair,SCH_sub2_t4,NORMAL,NORMAL,TN,Yes,N/A,99,118,5.87,N/A,N/A
+2,SCH,Sit Chair,SCH_sub2_t5,NORMAL,NORMAL,TN,Yes,N/A,99,118,5.88,N/A,N/A
+2,SCH,Sit Chair,SCH_sub2_t6,NORMAL,NORMAL,TN,Yes,N/A,101,120,5.98,N/A,N/A
+3,SCH,Sit Chair,SCH_sub3_t1,NORMAL,NORMAL,TN,Yes,N/A,99,118,5.86,N/A,N/A
+3,SCH,Sit Chair,SCH_sub3_t2,NORMAL,NORMAL,TN,Yes,N/A,99,118,5.89,N/A,N/A
+3,SCH,Sit Chair,SCH_sub3_t3,NORMAL,NORMAL,TN,Yes,N/A,98,117,5.85,N/A,N/A
+3,SCH,Sit Chair,SCH_sub3_t4,NORMAL,NORMAL,TN,Yes,N/A,101,120,5.98,N/A,N/A
+3,SCH,Sit Chair,SCH_sub3_t5,NORMAL,NORMAL,TN,Yes,N/A,101,120,5.99,N/A,N/A
+3,SCH,Sit Chair,SCH_sub3_t6,NORMAL,NORMAL,TN,Yes,N/A,99,118,5.89,N/A,N/A
+4,SCH,Sit Chair,SCH_sub4_t1,NORMAL,NORMAL,TN,Yes,N/A,100,119,5.95,N/A,N/A
+4,SCH,Sit Chair,SCH_sub4_t2,NORMAL,NORMAL,TN,Yes,N/A,101,120,5.97,N/A,N/A
+4,SCH,Sit Chair,SCH_sub4_t3,NORMAL,NORMAL,TN,Yes,N/A,99,118,5.89,N/A,N/A
+4,SCH,Sit Chair,SCH_sub4_t4,NORMAL,NORMAL,TN,Yes,N/A,98,117,5.8,N/A,N/A
+4,SCH,Sit Chair,SCH_sub4_t5,NORMAL,NORMAL,TN,Yes,N/A,99,118,5.87,N/A,N/A
+4,SCH,Sit Chair,SCH_sub4_t6,NORMAL,NORMAL,TN,Yes,N/A,99,118,5.89,N/A,N/A
+5,SCH,Sit Chair,SCH_sub5_t1,NORMAL,NORMAL,TN,Yes,N/A,100,119,5.93,N/A,N/A
+5,SCH,Sit Chair,SCH_sub5_t2,NORMAL,NORMAL,TN,Yes,N/A,99,118,5.88,N/A,N/A
+5,SCH,Sit Chair,SCH_sub5_t3,NORMAL,NORMAL,TN,Yes,N/A,101,120,5.96,N/A,N/A
+5,SCH,Sit Chair,SCH_sub5_t4,NORMAL,NORMAL,TN,Yes,N/A,98,117,5.81,N/A,N/A
+5,SCH,Sit Chair,SCH_sub5_t5,NORMAL,NORMAL,TN,Yes,N/A,100,119,5.94,N/A,N/A
+5,SCH,Sit Chair,SCH_sub5_t6,NORMAL,NORMAL,TN,Yes,N/A,98,117,5.83,N/A,N/A
+7,SCH,Sit Chair,SCH_sub7_t1,NORMAL,NORMAL,TN,Yes,N/A,98,117,5.84,N/A,N/A
+7,SCH,Sit Chair,SCH_sub7_t2,NORMAL,NORMAL,TN,Yes,N/A,99,118,5.87,N/A,N/A
+7,SCH,Sit Chair,SCH_sub7_t3,NORMAL,NORMAL,TN,Yes,N/A,100,119,5.93,N/A,N/A
+7,SCH,Sit Chair,SCH_sub7_t4,NORMAL,NORMAL,TN,Yes,N/A,99,118,5.88,N/A,N/A
+7,SCH,Sit Chair,SCH_sub7_t5,NORMAL,NORMAL,TN,Yes,N/A,101,120,5.97,N/A,N/A
+7,SCH,Sit Chair,SCH_sub7_t6,NORMAL,NORMAL,TN,Yes,N/A,97,116,5.8,N/A,N/A
+8,SCH,Sit Chair,SCH_sub8_t1,NORMAL,NORMAL,TN,Yes,N/A,98,117,5.84,N/A,N/A
+8,SCH,Sit Chair,SCH_sub8_t2,NORMAL,NORMAL,TN,Yes,N/A,99,118,5.88,N/A,N/A
+8,SCH,Sit Chair,SCH_sub8_t3,NORMAL,NORMAL,TN,Yes,N/A,98,117,5.82,N/A,N/A
+8,SCH,Sit Chair,SCH_sub8_t4,NORMAL,NORMAL,TN,Yes,N/A,101,120,5.99,N/A,N/A
+8,SCH,Sit Chair,SCH_sub8_t5,NORMAL,NORMAL,TN,Yes,N/A,100,119,5.93,N/A,N/A
+8,SCH,Sit Chair,SCH_sub8_t6,NORMAL,NORMAL,TN,Yes,N/A,98,117,5.8,N/A,N/A
+9,SCH,Sit Chair,SCH_sub9_t1,NORMAL,NORMAL,TN,Yes,N/A,99,118,5.86,N/A,N/A
+9,SCH,Sit Chair,SCH_sub9_t2,NORMAL,NORMAL,TN,Yes,N/A,100,119,5.93,N/A,N/A
+9,SCH,Sit Chair,SCH_sub9_t3,NORMAL,NORMAL,TN,Yes,N/A,99,118,5.87,N/A,N/A
+9,SCH,Sit Chair,SCH_sub9_t4,NORMAL,NORMAL,TN,Yes,N/A,98,117,5.84,N/A,N/A
+9,SCH,Sit Chair,SCH_sub9_t5,NORMAL,FALL,FP,No,1700.0,100,119,5.9,Stage 3: Impact with Violent Rotation,"Min Accel: 6.6 m/s², Max Accel: 14.3 m/s², Max Gyro: 170.4 °/s"
+9,SCH,Sit Chair,SCH_sub9_t6,NORMAL,NORMAL,TN,Yes,N/A,100,119,5.92,N/A,N/A
+10,SCH,Sit Chair,SCH_sub10_t1,NORMAL,NORMAL,TN,Yes,N/A,101,120,5.95,N/A,N/A
+10,SCH,Sit Chair,SCH_sub10_t2,NORMAL,NORMAL,TN,Yes,N/A,101,120,5.96,N/A,N/A
+10,SCH,Sit Chair,SCH_sub10_t3,NORMAL,NORMAL,TN,Yes,N/A,100,119,5.93,N/A,N/A
+10,SCH,Sit Chair,SCH_sub10_t4,NORMAL,NORMAL,TN,Yes,N/A,98,117,5.8,N/A,N/A
+10,SCH,Sit Chair,SCH_sub10_t5,NORMAL,NORMAL,TN,Yes,N/A,100,119,5.93,N/A,N/A
+10,SCH,Sit Chair,SCH_sub10_t6,NORMAL,NORMAL,TN,Yes,N/A,101,120,5.99,N/A,N/A
+11,SCH,Sit Chair,SCH_sub11_t1,NORMAL,NORMAL,TN,Yes,N/A,101,120,5.97,N/A,N/A
+11,SCH,Sit Chair,SCH_sub11_t2,NORMAL,NORMAL,TN,Yes,N/A,98,117,5.81,N/A,N/A
+11,SCH,Sit Chair,SCH_sub11_t3,NORMAL,NORMAL,TN,Yes,N/A,101,120,5.97,N/A,N/A
+11,SCH,Sit Chair,SCH_sub11_t4,NORMAL,NORMAL,TN,Yes,N/A,100,119,5.93,N/A,N/A
+11,SCH,Sit Chair,SCH_sub11_t5,NORMAL,NORMAL,TN,Yes,N/A,98,117,5.81,N/A,N/A
+11,SCH,Sit Chair,SCH_sub11_t6,NORMAL,NORMAL,TN,Yes,N/A,101,120,5.99,N/A,N/A
+2,STD,Standing,STD_sub2_t1,NORMAL,NORMAL,TN,Yes,N/A,5980,5999,299.92,N/A,N/A
+3,STD,Standing,STD_sub3_t1,NORMAL,NORMAL,TN,Yes,N/A,5978,5997,299.82,N/A,N/A
+4,STD,Standing,STD_sub4_t1,NORMAL,NORMAL,TN,Yes,N/A,5979,5998,299.87,N/A,N/A
+5,STD,Standing,STD_sub5_t1,NORMAL,NORMAL,TN,Yes,N/A,5982,6001,300.01,N/A,N/A
+7,STD,Standing,STD_sub7_t1,NORMAL,NORMAL,TN,Yes,N/A,5982,6001,300.01,N/A,N/A
+8,STD,Standing,STD_sub8_t1,NORMAL,FALL,FP,No,31100.0,5979,5998,299.85,Stage 3: Impact with Violent Rotation,"Min Accel: 6.8 m/s², Max Accel: 15.5 m/s², Max Gyro: 103.3 °/s"
+9,STD,Standing,STD_sub9_t1,NORMAL,NORMAL,TN,Yes,N/A,5978,5997,299.81,N/A,N/A
+10,STD,Standing,STD_sub10_t1,NORMAL,NORMAL,TN,Yes,N/A,5979,5998,299.87,N/A,N/A
+11,STD,Standing,STD_sub11_t1,NORMAL,NORMAL,TN,Yes,N/A,5981,6000,300.0,N/A,N/A
+2,STN,Stairs Down,STN_sub2_t1,NORMAL,NORMAL,TN,Yes,N/A,177,196,9.8,N/A,N/A
+2,STN,Stairs Down,STN_sub2_t2,NORMAL,NORMAL,TN,Yes,N/A,180,199,9.94,N/A,N/A
+2,STN,Stairs Down,STN_sub2_t3,NORMAL,FALL,FP,No,9650.0,179,198,9.9,Stage 3: Impact with Violent Rotation,"Min Accel: 5.4 m/s², Max Accel: 17.8 m/s², Max Gyro: 239.9 °/s"
+2,STN,Stairs Down,STN_sub2_t4,NORMAL,FALL,FP,No,2350.0,181,200,9.96,Stage 3: Impact with Violent Rotation,"Min Accel: 6.9 m/s², Max Accel: 14.1 m/s², Max Gyro: 125.2 °/s"
+2,STN,Stairs Down,STN_sub2_t5,NORMAL,FALL,FP,No,9450.0,177,196,9.8,Stage 3: Impact with Violent Rotation,"Min Accel: 4.4 m/s², Max Accel: 19.5 m/s², Max Gyro: 391.7 °/s"
+2,STN,Stairs Down,STN_sub2_t6,NORMAL,FALL,FP,No,9550.0,180,199,9.9,Stage 4/5: Critical Fall & Post-Impact Stillness,"Min Accel: 5.2 m/s², Max Accel: 20.5 m/s², Max Gyro: 240.1 °/s"
+3,STN,Stairs Down,STN_sub3_t1,NORMAL,NORMAL,TN,Yes,N/A,179,198,9.88,N/A,N/A
+3,STN,Stairs Down,STN_sub3_t2,NORMAL,FALL,FP,No,9050.0,178,197,9.85,Stage 3: Impact with Violent Rotation,"Min Accel: 5.3 m/s², Max Accel: 15.1 m/s², Max Gyro: 145.2 °/s"
+3,STN,Stairs Down,STN_sub3_t3,NORMAL,NORMAL,TN,Yes,N/A,179,198,9.89,N/A,N/A
+3,STN,Stairs Down,STN_sub3_t4,NORMAL,FALL,FP,No,9050.0,181,200,9.96,Stage 3: Impact with Violent Rotation,"Min Accel: 4.6 m/s², Max Accel: 17.5 m/s², Max Gyro: 141.6 °/s"
+3,STN,Stairs Down,STN_sub3_t5,NORMAL,NORMAL,TN,Yes,N/A,179,198,9.86,N/A,N/A
+3,STN,Stairs Down,STN_sub3_t6,NORMAL,FALL,FP,No,8450.0,180,199,9.9,Stage 3: Impact with Violent Rotation,"Min Accel: 5.0 m/s², Max Accel: 15.9 m/s², Max Gyro: 116.8 °/s"
+4,STN,Stairs Down,STN_sub4_t1,NORMAL,FALL,FP,No,1500.0,177,196,9.8,Stage 3: Impact with Violent Rotation,"Min Accel: 6.0 m/s², Max Accel: 16.4 m/s², Max Gyro: 176.8 °/s"
+4,STN,Stairs Down,STN_sub4_t2,NORMAL,NORMAL,TN,Yes,N/A,181,200,9.97,N/A,N/A
+4,STN,Stairs Down,STN_sub4_t3,NORMAL,NORMAL,TN,Yes,N/A,179,198,9.88,N/A,N/A
+4,STN,Stairs Down,STN_sub4_t4,NORMAL,NORMAL,TN,Yes,N/A,178,197,9.8,N/A,N/A
+4,STN,Stairs Down,STN_sub4_t5,NORMAL,NORMAL,TN,Yes,N/A,178,197,9.84,N/A,N/A
+4,STN,Stairs Down,STN_sub4_t6,NORMAL,NORMAL,TN,Yes,N/A,181,200,9.96,N/A,N/A
+5,STN,Stairs Down,STN_sub5_t1,NORMAL,FALL,FP,No,9200.0,179,198,9.87,Stage 3: Impact with Violent Rotation,"Min Accel: 5.1 m/s², Max Accel: 20.1 m/s², Max Gyro: 135.5 °/s"
+5,STN,Stairs Down,STN_sub5_t2,NORMAL,FALL,FP,No,9250.0,177,196,9.79,Stage 3: Impact with Violent Rotation,"Min Accel: 5.7 m/s², Max Accel: 17.8 m/s², Max Gyro: 100.1 °/s"
+5,STN,Stairs Down,STN_sub5_t3,NORMAL,FALL,FP,No,9050.0,180,199,9.91,Stage 4/5: Critical Fall & Post-Impact Stillness,"Min Accel: 5.1 m/s², Max Accel: 17.0 m/s², Max Gyro: 104.5 °/s"
+5,STN,Stairs Down,STN_sub5_t4,NORMAL,FALL,FP,No,9000.0,180,199,9.94,Stage 3: Impact with Violent Rotation,"Min Accel: 5.3 m/s², Max Accel: 17.3 m/s², Max Gyro: 174.8 °/s"
+5,STN,Stairs Down,STN_sub5_t5,NORMAL,FALL,FP,No,9150.0,179,198,9.89,Stage 3: Impact with Violent Rotation,"Min Accel: 5.8 m/s², Max Accel: 18.4 m/s², Max Gyro: 96.7 °/s"
+5,STN,Stairs Down,STN_sub5_t6,NORMAL,FALL,FP,No,9450.0,178,197,9.83,Stage 3: Impact with Violent Rotation,"Min Accel: 6.6 m/s², Max Accel: 18.4 m/s², Max Gyro: 92.1 °/s"
+7,STN,Stairs Down,STN_sub7_t1,NORMAL,FALL,FP,No,8200.0,181,200,9.99,Stage 3: Impact with Violent Rotation,"Min Accel: 2.2 m/s², Max Accel: 19.3 m/s², Max Gyro: 309.8 °/s"
+7,STN,Stairs Down,STN_sub7_t2,NORMAL,FALL,FP,No,8050.0,178,197,9.85,Stage 3: Impact with Violent Rotation,"Min Accel: 3.2 m/s², Max Accel: 22.6 m/s², Max Gyro: 274.6 °/s"
+7,STN,Stairs Down,STN_sub7_t3,NORMAL,FALL,FP,No,8750.0,178,197,9.84,Stage 4/5: Critical Fall & Post-Impact Stillness,"Min Accel: 3.2 m/s², Max Accel: 18.8 m/s², Max Gyro: 372.1 °/s"
+7,STN,Stairs Down,STN_sub7_t4,NORMAL,FALL,FP,No,9150.0,182,201,10.0,Stage 4/5: Critical Fall & Post-Impact Stillness,"Min Accel: 4.3 m/s², Max Accel: 18.3 m/s², Max Gyro: 236.5 °/s"
+7,STN,Stairs Down,STN_sub7_t5,NORMAL,FALL,FP,No,8200.0,178,197,9.82,Stage 3: Impact with Violent Rotation,"Min Accel: 3.3 m/s², Max Accel: 20.1 m/s², Max Gyro: 257.4 °/s"
+7,STN,Stairs Down,STN_sub7_t6,NORMAL,FALL,FP,No,8950.0,180,199,9.92,Stage 3: Impact with Violent Rotation,"Min Accel: 4.7 m/s², Max Accel: 21.4 m/s², Max Gyro: 263.9 °/s"
+8,STN,Stairs Down,STN_sub8_t1,NORMAL,NORMAL,TN,Yes,N/A,181,200,9.96,N/A,N/A
+8,STN,Stairs Down,STN_sub8_t2,NORMAL,NORMAL,TN,Yes,N/A,181,200,9.99,N/A,N/A
+8,STN,Stairs Down,STN_sub8_t3,NORMAL,FALL,FP,No,9550.0,179,198,9.87,Stage 3: Impact with Violent Rotation,"Min Accel: 4.9 m/s², Max Accel: 24.4 m/s², Max Gyro: 251.2 °/s"
+8,STN,Stairs Down,STN_sub8_t4,NORMAL,FALL,FP,No,9900.0,180,199,9.91,Stage 3: Impact with Violent Rotation,"Min Accel: 3.3 m/s², Max Accel: 26.5 m/s², Max Gyro: 280.5 °/s"
+8,STN,Stairs Down,STN_sub8_t5,NORMAL,NORMAL,TN,Yes,N/A,180,199,9.95,N/A,N/A
+8,STN,Stairs Down,STN_sub8_t6,NORMAL,NORMAL,TN,Yes,N/A,180,199,9.95,N/A,N/A
+9,STN,Stairs Down,STN_sub9_t1,NORMAL,FALL,FP,No,1400.0,181,200,9.97,Stage 3: Impact with Violent Rotation,"Min Accel: 5.4 m/s², Max Accel: 22.2 m/s², Max Gyro: 319.0 °/s"
+9,STN,Stairs Down,STN_sub9_t2,NORMAL,FALL,FP,No,8950.0,178,197,9.83,Stage 3: Impact with Violent Rotation,"Min Accel: 4.2 m/s², Max Accel: 21.2 m/s², Max Gyro: 284.0 °/s"
+9,STN,Stairs Down,STN_sub9_t3,NORMAL,FALL,FP,No,8550.0,180,199,9.91,Stage 4/5: Critical Fall & Post-Impact Stillness,"Min Accel: 2.2 m/s², Max Accel: 23.0 m/s², Max Gyro: 563.6 °/s"
+9,STN,Stairs Down,STN_sub9_t4,NORMAL,FALL,FP,No,9400.0,179,198,9.87,Stage 3: Impact with Violent Rotation,"Min Accel: 5.3 m/s², Max Accel: 17.0 m/s², Max Gyro: 311.5 °/s"
+9,STN,Stairs Down,STN_sub9_t5,NORMAL,FALL,FP,No,9350.0,181,200,9.97,Stage 3: Impact with Violent Rotation,"Min Accel: 4.1 m/s², Max Accel: 19.6 m/s², Max Gyro: 309.4 °/s"
+9,STN,Stairs Down,STN_sub9_t6,NORMAL,FALL,FP,No,9250.0,180,199,9.93,Stage 3: Impact with Violent Rotation,"Min Accel: 4.6 m/s², Max Accel: 21.6 m/s², Max Gyro: 271.2 °/s"
+10,STN,Stairs Down,STN_sub10_t1,NORMAL,NORMAL,TN,Yes,N/A,178,197,9.81,N/A,N/A
+10,STN,Stairs Down,STN_sub10_t2,NORMAL,NORMAL,TN,Yes,N/A,181,200,9.95,N/A,N/A
+10,STN,Stairs Down,STN_sub10_t3,NORMAL,NORMAL,TN,Yes,N/A,179,198,9.86,N/A,N/A
+10,STN,Stairs Down,STN_sub10_t4,NORMAL,NORMAL,TN,Yes,N/A,181,200,9.97,N/A,N/A
+10,STN,Stairs Down,STN_sub10_t5,NORMAL,NORMAL,TN,Yes,N/A,181,200,9.98,N/A,N/A
+10,STN,Stairs Down,STN_sub10_t6,NORMAL,FALL,FP,No,9400.0,178,197,9.83,Stage 3: Impact with Violent Rotation,"Min Accel: 4.2 m/s², Max Accel: 18.2 m/s², Max Gyro: 419.4 °/s"
+11,STN,Stairs Down,STN_sub11_t1,NORMAL,NORMAL,TN,Yes,N/A,181,200,9.97,N/A,N/A
+11,STN,Stairs Down,STN_sub11_t2,NORMAL,FALL,FP,No,9100.0,178,197,9.85,Stage 3: Impact with Violent Rotation,"Min Accel: 6.1 m/s², Max Accel: 18.1 m/s², Max Gyro: 162.0 °/s"
+11,STN,Stairs Down,STN_sub11_t3,NORMAL,NORMAL,TN,Yes,N/A,179,198,9.89,N/A,N/A
+11,STN,Stairs Down,STN_sub11_t4,NORMAL,NORMAL,TN,Yes,N/A,180,199,9.91,N/A,N/A
+11,STN,Stairs Down,STN_sub11_t5,NORMAL,NORMAL,TN,Yes,N/A,181,200,9.99,N/A,N/A
+11,STN,Stairs Down,STN_sub11_t6,NORMAL,NORMAL,TN,Yes,N/A,178,197,9.8,N/A,N/A
+2,STU,Stairs Up,STU_sub2_t1,NORMAL,NORMAL,TN,Yes,N/A,181,200,9.98,N/A,N/A
+2,STU,Stairs Up,STU_sub2_t2,NORMAL,NORMAL,TN,Yes,N/A,179,198,9.89,N/A,N/A
+2,STU,Stairs Up,STU_sub2_t3,NORMAL,NORMAL,TN,Yes,N/A,179,198,9.9,N/A,N/A
+2,STU,Stairs Up,STU_sub2_t4,NORMAL,FALL,FP,No,2400.0,180,199,9.94,Stage 3: Impact with Violent Rotation,"Min Accel: 6.2 m/s², Max Accel: 14.0 m/s², Max Gyro: 187.0 °/s"
+2,STU,Stairs Up,STU_sub2_t5,NORMAL,FALL,FP,No,2100.0,181,200,9.95,Stage 4/5: Critical Fall & Post-Impact Stillness,"Min Accel: 6.2 m/s², Max Accel: 16.4 m/s², Max Gyro: 125.9 °/s"
+2,STU,Stairs Up,STU_sub2_t6,NORMAL,FALL,FP,No,9400.0,180,199,9.9,Stage 3: Impact with Violent Rotation,"Min Accel: 2.8 m/s², Max Accel: 18.6 m/s², Max Gyro: 256.9 °/s"
+3,STU,Stairs Up,STU_sub3_t1,NORMAL,FALL,FP,No,9350.0,181,200,9.95,Stage 3: Impact with Violent Rotation,"Min Accel: 4.5 m/s², Max Accel: 15.4 m/s², Max Gyro: 157.3 °/s"
+3,STU,Stairs Up,STU_sub3_t2,NORMAL,NORMAL,TN,Yes,N/A,181,200,9.95,N/A,N/A
+3,STU,Stairs Up,STU_sub3_t3,NORMAL,FALL,FP,No,3250.0,179,198,9.89,Stage 3: Impact with Violent Rotation,"Min Accel: 6.3 m/s², Max Accel: 14.8 m/s², Max Gyro: 123.1 °/s"
+3,STU,Stairs Up,STU_sub3_t4,NORMAL,FALL,FP,No,9750.0,179,198,9.85,Stage 3: Impact with Violent Rotation,"Min Accel: 3.1 m/s², Max Accel: 17.4 m/s², Max Gyro: 162.4 °/s"
+3,STU,Stairs Up,STU_sub3_t5,NORMAL,FALL,FP,No,9400.0,181,200,9.97,Stage 3: Impact with Violent Rotation,"Min Accel: 5.1 m/s², Max Accel: 15.9 m/s², Max Gyro: 171.9 °/s"
+3,STU,Stairs Up,STU_sub3_t6,NORMAL,FALL,FP,No,3250.0,181,200,9.98,Stage 3: Impact with Violent Rotation,"Min Accel: 5.4 m/s², Max Accel: 15.9 m/s², Max Gyro: 165.1 °/s"
+4,STU,Stairs Up,STU_sub4_t1,NORMAL,NORMAL,TN,Yes,N/A,178,197,9.83,N/A,N/A
+4,STU,Stairs Up,STU_sub4_t2,NORMAL,NORMAL,TN,Yes,N/A,180,199,9.91,N/A,N/A
+4,STU,Stairs Up,STU_sub4_t3,NORMAL,NORMAL,TN,Yes,N/A,179,198,9.87,N/A,N/A
+4,STU,Stairs Up,STU_sub4_t4,NORMAL,NORMAL,TN,Yes,N/A,177,196,9.79,N/A,N/A
+4,STU,Stairs Up,STU_sub4_t5,NORMAL,NORMAL,TN,Yes,N/A,179,198,9.89,N/A,N/A
+4,STU,Stairs Up,STU_sub4_t6,NORMAL,NORMAL,TN,Yes,N/A,180,199,9.94,N/A,N/A
+5,STU,Stairs Up,STU_sub5_t1,NORMAL,FALL,FP,No,8250.0,181,200,9.97,Stage 3: Impact with Violent Rotation,"Min Accel: 6.6 m/s², Max Accel: 14.1 m/s², Max Gyro: 117.7 °/s"
+5,STU,Stairs Up,STU_sub5_t2,NORMAL,FALL,FP,No,2550.0,180,199,9.94,Stage 3: Impact with Violent Rotation,"Min Accel: 6.4 m/s², Max Accel: 16.2 m/s², Max Gyro: 133.0 °/s"
+5,STU,Stairs Up,STU_sub5_t3,NORMAL,FALL,FP,No,4550.0,179,198,9.87,Stage 3: Impact with Violent Rotation,"Min Accel: 5.6 m/s², Max Accel: 15.8 m/s², Max Gyro: 112.9 °/s"
+5,STU,Stairs Up,STU_sub5_t4,NORMAL,FALL,FP,No,5750.0,179,198,9.89,Stage 3: Impact with Violent Rotation,"Min Accel: 7.0 m/s², Max Accel: 15.1 m/s², Max Gyro: 86.0 °/s"
+5,STU,Stairs Up,STU_sub5_t5,NORMAL,FALL,FP,No,3400.0,180,199,9.92,Stage 3: Impact with Violent Rotation,"Min Accel: 6.8 m/s², Max Accel: 14.2 m/s², Max Gyro: 89.0 °/s"
+5,STU,Stairs Up,STU_sub5_t6,NORMAL,NORMAL,TN,Yes,N/A,180,199,9.94,N/A,N/A
+7,STU,Stairs Up,STU_sub7_t1,NORMAL,FALL,FP,No,9300.0,180,199,9.91,Stage 3: Impact with Violent Rotation,"Min Accel: 4.8 m/s², Max Accel: 19.8 m/s², Max Gyro: 235.9 °/s"
+7,STU,Stairs Up,STU_sub7_t2,NORMAL,FALL,FP,No,9500.0,180,199,9.91,Stage 4/5: Critical Fall & Post-Impact Stillness,"Min Accel: 5.8 m/s², Max Accel: 17.3 m/s², Max Gyro: 241.0 °/s"
+7,STU,Stairs Up,STU_sub7_t3,NORMAL,FALL,FP,No,2750.0,179,198,9.9,Stage 3: Impact with Violent Rotation,"Min Accel: 3.5 m/s², Max Accel: 16.4 m/s², Max Gyro: 281.1 °/s"
+7,STU,Stairs Up,STU_sub7_t4,NORMAL,NORMAL,TN,Yes,N/A,180,199,9.94,N/A,N/A
+7,STU,Stairs Up,STU_sub7_t5,NORMAL,FALL,FP,No,9350.0,179,198,9.88,Stage 3: Impact with Violent Rotation,"Min Accel: 5.8 m/s², Max Accel: 17.3 m/s², Max Gyro: 206.3 °/s"
+7,STU,Stairs Up,STU_sub7_t6,NORMAL,FALL,FP,No,9650.0,179,198,9.85,Stage 4/5: Critical Fall & Post-Impact Stillness,"Min Accel: 5.1 m/s², Max Accel: 17.9 m/s², Max Gyro: 240.1 °/s"
+8,STU,Stairs Up,STU_sub8_t1,NORMAL,NORMAL,TN,Yes,N/A,180,199,9.91,N/A,N/A
+8,STU,Stairs Up,STU_sub8_t2,NORMAL,NORMAL,TN,Yes,N/A,179,198,9.89,N/A,N/A
+8,STU,Stairs Up,STU_sub8_t3,NORMAL,NORMAL,TN,Yes,N/A,181,200,9.99,N/A,N/A
+8,STU,Stairs Up,STU_sub8_t4,NORMAL,FALL,FP,No,9450.0,181,200,9.95,Stage 3: Impact with Violent Rotation,"Min Accel: 4.9 m/s², Max Accel: 18.8 m/s², Max Gyro: 188.5 °/s"
+8,STU,Stairs Up,STU_sub8_t5,NORMAL,FALL,FP,No,9450.0,178,197,9.84,Stage 3: Impact with Violent Rotation,"Min Accel: 4.6 m/s², Max Accel: 20.8 m/s², Max Gyro: 243.7 °/s"
+8,STU,Stairs Up,STU_sub8_t6,NORMAL,NORMAL,TN,Yes,N/A,178,197,9.83,N/A,N/A
+9,STU,Stairs Up,STU_sub9_t1,NORMAL,FALL,FP,No,2200.0,179,198,9.9,Stage 3: Impact with Violent Rotation,"Min Accel: 5.8 m/s², Max Accel: 16.6 m/s², Max Gyro: 272.0 °/s"
+9,STU,Stairs Up,STU_sub9_t2,NORMAL,FALL,FP,No,9750.0,178,197,9.85,Stage 3: Impact with Violent Rotation,"Min Accel: 3.3 m/s², Max Accel: 24.3 m/s², Max Gyro: 308.8 °/s"
+9,STU,Stairs Up,STU_sub9_t3,NORMAL,FALL,FP,No,3050.0,181,200,9.96,Stage 3: Impact with Violent Rotation,"Min Accel: 4.1 m/s², Max Accel: 18.8 m/s², Max Gyro: 148.1 °/s"
+9,STU,Stairs Up,STU_sub9_t4,NORMAL,NORMAL,TN,Yes,N/A,178,197,9.82,N/A,N/A
+9,STU,Stairs Up,STU_sub9_t5,NORMAL,FALL,FP,No,2900.0,179,198,9.86,Stage 3: Impact with Violent Rotation,"Min Accel: 4.5 m/s², Max Accel: 15.0 m/s², Max Gyro: 166.0 °/s"
+9,STU,Stairs Up,STU_sub9_t6,NORMAL,NORMAL,TN,Yes,N/A,180,199,9.94,N/A,N/A
+10,STU,Stairs Up,STU_sub10_t1,NORMAL,FALL,FP,No,9850.0,179,198,9.89,Stage 3: Impact with Violent Rotation,"Min Accel: 5.3 m/s², Max Accel: 17.3 m/s², Max Gyro: 200.5 °/s"
+10,STU,Stairs Up,STU_sub10_t2,NORMAL,FALL,FP,No,2000.0,125,144,7.18,Stage 3: Impact with Violent Rotation,"Min Accel: 6.8 m/s², Max Accel: 16.1 m/s², Max Gyro: 148.7 °/s"
+10,STU,Stairs Up,STU_sub10_t3,NORMAL,FALL,FP,No,9900.0,181,200,9.96,Stage 3: Impact with Violent Rotation,"Min Accel: 5.0 m/s², Max Accel: 17.8 m/s², Max Gyro: 261.8 °/s"
+10,STU,Stairs Up,STU_sub10_t4,NORMAL,NORMAL,TN,Yes,N/A,180,199,9.92,N/A,N/A
+10,STU,Stairs Up,STU_sub10_t5,NORMAL,FALL,FP,No,9750.0,179,198,9.89,Stage 3: Impact with Violent Rotation,"Min Accel: 6.2 m/s², Max Accel: 18.1 m/s², Max Gyro: 163.1 °/s"
+10,STU,Stairs Up,STU_sub10_t6,NORMAL,NORMAL,TN,Yes,N/A,178,197,9.83,N/A,N/A
+11,STU,Stairs Up,STU_sub11_t1,NORMAL,NORMAL,TN,Yes,N/A,178,197,9.84,N/A,N/A
+11,STU,Stairs Up,STU_sub11_t2,NORMAL,FALL,FP,No,9200.0,179,198,9.86,Stage 3: Impact with Violent Rotation,"Min Accel: 5.1 m/s², Max Accel: 18.0 m/s², Max Gyro: 215.3 °/s"
+11,STU,Stairs Up,STU_sub11_t3,NORMAL,NORMAL,TN,Yes,N/A,179,198,9.85,N/A,N/A
+11,STU,Stairs Up,STU_sub11_t4,NORMAL,NORMAL,TN,Yes,N/A,178,197,9.84,N/A,N/A
+11,STU,Stairs Up,STU_sub11_t5,NORMAL,NORMAL,TN,Yes,N/A,178,197,9.83,N/A,N/A
+11,STU,Stairs Up,STU_sub11_t6,NORMAL,FALL,FP,No,9800.0,179,198,9.87,Stage 3: Impact with Violent Rotation,"Min Accel: 5.9 m/s², Max Accel: 20.6 m/s², Max Gyro: 252.4 °/s"
+2,WAL,Walking,WAL_sub2_t1,NORMAL,FALL,FP,No,121750.0,5981,6000,299.96,Stage 3: Impact with Violent Rotation,"Min Accel: 6.7 m/s², Max Accel: 15.8 m/s², Max Gyro: 208.9 °/s"
+3,WAL,Walking,WAL_sub3_t1,NORMAL,FALL,FP,No,246400.0,5979,5998,299.87,Stage 3: Impact with Violent Rotation,"Min Accel: 5.9 m/s², Max Accel: 16.9 m/s², Max Gyro: 132.0 °/s"
+4,WAL,Walking,WAL_sub4_t1,NORMAL,FALL,FP,No,1500.0,5980,5999,299.9,Stage 3: Impact with Violent Rotation,"Min Accel: 4.8 m/s², Max Accel: 14.3 m/s², Max Gyro: 128.4 °/s"
+5,WAL,Walking,WAL_sub5_t1,NORMAL,FALL,FP,No,162500.0,5981,6000,299.97,Stage 3: Impact with Violent Rotation,"Min Accel: 5.9 m/s², Max Accel: 17.6 m/s², Max Gyro: 315.3 °/s"
+7,WAL,Walking,WAL_sub7_t1,NORMAL,FALL,FP,No,1750.0,5979,5998,299.87,Stage 3: Impact with Violent Rotation,"Min Accel: 5.2 m/s², Max Accel: 20.2 m/s², Max Gyro: 159.8 °/s"
+8,WAL,Walking,WAL_sub8_t1,NORMAL,NORMAL,TN,Yes,N/A,5981,6000,299.98,N/A,N/A
+9,WAL,Walking,WAL_sub9_t1,NORMAL,FALL,FP,No,1750.0,5981,6000,299.99,Stage 3: Impact with Violent Rotation,"Min Accel: 1.3 m/s², Max Accel: 19.3 m/s², Max Gyro: 322.9 °/s"
+10,WAL,Walking,WAL_sub10_t1,NORMAL,NORMAL,TN,Yes,N/A,5978,5997,299.81,N/A,N/A
+11,WAL,Walking,WAL_sub11_t1,NORMAL,FALL,FP,No,1850.0,5979,5998,299.9,Stage 3: Impact with Violent Rotation,"Min Accel: 5.1 m/s², Max Accel: 18.2 m/s², Max Gyro: 172.9 °/s"
