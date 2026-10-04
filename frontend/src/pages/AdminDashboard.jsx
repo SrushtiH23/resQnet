@@ -190,6 +190,7 @@ export const AdminDashboard = () => {
       <div className="flex items-center gap-2 border-b border-slate-800 pb-2 overflow-x-auto text-xs">
         {[
           { id: 'emergencies', label: `Active Emergencies (${activeEmergencies.length})`, icon: <ShieldAlert className="w-4 h-4 text-rose-500" /> },
+          { id: 'mobiact_research', label: 'MobiAct Research', icon: <FlaskConical className="w-4 h-4 text-rose-400" />, isLink: true, path: '/mobiact-research-evaluation' },
           { id: 'hospital_registry', label: 'Real Google Places hospital directory — Bengaluru coverage', icon: <Building2 className="w-4 h-4 text-indigo-400" /> },
           { id: 'evaluation', label: 'Fall Detection Evaluation (SMS Disabled)', icon: <FlaskConical className="w-4 h-4 text-amber-400" /> },
           { id: 'users', label: `Users (${overview?.users?.length || 0})`, icon: <Users className="w-4 h-4 text-cyan-400" /> },
@@ -199,7 +200,13 @@ export const AdminDashboard = () => {
         ].map(tab => (
           <button
             key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
+            onClick={() => {
+              if (tab.isLink) {
+                navigate(tab.path);
+              } else {
+                setActiveTab(tab.id);
+              }
+            }}
             className={`px-4 py-2.5 rounded-xl font-bold transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap ${
               activeTab === tab.id
                 ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 shadow-sm'
