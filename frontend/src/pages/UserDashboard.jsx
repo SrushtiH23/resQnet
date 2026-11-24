@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Link } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { DashboardTriageChatbot } from '../components/DashboardTriageChatbot';
@@ -8,7 +7,7 @@ import { RealSmartphoneSensor } from '../components/RealSmartphoneSensor';
 import { InteractiveLiveMap } from '../components/InteractiveLiveMap';
 import { NearbyHospitalNavigationModal } from '../components/NearbyHospitalNavigationModal';
 import {
-  Navigation, Flame, ShieldAlert, MapPin, RefreshCw, CheckCircle2, AlertTriangle, Zap
+  Navigation, Flame, ShieldAlert, MapPin, RefreshCw, CheckCircle2, AlertTriangle, MessageSquare, X
 } from 'lucide-react';
 
 export const UserDashboard = () => {
@@ -24,6 +23,9 @@ export const UserDashboard = () => {
     lastUpdated: null,
     available: false
   });
+
+  // Floating Clinical Triage Assistant Chatbot State (USER Role Only)
+  const [isChatbotOpen, setIsChatbotOpen] = useState(false);
 
   // SOS Modal & Trigger State
   const [showSosModal, setShowSosModal] = useState(false);
@@ -491,12 +493,6 @@ export const UserDashboard = () => {
         />
       </div>
 
-      {/* 6. EMERGENCY TRIAGE CHATBOT */}
-      <DashboardTriageChatbot
-        activeEmergency={activeEmergency}
-        onRequestEmergency={handleOpenSosModal}
-      />
-
       {/* AUTOMATIC NEARBY HOSPITAL DIRECTION POPUP */}
       <NearbyHospitalNavigationModal
         isOpen={showHospitalNavModal}
@@ -506,25 +502,83 @@ export const UserDashboard = () => {
         locationStatus={locationStatus}
       />
 
-      {/* 7. FLOATING AI DECISION ENGINE ICON (USER ROLE ONLY) */}
+      {/* 6. FLOATING CLINICAL TRIAGE ASSISTANT CHATBOT (USER ROLE ONLY) */}
       {isUser && (
-        <Link
-          to="/ai-decision-engine"
-          className="fixed bottom-6 right-6 z-40 flex items-center gap-2.5 px-4 py-3 rounded-full bg-gradient-to-r from-amber-500 via-rose-500 to-purple-600 text-white font-bold text-xs shadow-2xl shadow-rose-500/30 hover:shadow-rose-500/50 hover:scale-105 active:scale-95 transition-all duration-300 border border-white/20 backdrop-blur-md group cursor-pointer"
-          title="Open AI Decision Engine"
-          aria-label="AI Decision Engine"
-        >
-          <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center group-hover:rotate-12 transition-transform shadow-inner">
-            <Zap className="w-3.5 h-3.5 text-amber-200 fill-amber-200 animate-pulse" />
+        <>
+          {/* Floating Chat Panel */}
+          <div
+            style={{ display: isChatbotOpen ? 'block' : 'none' }}
+            className="fixed bottom-24 right-4 sm:right-6 z-50 w-[96vw] sm:w-[480px] md:w-[520px] max-w-[96vw] max-h-[82vh] rounded-3xl border border-cyan-500/40 bg-slate-950/95 shadow-2xl shadow-cyan-950/60 backdrop-blur-2xl animate-fade-in overflow-hidden flex flex-col"
+            role="dialog"
+            aria-label="ResQNet Clinical Triage Assistant"
+          >
+            {/* Window Header with Minimize/Close Button */}
+            <div className="flex items-center justify-between px-5 py-3.5 bg-gradient-to-r from-slate-900 via-slate-900 to-cyan-950/50 border-b border-slate-800/80">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-xl bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 flex items-center justify-center shadow-sm">
+                  <MessageSquare className="w-4 h-4 animate-pulse" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-black text-white tracking-wide">ResQNet Assistant</span>
+                    <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-full">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                      Live Triage
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-slate-400">Clinical Triage & Symptom Assessment</p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsChatbotOpen(false)}
+                className="p-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-800 hover:border-slate-700 transition-all cursor-pointer"
+                title="Minimize Assistant"
+                aria-label="Minimize Assistant"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Window Content: Reusing Existing DashboardTriageChatbot */}
+            <div className="overflow-y-auto max-h-[calc(82vh-4rem)] p-3 sm:p-4 scrollbar-thin scrollbar-thumb-slate-800">
+              <DashboardTriageChatbot
+                activeEmergency={activeEmergency}
+                onRequestEmergency={() => {
+                  setIsChatbotOpen(false);
+                  handleOpenSosModal();
+                }}
+              />
+            </div>
           </div>
-          <span className="hidden sm:inline font-bold tracking-wide text-white drop-shadow">
-            AI Decision Engine
-          </span>
-          <span className="flex h-2 w-2 relative">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-300 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-400"></span>
-          </span>
-        </Link>
+
+          {/* Floating Chatbot Launcher Button */}
+          <button
+            type="button"
+            onClick={() => setIsChatbotOpen((prev) => !prev)}
+            className="fixed bottom-6 right-6 z-40 flex items-center gap-2.5 px-4 py-3 rounded-full bg-gradient-to-r from-cyan-600 via-teal-600 to-indigo-600 hover:from-cyan-500 hover:via-teal-500 hover:to-indigo-500 text-white font-bold text-xs shadow-2xl shadow-cyan-500/40 hover:shadow-cyan-500/60 hover:scale-105 active:scale-95 transition-all duration-300 border border-white/20 backdrop-blur-md group cursor-pointer"
+            title="ResQNet Assistant"
+            aria-label="ResQNet Assistant"
+          >
+            <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center group-hover:rotate-12 transition-transform shadow-inner">
+              {isChatbotOpen ? (
+                <X className="w-3.5 h-3.5 text-white" />
+              ) : (
+                <MessageSquare className="w-3.5 h-3.5 text-cyan-200 fill-cyan-200" />
+              )}
+            </div>
+            <span className="hidden sm:inline font-bold tracking-wide text-white drop-shadow">
+              {isChatbotOpen ? 'Close Assistant' : 'ResQNet Assistant'}
+            </span>
+            {!isChatbotOpen && (
+              <span className="flex h-2 w-2 relative">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-300 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-400"></span>
+              </span>
+            )}
+          </button>
+        </>
       )}
 
       {/* STEP 1 — SOS CONFIRMATION MODAL */}
