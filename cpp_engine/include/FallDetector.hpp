@@ -36,11 +36,11 @@ private:
     FallState current_state;
     int64_t state_entry_timestamp;
 
-    static constexpr double FREEFALL_THRESHOLD = 3.0;   // m/s²
-    static constexpr double IMPACT_THRESHOLD = 24.0;     // m/s²
-    static constexpr double ROTATION_THRESHOLD = 180.0;  // °/s
-    static constexpr double STILLNESS_VARIANCE = 1.5;   // m/s²
-    static constexpr double RECOVERY_VARIANCE = 5.0;    // m/s²
+    static constexpr double FREEFALL_THRESHOLD = 6.5;   // m/s² (~0.65g downward descent)
+    static constexpr double IMPACT_THRESHOLD = 18.0;     // m/s² (~1.84g deceleration shock)
+    static constexpr double ROTATION_THRESHOLD = 80.0;   // °/s (body rotation angular velocity)
+    static constexpr double STILLNESS_VARIANCE = 3.0;    // m/s² (post-impact resting stillness)
+    static constexpr double RECOVERY_VARIANCE = 5.5;     // m/s² (active recovery threshold)
 
 public:
     FallDetector();

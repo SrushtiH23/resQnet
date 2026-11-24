@@ -88,23 +88,26 @@ FallDetectionResult FallDetector::evaluate_window(const std::vector<SensorSample
     // State transition logic combining multi-threshold accelerometer & gyroscope
     if (has_free_fall && has_impact && has_rotation && has_stillness) {
         state = FallState::FALL_CONFIRMED;
-        confidence_boost = 85.0;
-    } else if (has_free_fall && has_impact && has_rotation) {
+        confidence_boost = 90.0;
+    } else if (has_impact && has_rotation && has_stillness) {
         state = FallState::VERIFY;
-        confidence_boost = 65.0;
-    } else if (has_free_fall && has_impact) {
+        confidence_boost = 75.0;
+    } else if (has_free_fall && has_impact && has_stillness) {
         state = FallState::IMPACT;
-        confidence_boost = 50.0;
+        confidence_boost = 70.0;
+    } else if (has_impact && has_rotation) {
+        state = FallState::ROTATION_CHANGE;
+        confidence_boost = 35.0; // Needs post-impact stillness before emergency escalation!
+    } else if (has_impact) {
+        state = FallState::IMPACT;
+        confidence_boost = 25.0;
     } else if (has_free_fall) {
         state = FallState::FREE_FALL;
-        confidence_boost = 25.0;
-    } else if (has_impact) {
-        state = FallState::ROTATION_CHANGE;
-        confidence_boost = 25.0;
+        confidence_boost = 20.0;
     }
 
     current_state = state;
-    bool is_fall = confidence_boost >= 40.0;
+    bool is_fall = confidence_boost >= 60.0;
 
     std::ostringstream ss;
     ss << "Min Accel: " << std::fixed << std::setprecision(1) << min_accel << " m/s², "

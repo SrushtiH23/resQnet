@@ -26,7 +26,7 @@ from services.routing_engine import ProductionGeospatialRouter, HospitalGraphRou
 from services.ambulance_engine import PriorityAmbulanceAllocator
 from services.qr_service import SecureQRService
 from services.chatbot_service import EmergencyTriageChatbot
-from services.notification_service import EmergencyNotificationService, NotificationAndAuditService, normalize_indian_phone
+from services.notification_service import EmergencyNotificationService, NotificationAndAuditService, normalize_indian_phone, validate_phone_number
 from websocket_manager import ws_manager
 from seed_data import seed_database
 from services.google_places_service import sync_bengaluru_hospital_registry, calculate_haversine_distance
@@ -348,11 +348,18 @@ def get_family_contacts(current_user: User = Depends(get_current_user), db: Sess
 @app.post("/api/user/family-contacts", response_model=schemas.FamilyContactResponse)
 @app.post("/user/family-contacts", response_model=schemas.FamilyContactResponse)
 def add_family_contact(contact_in: schemas.FamilyContactCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    normalized_phone = validate_phone_number(contact_in.phone)
+    if not normalized_phone:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid phone number format: '{contact_in.phone}'. Must be a valid mobile number with country code (e.g. +91XXXXXXXXXX)."
+        )
+
     contact = FamilyContact(
         user_id=current_user.id,
         contact_name=contact_in.contact_name,
         relationship_type=contact_in.relationship_type,
-        phone=contact_in.phone,
+        phone=normalized_phone,
         email=contact_in.email,
         escalation_order=contact_in.escalation_order
     )
@@ -376,7 +383,13 @@ def update_family_contact(contact_id: int, contact_in: schemas.FamilyContactUpda
     if contact_in.relationship_type is not None:
         contact.relationship_type = contact_in.relationship_type
     if contact_in.phone is not None:
-        contact.phone = contact_in.phone
+        normalized_phone = validate_phone_number(contact_in.phone)
+        if not normalized_phone:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid phone number format: '{contact_in.phone}'. Must be a valid mobile number with country code (e.g. +91XXXXXXXXXX)."
+            )
+        contact.phone = normalized_phone
     if contact_in.email is not None:
         contact.email = contact_in.email
     if contact_in.escalation_order is not None:
@@ -1262,6 +1275,12 @@ def acknowledge_emergency(req: schemas.EmergencyAcknowledgementRequest, db: Sess
 def populate_emergency_sms_metadata(db: Session, emergency: EmergencyEvent) -> EmergencyEvent:
     if not emergency:
         return emergency
+
+    # Check for delivery status updates from provider
+    try:
+        EmergencyNotificationService.check_batch_delivery_status(db, emergency.id)
+    except Exception as e:
+        pass
 
     logs = db.query(NotificationLog).filter(
         NotificationLog.emergency_event_id == emergency.id,

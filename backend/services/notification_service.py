@@ -343,6 +343,62 @@ class EmergencyNotificationService:
         db.refresh(notif_log)
         return notif_log
 
+    @staticmethod
+    def check_batch_delivery_status(db: Session, emergency_id: int) -> None:
+        """
+        Polls TextBee batch status for any SENT notification logs to verify carrier delivery receipts.
+        Updates status from SENT to DELIVERED or FAILED accordingly.
+        """
+        sent_logs = db.query(NotificationLog).filter(
+            NotificationLog.emergency_event_id == emergency_id,
+            NotificationLog.channel == "SMS",
+            NotificationLog.status == "SENT",
+            NotificationLog.provider == "textbee"
+        ).all()
+
+        if not sent_logs:
+            return
+
+        textbee_api_key = os.getenv("TEXTBEE_API_KEY", "").strip()
+        textbee_device_id = os.getenv("TEXTBEE_DEVICE_ID", "").strip()
+        if not (textbee_api_key and textbee_device_id):
+            return
+
+        import requests
+        headers = {"x-api-key": textbee_api_key}
+
+        for log in sent_logs:
+            batch_id = log.provider_message_id
+            if not batch_id or batch_id.startswith("TXB_"):
+                continue
+            try:
+                url = f"https://api.textbee.dev/api/v1/gateway/devices/{textbee_device_id}/sms-batch/{batch_id}"
+                resp = requests.get(url, headers=headers, timeout=5)
+                if resp.status_code == 200:
+                    data = resp.json().get("data", {})
+                    batch = data.get("batch", {})
+                    messages = data.get("messages", [])
+
+                    delivered = (batch.get("deliveredCount", 0) > 0) or any(m.get("status") in ["delivered", "DELIVERED"] for m in messages)
+                    dispatched = (batch.get("dispatchedCount", 0) > 0) or any(m.get("status") in ["dispatched", "sent", "SENT"] for m in messages)
+                    failed = (batch.get("failureCount", 0) > 0) or any(m.get("status") in ["failed", "FAILED"] for m in messages)
+
+                    if delivered:
+                        log.status = "DELIVERED"
+                        log.delivered_at = datetime.utcnow()
+                        db.commit()
+                        print(f"[TextBee STATUS REFRESH] Emergency #{emergency_id} Batch #{batch_id} -> DELIVERED")
+                    elif failed:
+                        log.status = "FAILED"
+                        log.error_message = f"TextBee reported delivery failure for contact #{log.contact_id}."
+                        db.commit()
+                        print(f"[TextBee STATUS REFRESH] Emergency #{emergency_id} Batch #{batch_id} -> FAILED")
+                    elif dispatched:
+                        print(f"[TextBee STATUS REFRESH] Emergency #{emergency_id} Batch #{batch_id} -> Dispatched to carrier network")
+            except Exception as e:
+                # Non-blocking delivery polling
+                pass
+
 class NotificationAndAuditService:
     """
     Service for logging timeline events and recording system security/user audit logs.
