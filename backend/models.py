@@ -20,8 +20,15 @@ class User(Base):
     medical_profile = relationship("MedicalProfile", back_populates="user", uselist=False, cascade="all, delete-orphan")
     family_contacts = relationship("FamilyContact", back_populates="user", cascade="all, delete-orphan")
     emergency_events = relationship("EmergencyEvent", back_populates="user")
-    qr_card = relationship("QRCard", back_populates="user", uselist=False, cascade="all, delete-orphan")
+    qr_cards = relationship("QRCard", back_populates="user", cascade="all, delete-orphan", order_by="desc(QRCard.created_at)")
     audit_logs = relationship("AuditLog", back_populates="user")
+
+    @property
+    def qr_card(self):
+        if not self.qr_cards:
+            return None
+        active = [q for q in self.qr_cards if q.is_active]
+        return active[0] if active else self.qr_cards[0]
 
 class MedicalProfile(Base):
     __tablename__ = "medical_profiles"
@@ -52,7 +59,7 @@ class QRCard(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     revoked_at = Column(DateTime, nullable=True)
 
-    user = relationship("User", back_populates="qr_card")
+    user = relationship("User", back_populates="qr_cards")
 
 class FamilyContact(Base):
     __tablename__ = "family_contacts"

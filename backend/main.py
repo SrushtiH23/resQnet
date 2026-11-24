@@ -38,6 +38,31 @@ try:
     try:
         from sqlalchemy import text
         with engine.connect() as conn:
+            # Remove legacy SQLite UNIQUE (user_id) constraint on qr_cards if present to allow revoked token tracking
+            try:
+                res = conn.execute(text("SELECT sql FROM sqlite_master WHERE type='table' AND name='qr_cards'")).fetchone()
+                if res and "UNIQUE (user_id)" in res[0]:
+                    conn.execute(text("""
+                        CREATE TABLE qr_cards_new (
+                            id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                            user_id INTEGER NOT NULL,
+                            qr_code_token VARCHAR(255) NOT NULL UNIQUE,
+                            is_active BOOLEAN DEFAULT 1,
+                            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                            revoked_at DATETIME NULL,
+                            FOREIGN KEY(user_id) REFERENCES users (id)
+                        );
+                    """))
+                    conn.execute(text("""
+                        INSERT INTO qr_cards_new (id, user_id, qr_code_token, is_active, created_at, revoked_at)
+                        SELECT id, user_id, qr_code_token, is_active, created_at, revoked_at FROM qr_cards;
+                    """))
+                    conn.execute(text("DROP TABLE qr_cards;"))
+                    conn.execute(text("ALTER TABLE qr_cards_new RENAME TO qr_cards;"))
+                    conn.commit()
+            except Exception:
+                pass
+
             for stmt in [
                 "ALTER TABLE qr_cards ADD COLUMN revoked_at DATETIME NULL;",
                 "ALTER TABLE hospitals ADD COLUMN google_place_id VARCHAR(255) NULL;",
@@ -393,9 +418,10 @@ def trigger_bengaluru_hospital_discovery(db: Session = Depends(get_db)):
     return result
 
 @app.get("/api/hospitals/nearby", response_model=List[schemas.GoogleHospitalResponse])
+@app.get("/hospitals/nearby", response_model=List[schemas.GoogleHospitalResponse])
 def get_nearby_hospitals(
-    lat: float = Query(..., description="User current latitude"),
-    lon: float = Query(..., description="User current longitude"),
+    lat: float = Query(12.9716, description="User current latitude"),
+    lon: float = Query(77.5946, description="User current longitude"),
     only_verified: bool = Query(False, description="Filter only verified ResQNet hospitals"),
     db: Session = Depends(get_db)
 ):
@@ -1433,8 +1459,11 @@ def get_optional_current_user(request: Request, db: Session) -> Optional[User]:
         return None
 
 @app.get("/api/qr/my-card", response_model=schemas.QRGenerateResponse)
+@app.get("/qr/my-card", response_model=schemas.QRGenerateResponse)
 @app.get("/api/qr/generate", response_model=schemas.QRGenerateResponse)
+@app.get("/qr/generate", response_model=schemas.QRGenerateResponse)
 @app.post("/api/qr/generate", response_model=schemas.QRGenerateResponse)
+@app.post("/qr/generate", response_model=schemas.QRGenerateResponse)
 def generate_or_get_qr(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """
     Retrieves or generates the patient's active QR code token.
@@ -1464,7 +1493,9 @@ def generate_or_get_qr(current_user: User = Depends(get_current_user), db: Sessi
         }
 
 @app.post("/api/qr/regenerate", response_model=schemas.QRGenerateResponse)
+@app.post("/qr/regenerate", response_model=schemas.QRGenerateResponse)
 @app.post("/api/qr/revoke", response_model=schemas.QRGenerateResponse)
+@app.post("/qr/revoke", response_model=schemas.QRGenerateResponse)
 def regenerate_qr(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """
     Revokes the patient's existing active QR code token and generates a brand-new random secure token.
@@ -1620,6 +1651,8 @@ def bystander_notify_family(payload: dict, db: Session = Depends(get_db)):
     }
 
 @app.get("/api/qr/{token}")
+@app.get("/qr/{token}")
+@app.get("/api/qr/patient/{token}")
 @app.get("/qr/patient/{token}")
 def get_qr_details(token: str, request: Request, db: Session = Depends(get_db)):
     """

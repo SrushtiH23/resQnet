@@ -51,10 +51,6 @@ export const RealSmartphoneSensor = ({ userId = 1, onFallDetected, userLat = nul
     }
     hasDispatchedEmergencyRef.current = true;
 
-    if (onFallDetectedRef.current) {
-      onFallDetectedRef.current(fallData || lastAnalysis);
-    }
-
     let lat = (userLat !== null && !isNaN(userLat)) ? userLat : 0.0;
     let lon = (userLon !== null && !isNaN(userLon)) ? userLon : 0.0;
 
@@ -70,15 +66,25 @@ export const RealSmartphoneSensor = ({ userId = 1, onFallDetected, userLat = nul
       }
     }
 
-    // Dispatch single emergency alert on confirmed fall
-    api.post('/emergency/create', {
-      trigger_source: 'Fall Detection',
-      latitude: lat,
-      longitude: lon,
-      speed: 0.0,
-      battery_level: 95,
-      network_status: '5G'
-    }).catch((err) => console.warn('Fall detection emergency trigger notice:', err));
+    // Dispatch single emergency alert on confirmed fall and notify dashboard
+    try {
+      const res = await api.post('/emergency/create', {
+        trigger_source: 'Fall Detection',
+        latitude: lat,
+        longitude: lon,
+        speed: 0.0,
+        battery_level: 95,
+        network_status: '5G'
+      });
+      if (onFallDetectedRef.current) {
+        onFallDetectedRef.current(res.data);
+      }
+    } catch (err) {
+      console.warn('Fall detection emergency trigger notice:', err);
+      if (onFallDetectedRef.current) {
+        onFallDetectedRef.current(fallData || lastAnalysis);
+      }
+    }
   };
 
   const triggerFallVerificationModal = (fallData) => {

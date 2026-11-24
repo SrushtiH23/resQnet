@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { AlertTriangle, CheckCircle, XCircle, MapPin, ShieldAlert, Eye, X, ExternalLink } from 'lucide-react';
+import { AlertTriangle, CheckCircle, XCircle, MapPin, ShieldAlert, Eye, X, ExternalLink, Navigation } from 'lucide-react';
 import { InteractiveLiveMap } from './InteractiveLiveMap';
 import api from '../services/api';
 
-export const SimpleEmergencyStatusCard = ({ emergency, onStatusChange, gpsData }) => {
+export const SimpleEmergencyStatusCard = ({ emergency, onStatusChange, gpsData, onOpenHospitalNav }) => {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [cancelling, setCancelling] = useState(false);
 
@@ -70,7 +70,17 @@ export const SimpleEmergencyStatusCard = ({ emergency, onStatusChange, gpsData }
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            {onOpenHospitalNav && (
+              <button
+                onClick={onOpenHospitalNav}
+                className="px-3.5 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-white font-extrabold rounded-xl text-xs shadow-lg shadow-cyan-600/30 flex items-center gap-1.5 transition-all hover:scale-105 cursor-pointer"
+                title="View nearest hospital navigation and get directions on Google Maps"
+              >
+                <Navigation className="w-3.5 h-3.5 animate-pulse" />
+                Hospital Directions
+              </button>
+            )}
             <button
               onClick={handleResolveEmergency}
               disabled={cancelling}

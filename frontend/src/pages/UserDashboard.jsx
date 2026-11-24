@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { DashboardTriageChatbot } from '../components/DashboardTriageChatbot';
 import { SimpleEmergencyStatusCard } from '../components/SimpleEmergencyStatusCard';
 import { RealSmartphoneSensor } from '../components/RealSmartphoneSensor';
 import { InteractiveLiveMap } from '../components/InteractiveLiveMap';
+import { NearbyHospitalNavigationModal } from '../components/NearbyHospitalNavigationModal';
 import {
   Navigation, Flame, ShieldAlert, MapPin, RefreshCw, CheckCircle2, AlertTriangle
 } from 'lucide-react';
@@ -25,6 +26,11 @@ export const UserDashboard = () => {
   // SOS Modal & Trigger State
   const [showSosModal, setShowSosModal] = useState(false);
   const [sendingSos, setSendingSos] = useState(false);
+
+  // Automatic Nearby Hospital Direction Popup State
+  const [showHospitalNavModal, setShowHospitalNavModal] = useState(false);
+  const [hospitalNavEmergency, setHospitalNavEmergency] = useState(null);
+  const handledEmergencyIdRef = useRef(null);
 
   useEffect(() => {
     fetchActiveEmergency();
@@ -141,6 +147,44 @@ export const UserDashboard = () => {
     }
   }, []);
 
+  const triggerHospitalNavigationFlow = useCallback(async (emergencyData) => {
+    if (!emergencyData || !emergencyData.id) return;
+
+    let current = emergencyData;
+    // Verify TextBee SMS status using existing emergency status API if still pending
+    if (current.sms_status === 'PENDING') {
+      for (let i = 0; i < 3; i++) {
+        await new Promise((r) => setTimeout(r, 1000));
+        try {
+          const check = await api.get(`/emergency/${current.id}`);
+          if (check.data) {
+            current = check.data;
+            if (current.sms_status !== 'PENDING') break;
+          }
+        } catch (e) {
+          break;
+        }
+      }
+    }
+
+    setActiveEmergency(current);
+    setHospitalNavEmergency(current);
+
+    // Automatically open hospital navigation popup (prevent duplicate popups for same emergency)
+    if (handledEmergencyIdRef.current !== current.id) {
+      handledEmergencyIdRef.current = current.id;
+      setShowHospitalNavModal(true);
+    }
+  }, []);
+
+  const handleFallEmergencyConfirmed = useCallback((fallEmergency) => {
+    if (fallEmergency && fallEmergency.id) {
+      triggerHospitalNavigationFlow(fallEmergency);
+    } else {
+      fetchActiveEmergency();
+    }
+  }, [triggerHospitalNavigationFlow, fetchActiveEmergency]);
+
   const handleOpenSosModal = () => {
     setShowSosModal(true);
   };
@@ -180,8 +224,8 @@ export const UserDashboard = () => {
         battery_level: 92,
         network_status: '5G'
       });
-      setActiveEmergency(res.data);
       setShowSosModal(false);
+      await triggerHospitalNavigationFlow(res.data);
     } catch (err) {
       alert('Failed to trigger SOS emergency alert.');
     } finally {
@@ -228,6 +272,10 @@ export const UserDashboard = () => {
           emergency={activeEmergency}
           onStatusChange={fetchActiveEmergency}
           gpsData={gpsData}
+          onOpenHospitalNav={() => {
+            setHospitalNavEmergency(activeEmergency);
+            setShowHospitalNavModal(true);
+          }}
         />
       )}
 
@@ -418,7 +466,7 @@ export const UserDashboard = () => {
 
       {/* 5. REAL SMARTPHONE HARDWARE SENSOR & FALL DETECTION ENGINE */}
       <RealSmartphoneSensor
-        onFallDetected={fetchActiveEmergency}
+        onFallDetected={handleFallEmergencyConfirmed}
         userLat={gpsData.latitude}
         userLon={gpsData.longitude}
       />
@@ -427,6 +475,15 @@ export const UserDashboard = () => {
       <DashboardTriageChatbot
         activeEmergency={activeEmergency}
         onRequestEmergency={handleOpenSosModal}
+      />
+
+      {/* AUTOMATIC NEARBY HOSPITAL DIRECTION POPUP */}
+      <NearbyHospitalNavigationModal
+        isOpen={showHospitalNavModal}
+        onClose={() => setShowHospitalNavModal(false)}
+        emergency={hospitalNavEmergency || activeEmergency}
+        userGps={gpsData}
+        locationStatus={locationStatus}
       />
 
       {/* STEP 1 — SOS CONFIRMATION MODAL */}

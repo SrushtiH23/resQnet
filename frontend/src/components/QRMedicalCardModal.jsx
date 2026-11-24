@@ -1,8 +1,11 @@
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
 import { Download, RefreshCw, ShieldCheck, XCircle, QrCode } from 'lucide-react';
 
 export const QRMedicalCardModal = ({ isOpen, onClose, qrToken, user, medicalProfile, onRegenerate }) => {
+  const canvasRef = useRef(null);
+  const [regenerating, setRegenerating] = useState(false);
+
   if (!isOpen) return null;
 
   // Extract clean token
@@ -24,23 +27,36 @@ export const QRMedicalCardModal = ({ isOpen, onClose, qrToken, user, medicalProf
   console.log('==================================================');
 
   const handleDownload = () => {
-    const canvas = document.getElementById('resqnet-qr-canvas');
+    const canvas = canvasRef.current || document.getElementById('resqnet-qr-canvas');
     if (!canvas) {
       alert('QR Canvas not found');
       return;
     }
-    const imageURI = canvas.toDataURL('image/png');
-    const link = document.createElement('a');
-    link.href = imageURI;
-    link.download = `ResQNet-Medical-Card-${user?.full_name || 'Patient'}.png`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    try {
+      const imageURI = canvas.toDataURL('image/png');
+      const link = document.createElement('a');
+      link.href = imageURI;
+      const cleanName = (user?.full_name || 'Patient').replace(/[^a-zA-Z0-9_-]/g, '_');
+      link.download = `ResQNet-Medical-Card-${cleanName}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (err) {
+      console.error('Download error:', err);
+      alert('Failed to download QR code image.');
+    }
   };
 
-  const handleRegenerateClick = () => {
+  const handleRegenerateClick = async () => {
     if (window.confirm('Are you sure you want to regenerate your QR Code? Any printed or saved copies of the old QR code will become permanently inactive.')) {
-      if (onRegenerate) onRegenerate();
+      if (onRegenerate) {
+        setRegenerating(true);
+        try {
+          await onRegenerate();
+        } finally {
+          setRegenerating(false);
+        }
+      }
     }
   };
 
@@ -74,6 +90,7 @@ export const QRMedicalCardModal = ({ isOpen, onClose, qrToken, user, medicalProf
           {/* High-Contrast Canvas QR Code with White Quiet Zone (4 Module Margin) */}
           <div className="p-4 bg-white rounded-3xl inline-block shadow-2xl mx-auto">
             <QRCodeCanvas
+              ref={canvasRef}
               id="resqnet-qr-canvas"
               value={qrUrl}
               size={220}
@@ -112,9 +129,11 @@ export const QRMedicalCardModal = ({ isOpen, onClose, qrToken, user, medicalProf
           </button>
           <button
             onClick={handleRegenerateClick}
-            className="py-3 px-4 bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 rounded-xl text-xs font-bold flex items-center justify-center gap-2 border border-amber-500/40 transition-all hover:scale-105 cursor-pointer"
+            disabled={regenerating}
+            className="py-3 px-4 bg-amber-600/20 hover:bg-amber-600/30 disabled:opacity-50 text-amber-300 rounded-xl text-xs font-bold flex items-center justify-center gap-2 border border-amber-500/40 transition-all hover:scale-105 cursor-pointer"
           >
-            <RefreshCw className="w-4 h-4 text-amber-400" /> Regenerate QR
+            <RefreshCw className={`w-4 h-4 text-amber-400 ${regenerating ? 'animate-spin' : ''}`} />
+            {regenerating ? 'Regenerating...' : 'Regenerate QR'}
           </button>
         </div>
       </div>

@@ -23,6 +23,7 @@ export const MedicalProfilePage = () => {
   const [editingProfile, setEditingProfile] = useState(false);
   const [showQrModal, setShowQrModal] = useState(false);
   const [qrToken, setQrToken] = useState('');
+  const [qrLoading, setQrLoading] = useState(false);
   const [newContact, setNewContact] = useState({
     contact_name: '',
     relationship_type: 'Mother',
@@ -139,12 +140,20 @@ export const MedicalProfilePage = () => {
   };
 
   const handleGenerateQR = async () => {
+    setQrLoading(true);
     try {
       const res = await api.get('/qr/generate');
-      setQrToken(res.data.qr_token);
-      setShowQrModal(true);
+      if (res.data?.qr_token) {
+        setQrToken(res.data.qr_token);
+        setShowQrModal(true);
+      } else {
+        alert('Received empty QR token from server.');
+      }
     } catch (err) {
-      alert('Failed to generate encrypted QR card.');
+      console.error('QR generation error:', err);
+      alert('Failed to generate encrypted QR card. Please check your network and try again.');
+    } finally {
+      setQrLoading(false);
     }
   };
 
@@ -176,9 +185,11 @@ export const MedicalProfilePage = () => {
 
         <button
           onClick={handleGenerateQR}
-          className="px-5 py-3 bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-500 hover:to-amber-500 text-white font-bold text-xs rounded-2xl shadow-lg flex items-center gap-2 transition-all hover:scale-105"
+          disabled={qrLoading}
+          className="px-5 py-3 bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-500 hover:to-amber-500 disabled:opacity-50 text-white font-bold text-xs rounded-2xl shadow-lg flex items-center gap-2 transition-all hover:scale-105 cursor-pointer"
         >
-          <QrCode className="w-4 h-4" /> Generate Encrypted QR Card
+          <QrCode className={`w-4 h-4 ${qrLoading ? 'animate-spin' : ''}`} />
+          {qrLoading ? 'Generating QR...' : 'Generate Encrypted QR Card'}
         </button>
       </div>
 
