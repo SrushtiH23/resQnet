@@ -86,7 +86,7 @@ function AppRoutes() {
           <Route
             path="/live-monitoring"
             element={
-              <ProtectedRoute allowedRoles={['user', 'hospital', 'admin']}>
+              <ProtectedRoute allowedRoles={['hospital', 'admin']}>
                 <LiveMonitoringPage />
               </ProtectedRoute>
             }

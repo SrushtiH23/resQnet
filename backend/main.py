@@ -303,6 +303,7 @@ def get_me(current_user: User = Depends(get_current_user)):
 # MODULE 2: Medical Profile & Contacts APIs
 # ==========================================
 @app.get("/api/user/medical-profile", response_model=schemas.MedicalProfileResponse)
+@app.get("/user/medical-profile", response_model=schemas.MedicalProfileResponse)
 def get_medical_profile(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     profile = db.query(MedicalProfile).filter(MedicalProfile.user_id == current_user.id).first()
     if not profile:
@@ -313,25 +314,39 @@ def get_medical_profile(current_user: User = Depends(get_current_user), db: Sess
     return profile
 
 @app.put("/api/user/medical-profile", response_model=schemas.MedicalProfileResponse)
+@app.put("/user/medical-profile", response_model=schemas.MedicalProfileResponse)
 def update_medical_profile(profile_in: schemas.MedicalProfileSchema, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     profile = db.query(MedicalProfile).filter(MedicalProfile.user_id == current_user.id).first()
     if not profile:
         profile = MedicalProfile(user_id=current_user.id)
         db.add(profile)
 
-    for field, val in profile_in.model_dump(exclude_unset=True).items():
-        setattr(profile, field, val)
+    update_dict = profile_in.model_dump(exclude_unset=True)
+    for field, val in update_dict.items():
+        if val is None:
+            continue
+        if isinstance(val, str):
+            clean_str = val.strip()
+            # Prevent empty strings from unintentionally blanking out established database fields
+            if clean_str == "":
+                continue
+            setattr(profile, field, clean_str)
+        else:
+            setattr(profile, field, val)
 
+    profile.updated_at = datetime.utcnow()
     db.commit()
     db.refresh(profile)
-    NotificationAndAuditService.record_audit(db, current_user.id, "MEDICAL_PROFILE_UPDATED", "Medical record updated")
+    NotificationAndAuditService.record_audit(db, current_user.id, "MEDICAL_PROFILE_UPDATED", f"Medical record updated for User #{current_user.id}")
     return profile
 
 @app.get("/api/user/family-contacts", response_model=List[schemas.FamilyContactResponse])
+@app.get("/user/family-contacts", response_model=List[schemas.FamilyContactResponse])
 def get_family_contacts(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     return db.query(FamilyContact).filter(FamilyContact.user_id == current_user.id).order_by(FamilyContact.escalation_order).all()
 
 @app.post("/api/user/family-contacts", response_model=schemas.FamilyContactResponse)
+@app.post("/user/family-contacts", response_model=schemas.FamilyContactResponse)
 def add_family_contact(contact_in: schemas.FamilyContactCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     contact = FamilyContact(
         user_id=current_user.id,
@@ -347,6 +362,7 @@ def add_family_contact(contact_in: schemas.FamilyContactCreate, current_user: Us
     return contact
 
 @app.put("/api/user/family-contacts/{contact_id}", response_model=schemas.FamilyContactResponse)
+@app.put("/user/family-contacts/{contact_id}", response_model=schemas.FamilyContactResponse)
 def update_family_contact(contact_id: int, contact_in: schemas.FamilyContactUpdate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     contact = db.query(FamilyContact).filter(
         FamilyContact.id == contact_id,
@@ -374,6 +390,7 @@ def update_family_contact(contact_id: int, contact_in: schemas.FamilyContactUpda
     return contact
 
 @app.delete("/api/user/family-contacts/{contact_id}")
+@app.delete("/user/family-contacts/{contact_id}")
 def delete_family_contact(contact_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     contact = db.query(FamilyContact).filter(
         FamilyContact.id == contact_id,
@@ -1025,6 +1042,7 @@ def compute_confidence(req: schemas.ConfidenceRequest):
 # MODULE 8 & 10: Emergency Creation, Validation & Escalation
 # ==========================================
 @app.post("/api/emergency/create", response_model=schemas.EmergencyResponse)
+@app.post("/emergency/create", response_model=schemas.EmergencyResponse)
 def create_emergency(req: schemas.EmergencyCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     print("========== SOS API HIT ==========")
     print(f"Request User ID: {current_user.id} ({current_user.full_name})")
@@ -1040,7 +1058,7 @@ def create_emergency(req: schemas.EmergencyCreate, current_user: User = Depends(
 
         if existing_active:
             print(f"[SOS DEDUPLICATION] Active emergency #{existing_active.id} already active for User #{current_user.id}. Preventing duplicate SMS dispatch.")
-            return existing_active
+            return populate_emergency_sms_metadata(db, existing_active)
 
         is_manual_sos = req.trigger_source in ["MANUAL_SOS", "SOS Button"]
         trigger_type = "MANUAL_SOS" if is_manual_sos else req.trigger_source
@@ -1292,26 +1310,92 @@ def get_active_emergencies(db: Session = Depends(get_db)):
     return [populate_emergency_sms_metadata(db, e) for e in events]
 
 @app.get("/api/emergency/history")
-def get_emergency_history(db: Session = Depends(get_db)):
-    events = db.query(EmergencyEvent).order_by(EmergencyEvent.created_at.desc()).all()
+@app.get("/emergency/history")
+def get_emergency_history(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    role = (current_user.role or "").lower()
+    query = db.query(EmergencyEvent)
+
+    # Role-based visibility filtering
+    if role == "user":
+        # Users see exclusively their own emergency events
+        query = query.filter(EmergencyEvent.user_id == current_user.id)
+    elif role == "doctor":
+        # Doctors see emergencies associated with their registered patients or their hospital
+        doctor_patient_ids = [p.user_id for p in db.query(MedicalProfile).filter(
+            (MedicalProfile.doctor_phone == current_user.phone) |
+            (MedicalProfile.doctor_name.ilike(f"%{current_user.full_name}%"))
+        ).all()]
+        doctor_hospital = db.query(Hospital).filter(Hospital.user_id == current_user.id).first()
+
+        if doctor_patient_ids and doctor_hospital:
+            query = query.filter(
+                (EmergencyEvent.user_id.in_(doctor_patient_ids)) |
+                (EmergencyEvent.assigned_hospital_id == doctor_hospital.id)
+            )
+        elif doctor_patient_ids:
+            query = query.filter(EmergencyEvent.user_id.in_(doctor_patient_ids))
+        elif doctor_hospital:
+            query = query.filter(EmergencyEvent.assigned_hospital_id == doctor_hospital.id)
+        else:
+            # If no direct bindings yet, allow viewing clinical emergencies
+            pass
+    elif role == "hospital":
+        hospital = db.query(Hospital).filter(Hospital.user_id == current_user.id).first()
+        if hospital:
+            query = query.filter(EmergencyEvent.assigned_hospital_id == hospital.id)
+    elif role == "admin":
+        # Administrators have platform-wide visibility across all user emergencies
+        pass
+    else:
+        # Default safety fallback: user-scoped
+        query = query.filter(EmergencyEvent.user_id == current_user.id)
+
+    events = query.order_by(EmergencyEvent.created_at.desc()).all()
     history = []
     for e in events:
         user = db.query(User).filter(User.id == e.user_id).first()
         logs = db.query(EmergencyLog).filter(EmergencyLog.emergency_event_id == e.id).order_by(EmergencyLog.timestamp.asc()).all()
+        notifs = db.query(NotificationLog).filter(NotificationLog.emergency_event_id == e.id).order_by(NotificationLog.created_at.desc()).all()
+
+        hospital = db.query(Hospital).filter(Hospital.id == e.assigned_hospital_id).first() if e.assigned_hospital_id else None
+        ambulance = db.query(Ambulance).filter(Ambulance.id == e.assigned_ambulance_id).first() if e.assigned_ambulance_id else None
+
+        # Populate TextBee SMS metadata and maps URL
+        e = populate_emergency_sms_metadata(db, e)
+
         history.append({
             "id": e.id,
+            "patient_id": e.user_id,
             "patient_name": user.full_name if user else f"Patient #{e.user_id}",
             "patient_email": user.email if user else None,
+            "patient_phone": user.phone if user else None,
             "trigger_source": e.trigger_source,
             "confidence_score": e.confidence_score,
             "status": e.status,
             "latitude": e.latitude,
             "longitude": e.longitude,
-            "location_url": f"https://www.google.com/maps?q={e.latitude:.6f},{e.longitude:.6f}" if (e.latitude and e.longitude) else None,
+            "location_url": getattr(e, "location_url", None) or (f"https://www.google.com/maps?q={e.latitude:.6f},{e.longitude:.6f}" if (e.latitude and e.longitude) else None),
             "created_at": e.created_at.isoformat() if e.created_at else None,
             "resolved_at": e.resolved_at.isoformat() if e.resolved_at else None,
             "is_demo": e.is_demo,
-            "logs": [{"id": l.id, "stage_name": l.stage_name, "description": l.description, "timestamp": l.timestamp.isoformat() if l.timestamp else None} for l in logs]
+            "sms_status": getattr(e, "sms_status", "PENDING"),
+            "sms_error": getattr(e, "sms_error", None),
+            "sms_provider": getattr(e, "sms_provider", None),
+            "assigned_hospital_id": e.assigned_hospital_id,
+            "assigned_hospital_name": hospital.name if hospital else None,
+            "assigned_ambulance_id": e.assigned_ambulance_id,
+            "assigned_ambulance_vehicle": ambulance.vehicle_number if ambulance else None,
+            "logs": [{"id": l.id, "stage_name": l.stage_name, "description": l.description, "timestamp": l.timestamp.isoformat() if l.timestamp else None} for l in logs],
+            "notifications": [
+                {
+                    "id": n.id,
+                    "channel": n.channel,
+                    "provider": n.provider,
+                    "status": n.status,
+                    "error_message": n.error_message,
+                    "created_at": n.created_at.isoformat() if n.created_at else None
+                } for n in notifs
+            ]
         })
     return history
 

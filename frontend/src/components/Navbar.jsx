@@ -27,7 +27,6 @@ export const Navbar = () => {
         return [
           { label: 'Dashboard', path: '/user-dashboard', icon: <Layout className="w-3.5 h-3.5" /> },
           { label: 'QR Scanner', path: '/qr-scanner', icon: <QrCode className="w-3.5 h-3.5" /> },
-          { label: 'Live Monitoring', path: '/live-monitoring', icon: <Smartphone className="w-3.5 h-3.5" /> },
           { label: 'Sensor Analytics', path: '/sensor-analytics', icon: <LineChart className="w-3.5 h-3.5" /> },
           { label: 'Emergency Analysis', path: '/emergency-analysis', icon: <Cpu className="w-3.5 h-3.5" /> },
           { label: 'AI Decision Engine', path: '/ai-decision-engine', icon: <Zap className="w-3.5 h-3.5" /> },

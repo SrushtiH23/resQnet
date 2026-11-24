@@ -9,18 +9,20 @@ export const MedicalProfilePage = () => {
   const { user } = useAuth();
   const [profile, setProfile] = useState({
     blood_group: 'O+',
-    age: 32,
-    weight: 70.0,
-    diseases: 'Type 1 Diabetes, Asthma',
-    medications: 'Insulin, Albuterol Inhaler',
-    allergies: 'Penicillin',
-    insurance_details: 'HDFC Ergo Health #99281',
-    doctor_name: 'Dr. Rajesh Kumar',
-    doctor_phone: '9876543210',
-    emergency_notes: 'Keep glucose tablet in pocket'
+    age: '',
+    weight: '',
+    diseases: '',
+    medications: '',
+    allergies: '',
+    insurance_details: '',
+    doctor_name: '',
+    doctor_phone: '',
+    emergency_notes: ''
   });
   const [contacts, setContacts] = useState([]);
   const [editingProfile, setEditingProfile] = useState(false);
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [profileFeedback, setProfileFeedback] = useState(null);
   const [showQrModal, setShowQrModal] = useState(false);
   const [qrToken, setQrToken] = useState('');
   const [qrLoading, setQrLoading] = useState(false);
@@ -44,7 +46,20 @@ export const MedicalProfilePage = () => {
   const fetchProfile = async () => {
     try {
       const res = await api.get('/user/medical-profile');
-      if (res.data) setProfile(res.data);
+      if (res.data) {
+        setProfile({
+          blood_group: res.data.blood_group || 'O+',
+          age: res.data.age !== null && res.data.age !== undefined ? res.data.age : '',
+          weight: res.data.weight !== null && res.data.weight !== undefined ? res.data.weight : '',
+          diseases: res.data.diseases || '',
+          medications: res.data.medications || '',
+          allergies: res.data.allergies || '',
+          insurance_details: res.data.insurance_details || '',
+          doctor_name: res.data.doctor_name || '',
+          doctor_phone: res.data.doctor_phone || '',
+          emergency_notes: res.data.emergency_notes || ''
+        });
+      }
     } catch (err) {
       console.error('Error fetching medical profile:', err);
     }
@@ -61,12 +76,46 @@ export const MedicalProfilePage = () => {
 
   const handleSaveProfile = async (e) => {
     e.preventDefault();
+    setSavingProfile(true);
+    setProfileFeedback(null);
     try {
-      await api.put('/user/medical-profile', profile);
+      const payload = {
+        blood_group: profile.blood_group || 'O+',
+        age: profile.age !== '' && profile.age !== null && !isNaN(profile.age) ? parseInt(profile.age, 10) : null,
+        weight: profile.weight !== '' && profile.weight !== null && !isNaN(profile.weight) ? parseFloat(profile.weight) : null,
+        diseases: profile.diseases ? profile.diseases.trim() : null,
+        medications: profile.medications ? profile.medications.trim() : null,
+        allergies: profile.allergies ? profile.allergies.trim() : null,
+        insurance_details: profile.insurance_details ? profile.insurance_details.trim() : null,
+        doctor_name: profile.doctor_name ? profile.doctor_name.trim() : null,
+        doctor_phone: profile.doctor_phone ? profile.doctor_phone.trim() : null,
+        emergency_notes: profile.emergency_notes ? profile.emergency_notes.trim() : null
+      };
+
+      const res = await api.put('/user/medical-profile', payload);
+      if (res.data) {
+        setProfile({
+          blood_group: res.data.blood_group || 'O+',
+          age: res.data.age !== null && res.data.age !== undefined ? res.data.age : '',
+          weight: res.data.weight !== null && res.data.weight !== undefined ? res.data.weight : '',
+          diseases: res.data.diseases || '',
+          medications: res.data.medications || '',
+          allergies: res.data.allergies || '',
+          insurance_details: res.data.insurance_details || '',
+          doctor_name: res.data.doctor_name || '',
+          doctor_phone: res.data.doctor_phone || '',
+          emergency_notes: res.data.emergency_notes || ''
+        });
+      }
       setEditingProfile(false);
-      alert('Medical profile updated successfully.');
+      setProfileFeedback({ type: 'success', text: 'Medical profile permanently saved in database.' });
+      setTimeout(() => setProfileFeedback(null), 6000);
     } catch (err) {
-      alert('Failed to update medical profile.');
+      console.error('Failed to update medical profile:', err);
+      const detail = err.response?.data?.detail || 'Failed to update medical profile. Please try again.';
+      setProfileFeedback({ type: 'error', text: detail });
+    } finally {
+      setSavingProfile(false);
     }
   };
 
@@ -204,12 +253,27 @@ export const MedicalProfilePage = () => {
               </h3>
               <button
                 onClick={() => setEditingProfile(!editingProfile)}
-                className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-bold flex items-center gap-1.5"
+                className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer"
               >
                 <Edit3 className="w-3.5 h-3.5" />
                 {editingProfile ? 'Cancel Editing' : 'Edit Profile'}
               </button>
             </div>
+
+            {profileFeedback && (
+              <div className={`p-3.5 rounded-xl text-xs font-bold flex items-center gap-2 ${
+                profileFeedback.type === 'success'
+                  ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-400'
+                  : 'bg-rose-500/10 border border-rose-500/30 text-rose-400'
+              }`}>
+                {profileFeedback.type === 'success' ? (
+                  <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
+                ) : (
+                  <ShieldCheck className="w-4 h-4 text-rose-400 shrink-0" />
+                )}
+                <span>{profileFeedback.text}</span>
+              </div>
+            )}
 
             {editingProfile ? (
               <form onSubmit={handleSaveProfile} className="space-y-4 text-xs">
@@ -230,8 +294,9 @@ export const MedicalProfilePage = () => {
                     <label className="text-slate-400 font-semibold block mb-1">Age</label>
                     <input
                       type="number"
-                      value={profile.age || ''}
-                      onChange={(e) => setProfile({ ...profile, age: parseInt(e.target.value) || 0 })}
+                      placeholder="e.g. 32"
+                      value={profile.age ?? ''}
+                      onChange={(e) => setProfile({ ...profile, age: e.target.value })}
                       className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-rose-500"
                     />
                   </div>
@@ -240,8 +305,9 @@ export const MedicalProfilePage = () => {
                     <input
                       type="number"
                       step="0.1"
-                      value={profile.weight || ''}
-                      onChange={(e) => setProfile({ ...profile, weight: parseFloat(e.target.value) || 0 })}
+                      placeholder="e.g. 70.5"
+                      value={profile.weight ?? ''}
+                      onChange={(e) => setProfile({ ...profile, weight: e.target.value })}
                       className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-rose-500"
                     />
                   </div>
@@ -287,7 +353,7 @@ export const MedicalProfilePage = () => {
                       type="text"
                       value={profile.insurance_details || ''}
                       onChange={(e) => setProfile({ ...profile, insurance_details: e.target.value })}
-                      placeholder="e.g. Policy #99281"
+                      placeholder="e.g. Policy #BS-994821"
                       className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-rose-500"
                     />
                   </div>
@@ -300,7 +366,7 @@ export const MedicalProfilePage = () => {
                       type="text"
                       value={profile.doctor_name || ''}
                       onChange={(e) => setProfile({ ...profile, doctor_name: e.target.value })}
-                      placeholder="e.g. Dr. Rajesh Kumar (+91 98765 43210)"
+                      placeholder="e.g. Dr. Rajesh Kumar"
                       className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-rose-500"
                     />
                   </div>
@@ -313,43 +379,65 @@ export const MedicalProfilePage = () => {
                   </div>
                 </div>
 
+                <div>
+                  <label className="text-slate-400 font-semibold block mb-1">Special Emergency Notes / Instructions</label>
+                  <textarea
+                    rows={2}
+                    value={profile.emergency_notes || ''}
+                    onChange={(e) => setProfile({ ...profile, emergency_notes: e.target.value })}
+                    placeholder="e.g. Keep glucose tablet in pocket; Patient carries emergency inhaler"
+                    className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-rose-500 resize-none"
+                  />
+                </div>
+
                 <button
                   type="submit"
-                  className="w-full py-3 bg-rose-600 hover:bg-rose-500 text-white font-extrabold rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all"
+                  disabled={savingProfile}
+                  className="w-full py-3 bg-rose-600 hover:bg-rose-500 disabled:opacity-50 text-white font-extrabold rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all cursor-pointer"
                 >
-                  <Save className="w-4 h-4" /> Save Medical Profile
+                  <Save className={`w-4 h-4 ${savingProfile ? 'animate-spin' : ''}`} />
+                  {savingProfile ? 'Saving Changes to Database...' : 'Save Medical Profile'}
                 </button>
               </form>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                 <div className="p-4 bg-slate-900 rounded-2xl border border-slate-800 space-y-1">
                   <span className="text-slate-400 text-[10px] uppercase font-bold tracking-wider">Blood Group & Physical</span>
-                  <p className="font-extrabold text-white text-base">Blood: <span className="text-rose-400">{profile.blood_group || 'O+'}</span> | Age: {profile.age || 32} | {profile.weight || 70} kg</p>
+                  <p className="font-extrabold text-white text-base">
+                    Blood: <span className="text-rose-400">{profile.blood_group || 'O+'}</span> | Age: {profile.age ? `${profile.age} yrs` : 'Not specified'} | {profile.weight ? `${profile.weight} kg` : 'Not specified'}
+                  </p>
                 </div>
 
                 <div className="p-4 bg-slate-900 rounded-2xl border border-slate-800 space-y-1">
                   <span className="text-slate-400 text-[10px] uppercase font-bold tracking-wider">Diagnosed Conditions</span>
-                  <p className="font-bold text-amber-400 text-sm">{profile.diseases || 'None listed'}</p>
+                  <p className="font-bold text-amber-400 text-sm">{profile.diseases || 'None reported'}</p>
                 </div>
 
                 <div className="p-4 bg-slate-900 rounded-2xl border border-slate-800 space-y-1">
                   <span className="text-slate-400 text-[10px] uppercase font-bold tracking-wider">Known Allergies</span>
-                  <p className="font-bold text-rose-400 text-sm">{profile.allergies || 'None listed'}</p>
+                  <p className="font-bold text-rose-400 text-sm">{profile.allergies || 'None reported'}</p>
                 </div>
 
                 <div className="p-4 bg-slate-900 rounded-2xl border border-slate-800 space-y-1">
                   <span className="text-slate-400 text-[10px] uppercase font-bold tracking-wider">Active Medications</span>
-                  <p className="font-bold text-cyan-400 text-sm">{profile.medications || 'None listed'}</p>
+                  <p className="font-bold text-cyan-400 text-sm">{profile.medications || 'None reported'}</p>
                 </div>
 
                 <div className="p-4 bg-slate-900 rounded-2xl border border-slate-800 space-y-1">
                   <span className="text-slate-400 text-[10px] uppercase font-bold tracking-wider">Primary Physician</span>
-                  <p className="font-bold text-white text-sm">{profile.doctor_name || 'Dr. Rajesh Kumar'} ({profile.doctor_phone ? (profile.doctor_phone.startsWith('+91') ? profile.doctor_phone : `+91 ${profile.doctor_phone}`) : 'N/A'})</p>
+                  <p className="font-bold text-white text-sm">
+                    {profile.doctor_name || 'Not specified'} {profile.doctor_phone ? `(${profile.doctor_phone.startsWith('+91') ? profile.doctor_phone : `+91 ${profile.doctor_phone}`})` : ''}
+                  </p>
                 </div>
 
                 <div className="p-4 bg-slate-900 rounded-2xl border border-slate-800 space-y-1">
                   <span className="text-slate-400 text-[10px] uppercase font-bold tracking-wider">Insurance Policy</span>
-                  <p className="font-bold text-emerald-400 text-sm">{profile.insurance_details || 'N/A'}</p>
+                  <p className="font-bold text-emerald-400 text-sm">{profile.insurance_details || 'Not specified'}</p>
+                </div>
+
+                <div className="p-4 bg-slate-900 rounded-2xl border border-slate-800 space-y-1 md:col-span-2">
+                  <span className="text-slate-400 text-[10px] uppercase font-bold tracking-wider">Special Emergency Notes / Instructions</span>
+                  <p className="font-bold text-purple-300 text-sm">{profile.emergency_notes || 'No special emergency instructions recorded'}</p>
                 </div>
               </div>
             )}

@@ -197,16 +197,49 @@ export const EmergencyHistoryPage = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 text-xs">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
               <div className="p-3 bg-slate-950 rounded-xl border border-slate-800">
-                <span className="text-slate-400 text-[10px] block">Trigger Source:</span>
+                <span className="text-slate-400 text-[10px] block uppercase font-bold tracking-wider">Trigger Source</span>
                 <span className="font-bold text-cyan-400">{selectedEvent.trigger_source}</span>
               </div>
               <div className="p-3 bg-slate-950 rounded-xl border border-slate-800">
-                <span className="text-slate-400 text-[10px] block">Final Status:</span>
+                <span className="text-slate-400 text-[10px] block uppercase font-bold tracking-wider">Current Status</span>
                 <span className="font-bold text-emerald-400">{selectedEvent.status}</span>
               </div>
+              <div className="p-3 bg-slate-950 rounded-xl border border-slate-800">
+                <span className="text-slate-400 text-[10px] block uppercase font-bold tracking-wider">SMS Dispatch</span>
+                <span className={`font-mono font-bold text-xs ${
+                  selectedEvent.sms_status === 'SENT' ? 'text-emerald-400' :
+                  selectedEvent.sms_status === 'FAILED' ? 'text-rose-400' :
+                  'text-amber-400'
+                }`}>
+                  {selectedEvent.sms_status || 'PENDING'}
+                </span>
+              </div>
+              <div className="p-3 bg-slate-950 rounded-xl border border-slate-800">
+                <span className="text-slate-400 text-[10px] block uppercase font-bold tracking-wider">Assigned Hospital</span>
+                <span className="font-bold text-white truncate block">
+                  {selectedEvent.assigned_hospital_name || 'Nearest ER Facility'}
+                </span>
+              </div>
             </div>
+
+            {selectedEvent.location_url && (
+              <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2 text-slate-300">
+                  <MapPin className="w-4 h-4 text-rose-500 shrink-0" />
+                  <span>GPS: {selectedEvent.latitude?.toFixed(4)}, {selectedEvent.longitude?.toFixed(4)}</span>
+                </div>
+                <a
+                  href={selectedEvent.location_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-amber-400 hover:text-amber-300 font-bold underline"
+                >
+                  Open in Google Maps
+                </a>
+              </div>
+            )}
 
             {/* Time-Stamped Emergency Log Progression */}
             <div className="space-y-3 pt-2">
