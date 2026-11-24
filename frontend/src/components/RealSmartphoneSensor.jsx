@@ -8,7 +8,7 @@ import {
   AlertTriangle, CheckCircle2, ShieldAlert
 } from 'lucide-react';
 
-export const RealSmartphoneSensor = ({ userId = 1, onFallDetected, userLat = null, userLon = null }) => {
+export const RealSmartphoneSensor = ({ userId = 1, onFallDetected, userLat = null, userLon = null, showNativeBanner = true }) => {
   const accel = useAccelerometer();
   const gyro = useGyroscope();
 
@@ -203,24 +203,26 @@ export const RealSmartphoneSensor = ({ userId = 1, onFallDetected, userLat = nul
   return (
     <div className="space-y-6">
       {/* NATIVE ANDROID FOREGROUND SERVICE MONITORING STATUS BANNER */}
-      <div className="glass-panel p-5 rounded-3xl border border-cyan-500/30 bg-cyan-950/20 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-xl">
-        <div className="flex items-start gap-3">
-          <div className="p-3 bg-cyan-500/20 text-cyan-400 rounded-2xl border border-cyan-500/40 mt-0.5">
-            <ShieldAlert className="w-5 h-5 animate-pulse" />
-          </div>
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-black uppercase text-cyan-300 tracking-wider">Android Native OS Architecture</span>
-              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">
-                24/7 OS Foreground Service Enabled
-              </span>
+      {showNativeBanner && (
+        <div className="glass-panel p-5 rounded-3xl border border-cyan-500/30 bg-cyan-950/20 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-xl">
+          <div className="flex items-start gap-3">
+            <div className="p-3 bg-cyan-500/20 text-cyan-400 rounded-2xl border border-cyan-500/40 mt-0.5">
+              <ShieldAlert className="w-5 h-5 animate-pulse" />
             </div>
-            <p className="text-xs text-slate-300">
-              Native Android <code className="text-cyan-300 font-mono">FallDetectionService</code> monitors hardware sensors 24/7 when browser tab is closed, minimized to Android Home Screen, inside WhatsApp/Chrome, or when screen is locked.
-            </p>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-black uppercase text-cyan-300 tracking-wider">Android Native OS Architecture</span>
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">
+                  24/7 OS Foreground Service Enabled
+                </span>
+              </div>
+              <p className="text-xs text-slate-300">
+                Native Android <code className="text-cyan-300 font-mono">FallDetectionService</code> monitors hardware sensors 24/7 when browser tab is closed, minimized to Android Home Screen, inside WhatsApp/Chrome, or when screen is locked.
+              </p>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* MAIN SENSOR ENGINE VIEW */}
       <div className="glass-panel p-6 rounded-3xl border border-slate-800 space-y-6 shadow-2xl">

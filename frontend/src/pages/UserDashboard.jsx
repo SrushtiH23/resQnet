@@ -490,6 +490,7 @@ export const UserDashboard = () => {
           onFallDetected={handleFallEmergencyConfirmed}
           userLat={gpsData.latitude}
           userLon={gpsData.longitude}
+          showNativeBanner={false}
         />
       </div>
 
