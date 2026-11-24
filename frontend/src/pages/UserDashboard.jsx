@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { DashboardTriageChatbot } from '../components/DashboardTriageChatbot';
@@ -7,11 +8,12 @@ import { RealSmartphoneSensor } from '../components/RealSmartphoneSensor';
 import { InteractiveLiveMap } from '../components/InteractiveLiveMap';
 import { NearbyHospitalNavigationModal } from '../components/NearbyHospitalNavigationModal';
 import {
-  Navigation, Flame, ShieldAlert, MapPin, RefreshCw, CheckCircle2, AlertTriangle
+  Navigation, Flame, ShieldAlert, MapPin, RefreshCw, CheckCircle2, AlertTriangle, Zap
 } from 'lucide-react';
 
 export const UserDashboard = () => {
-  const { user } = useAuth();
+  const { user, role } = useAuth();
+  const isUser = role === 'user' || user?.role?.toLowerCase() === 'user';
   const [activeEmergency, setActiveEmergency] = useState(null);
   const [nearbyHospitals, setNearbyHospitals] = useState([]);
   const [locationStatus, setLocationStatus] = useState('PROMPT'); // PROMPT | GRANTED | DENIED | UNAVAILABLE
@@ -234,12 +236,13 @@ export const UserDashboard = () => {
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8 space-y-8 animate-fade-in">
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-8 animate-fade-in relative pb-24 sm:pb-8">
       {/* 1. Welcome + Health Status Header */}
-      <div className="glass-panel p-6 rounded-3xl border border-slate-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-2xl">
-        <div>
-          <div className="flex items-center gap-2 mb-1.5">
-            <span className={`px-3.5 py-1 text-xs font-bold rounded-full uppercase tracking-wider flex items-center gap-1.5 border ${
+      <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-slate-800/80 bg-gradient-to-br from-slate-900/90 via-slate-900/60 to-slate-950/80 shadow-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-5 backdrop-blur-xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-72 h-72 bg-cyan-500/5 rounded-full blur-3xl pointer-events-none" />
+        <div className="relative z-10">
+          <div className="flex items-center gap-2 mb-2">
+            <span className={`px-3.5 py-1 text-xs font-bold rounded-full uppercase tracking-wider flex items-center gap-1.5 border shadow-sm ${
               activeEmergency
                 ? 'bg-rose-500/10 border-rose-500/30 text-rose-400'
                 : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
@@ -256,8 +259,8 @@ export const UserDashboard = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-2 text-xs font-mono text-cyan-400 bg-cyan-500/10 border border-cyan-500/30 px-4 py-2.5 rounded-2xl font-bold">
-          <Navigation className="w-4 h-4 text-cyan-400" />
+        <div className="flex items-center gap-2 text-xs font-mono text-cyan-400 bg-cyan-500/10 border border-cyan-500/30 px-4 py-2.5 rounded-2xl font-bold shadow-sm relative z-10">
+          <Navigation className="w-4 h-4 text-cyan-400 animate-pulse" />
           {gpsData.available && gpsData.latitude !== null
             ? `GPS Active (${gpsData.latitude.toFixed(4)}, ${gpsData.longitude.toFixed(4)})`
             : locationStatus === 'DENIED'
@@ -280,30 +283,36 @@ export const UserDashboard = () => {
       )}
 
       {/* 3. PROMINENT SOS BUTTON CENTERPIECE */}
-      <div className="glass-panel p-8 rounded-3xl border border-slate-800 text-center space-y-6 shadow-2xl relative overflow-hidden">
-        <div className="space-y-1">
+      <div className="glass-panel p-8 sm:p-10 rounded-3xl border border-slate-800/80 bg-gradient-to-b from-slate-900/90 via-slate-900/50 to-slate-950/90 text-center space-y-6 shadow-2xl relative overflow-hidden backdrop-blur-xl">
+        <div className="absolute -top-24 -right-24 w-80 h-80 bg-rose-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-24 -left-24 w-80 h-80 bg-red-600/10 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="space-y-1.5 relative z-10">
           <h2 className="text-xl md:text-2xl font-black text-white uppercase tracking-wider">
             Emergency SOS Assistance
           </h2>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-slate-400 max-w-md mx-auto">
             Press the button below to send an emergency alert and share your location.
           </p>
         </div>
 
-        <div className="py-4 flex justify-center">
-          <button
-            onClick={handleOpenSosModal}
-            className="w-44 h-44 md:w-56 md:h-56 rounded-full bg-gradient-to-tr from-rose-700 via-rose-600 to-red-500 text-white font-black text-4xl md:text-5xl tracking-widest shadow-2xl shadow-rose-600/60 border-4 border-rose-400/50 flex flex-col items-center justify-center gap-2 hover:scale-105 active:scale-95 transition-all duration-300 group cursor-pointer"
-          >
-            <Flame className="w-10 h-10 md:w-12 md:h-12 text-rose-200 animate-pulse group-hover:scale-110 transition-transform" />
-            <span className="drop-shadow-lg">SOS</span>
-            <span className="text-[11px] md:text-xs font-bold uppercase tracking-wider text-rose-200 font-sans">
-              Press for Emergency
-            </span>
-          </button>
+        <div className="py-4 flex justify-center relative z-10">
+          <div className="relative group">
+            <div className="absolute -inset-4 bg-gradient-to-r from-rose-600 to-red-600 rounded-full blur-xl opacity-30 group-hover:opacity-60 transition duration-500 animate-pulse" />
+            <button
+              onClick={handleOpenSosModal}
+              className="relative w-44 h-44 md:w-56 md:h-56 rounded-full bg-gradient-to-tr from-rose-700 via-rose-600 to-red-500 text-white font-black text-4xl md:text-5xl tracking-widest shadow-2xl shadow-rose-600/60 border-4 border-rose-400/50 flex flex-col items-center justify-center gap-2 hover:scale-105 active:scale-95 transition-all duration-300 cursor-pointer"
+            >
+              <Flame className="w-10 h-10 md:w-12 md:h-12 text-rose-200 animate-pulse group-hover:scale-110 transition-transform" />
+              <span className="drop-shadow-lg">SOS</span>
+              <span className="text-[11px] md:text-xs font-bold uppercase tracking-wider text-rose-200 font-sans">
+                Press for Emergency
+              </span>
+            </button>
+          </div>
         </div>
 
-        <p className="text-xs text-slate-400 italic">
+        <p className="text-xs text-slate-400 italic relative z-10">
           Pressing SOS opens an alert confirmation dialog before sending notifications.
         </p>
       </div>
@@ -465,11 +474,22 @@ export const UserDashboard = () => {
       </div>
 
       {/* 5. REAL SMARTPHONE HARDWARE SENSOR & FALL DETECTION ENGINE */}
-      <RealSmartphoneSensor
-        onFallDetected={handleFallEmergencyConfirmed}
-        userLat={gpsData.latitude}
-        userLon={gpsData.longitude}
-      />
+      <div className="space-y-3">
+        <div className="flex items-center justify-between px-1">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-400 font-mono">
+              Hardware Telemetry & Fall Detection
+            </span>
+          </div>
+          <span className="text-[11px] text-cyan-400 font-mono font-medium">5Hz Sliding-Window Analysis</span>
+        </div>
+        <RealSmartphoneSensor
+          onFallDetected={handleFallEmergencyConfirmed}
+          userLat={gpsData.latitude}
+          userLon={gpsData.longitude}
+        />
+      </div>
 
       {/* 6. EMERGENCY TRIAGE CHATBOT */}
       <DashboardTriageChatbot
@@ -485,6 +505,27 @@ export const UserDashboard = () => {
         userGps={gpsData}
         locationStatus={locationStatus}
       />
+
+      {/* 7. FLOATING AI DECISION ENGINE ICON (USER ROLE ONLY) */}
+      {isUser && (
+        <Link
+          to="/ai-decision-engine"
+          className="fixed bottom-6 right-6 z-40 flex items-center gap-2.5 px-4 py-3 rounded-full bg-gradient-to-r from-amber-500 via-rose-500 to-purple-600 text-white font-bold text-xs shadow-2xl shadow-rose-500/30 hover:shadow-rose-500/50 hover:scale-105 active:scale-95 transition-all duration-300 border border-white/20 backdrop-blur-md group cursor-pointer"
+          title="Open AI Decision Engine"
+          aria-label="AI Decision Engine"
+        >
+          <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center group-hover:rotate-12 transition-transform shadow-inner">
+            <Zap className="w-3.5 h-3.5 text-amber-200 fill-amber-200 animate-pulse" />
+          </div>
+          <span className="hidden sm:inline font-bold tracking-wide text-white drop-shadow">
+            AI Decision Engine
+          </span>
+          <span className="flex h-2 w-2 relative">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-300 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-400"></span>
+          </span>
+        </Link>
+      )}
 
       {/* STEP 1 — SOS CONFIRMATION MODAL */}
       {showSosModal && (

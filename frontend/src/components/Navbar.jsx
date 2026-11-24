@@ -16,16 +16,13 @@ export const Navbar = () => {
     navigate('/login');
   };
 
-  if (role === 'admin') {
-    return null;
-  }
-
-  const roleDashboardPath = role ? `/${role}-dashboard` : '/login';
+  const normalizedRole = role ? role.toLowerCase() : null;
+  const roleDashboardPath = normalizedRole ? `/${normalizedRole}-dashboard` : '/login';
 
   const getNavPages = () => {
-    if (!role) return [];
+    if (!normalizedRole) return [];
 
-    switch (role) {
+    switch (normalizedRole) {
       case 'user':
         return [
           { label: 'Dashboard', path: '/user-dashboard', icon: <Layout className="w-3.5 h-3.5" /> },
@@ -34,7 +31,6 @@ export const Navbar = () => {
           { label: 'Sensor Analytics', path: '/sensor-analytics', icon: <LineChart className="w-3.5 h-3.5" /> },
           { label: 'Emergency Analysis', path: '/emergency-analysis', icon: <Cpu className="w-3.5 h-3.5" /> },
           { label: 'AI Decision Engine', path: '/ai-decision-engine', icon: <Zap className="w-3.5 h-3.5" /> },
-          { label: 'MobiAct Research', path: '/mobiact-research-evaluation', icon: <FlaskConical className="w-3.5 h-3.5" /> },
           { label: 'Emergency History', path: '/emergency-history', icon: <History className="w-3.5 h-3.5" /> },
           { label: 'Medical Profile', path: '/medical-profile', icon: <Heart className="w-3.5 h-3.5" /> },
         ];
@@ -43,7 +39,6 @@ export const Navbar = () => {
           { label: 'Doctor Dashboard', path: '/doctor-dashboard', icon: <Stethoscope className="w-3.5 h-3.5" /> },
           { label: 'QR Scanner', path: '/qr-scanner', icon: <QrCode className="w-3.5 h-3.5" /> },
           { label: 'Active Emergencies', path: '/active-emergencies', icon: <ShieldAlert className="w-3.5 h-3.5" /> },
-          { label: 'MobiAct Research', path: '/mobiact-research-evaluation', icon: <FlaskConical className="w-3.5 h-3.5" /> },
           { label: 'Emergency History', path: '/emergency-history', icon: <History className="w-3.5 h-3.5" /> },
           { label: 'My Profile', path: '/doctor-profile', icon: <User className="w-3.5 h-3.5" /> },
         ];
@@ -53,7 +48,6 @@ export const Navbar = () => {
           { label: 'QR Scanner', path: '/qr-scanner', icon: <QrCode className="w-3.5 h-3.5" /> },
           { label: 'Live Monitoring', path: '/live-monitoring', icon: <Smartphone className="w-3.5 h-3.5" /> },
           { label: 'Emergency Analysis', path: '/emergency-analysis', icon: <Cpu className="w-3.5 h-3.5" /> },
-          { label: 'MobiAct Research', path: '/mobiact-research-evaluation', icon: <FlaskConical className="w-3.5 h-3.5" /> },
           { label: 'Emergency History', path: '/emergency-history', icon: <History className="w-3.5 h-3.5" /> },
         ];
       case 'admin':
