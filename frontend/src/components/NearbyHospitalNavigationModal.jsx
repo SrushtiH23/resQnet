@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Navigation, MapPin, Building2, Phone, Star, ExternalLink,
   CheckCircle2, AlertTriangle, XCircle, RefreshCw, X, ShieldAlert,
@@ -19,6 +19,9 @@ export const NearbyHospitalNavigationModal = ({
   const [fetchError, setFetchError] = useState(null);
   const [showOtherHospitals, setShowOtherHospitals] = useState(false);
 
+  const lastLoadedEmergencyIdRef = useRef(null);
+  const isFetchingRef = useRef(false);
+
   // Fallback Bengaluru center coordinates if GPS unavailable
   const fallbackLat = 12.9716;
   const fallbackLon = 77.5946;
@@ -38,45 +41,64 @@ export const NearbyHospitalNavigationModal = ({
 
   const hasRealGps = userGps?.available && userGps?.latitude !== null && userGps.latitude !== 0;
 
-  // Fetch nearby hospitals from backend API sorted by distance
+  // Stable hospital fetch: fetches once per emergency/open event, NOT on every GPS coordinate jitter
+  const fetchNearby = useCallback(async (forcedLat, forcedLon) => {
+    if (isFetchingRef.current) return;
+    isFetchingRef.current = true;
+    setLoadingHospitals(true);
+    setFetchError(null);
+    try {
+      const latToUse = forcedLat !== undefined ? forcedLat : effectiveLat;
+      const lonToUse = forcedLon !== undefined ? forcedLon : effectiveLon;
+      const res = await api.get('/hospitals/nearby', {
+        params: {
+          lat: latToUse,
+          lon: lonToUse
+        }
+      });
+      if (res.data && Array.isArray(res.data) && res.data.length > 0) {
+        setHospitals(res.data);
+        // Preserve user's existing hospital selection if still present in results
+        setSelectedHospital((prev) => {
+          if (prev && res.data.some(h => h.id === prev.id)) {
+            return prev;
+          }
+          return res.data[0];
+        });
+      } else {
+        setHospitals([]);
+      }
+      lastLoadedEmergencyIdRef.current = emergency?.id || 'active';
+    } catch (err) {
+      console.warn('Failed to fetch nearby hospitals:', err);
+      setFetchError('Unable to load nearby hospitals. Please check your network connection.');
+    } finally {
+      setLoadingHospitals(false);
+      isFetchingRef.current = false;
+    }
+  }, [effectiveLat, effectiveLon, emergency?.id]);
+
+  // Fetch nearby hospitals ONCE when modal is opened or emergency ID changes
+  // Crucial: effectiveLat and effectiveLon are intentionally excluded to prevent periodic reloading from GPS watchPosition jitter
   useEffect(() => {
     if (!isOpen) return;
 
-    const fetchNearby = async () => {
-      setLoadingHospitals(true);
-      setFetchError(null);
-      try {
-        const res = await api.get('/hospitals/nearby', {
-          params: {
-            lat: effectiveLat,
-            lon: effectiveLon
-          }
-        });
-        if (res.data && Array.isArray(res.data) && res.data.length > 0) {
-          setHospitals(res.data);
-          setSelectedHospital(res.data[0]); // default to nearest hospital
-        } else {
-          setHospitals([]);
-        }
-      } catch (err) {
-        console.warn('Failed to fetch nearby hospitals:', err);
-        setFetchError('Unable to load nearby hospitals. Please check your network connection.');
-      } finally {
-        setLoadingHospitals(false);
-      }
-    };
-
-    fetchNearby();
-  }, [isOpen, effectiveLat, effectiveLon]);
+    const currentEmergencyId = emergency?.id || 'active';
+    if (lastLoadedEmergencyIdRef.current !== currentEmergencyId || hospitals.length === 0) {
+      fetchNearby();
+    }
+  }, [isOpen, emergency?.id, fetchNearby, hospitals.length]);
 
   if (!isOpen) return null;
 
-  // SMS Status evaluation
+  // SMS Status evaluation matching backend statuses
   const smsStatus = emergency?.sms_status;
+  const isSmsDelivered = smsStatus === 'DELIVERED';
   const isSmsSent = smsStatus === 'SENT' || smsStatus === 'DELIVERED' || smsStatus === 'ACKNOWLEDGED';
   const isSmsNotConfigured = smsStatus === 'PROVIDER_NOT_CONFIGURED';
-  const isSmsFailed = smsStatus === 'FAILED' || (!isSmsSent && !isSmsNotConfigured && emergency?.sms_error);
-  const isSmsPending = smsStatus === 'PENDING' || (!isSmsSent && !isSmsFailed && !isSmsNotConfigured && !emergency?.sms_error);
+  const isSmsNoContacts = smsStatus === 'NO_CONTACTS';
+  const isSmsFailed = smsStatus === 'FAILED' || (!isSmsSent && !isSmsNotConfigured && !isSmsNoContacts && emergency?.sms_error);
+  const isSmsPending = smsStatus === 'PENDING' || (!isSmsSent && !isSmsFailed && !isSmsNotConfigured && !isSmsNoContacts && !emergency?.sms_error);
 
   // Handle Google Maps Directions click
   const handleGetDirections = (hospitalToNavigate) => {
@@ -155,6 +177,8 @@ export const NearbyHospitalNavigationModal = ({
         <div className={`p-4 rounded-2xl border text-xs space-y-1 transition-all ${
           isSmsSent
             ? 'bg-emerald-950/80 border-emerald-500/50 text-emerald-100'
+            : isSmsNoContacts
+            ? 'bg-amber-950/80 border-amber-500/50 text-amber-100'
             : isSmsNotConfigured
             ? 'bg-amber-950/80 border-amber-500/50 text-amber-100'
             : isSmsFailed
@@ -164,12 +188,17 @@ export const NearbyHospitalNavigationModal = ({
           <div className="flex items-center justify-between font-extrabold text-sm">
             <span className="flex items-center gap-2">
               {isSmsSent && <CheckCircle2 className="w-4 h-4 text-emerald-400" />}
+              {isSmsNoContacts && <AlertTriangle className="w-4 h-4 text-amber-400" />}
               {isSmsNotConfigured && <AlertTriangle className="w-4 h-4 text-amber-400" />}
               {isSmsFailed && <XCircle className="w-4 h-4 text-rose-400" />}
               {isSmsPending && <RefreshCw className="w-4 h-4 text-cyan-400 animate-spin" />}
 
-              {isSmsSent
+              {isSmsDelivered
+                ? '✓ Emergency SMS Delivered via TextBee'
+                : isSmsSent
                 ? '✓ Emergency SMS Sent via TextBee'
+                : isSmsNoContacts
+                ? '⚠️ No Emergency Contacts Configured'
                 : isSmsNotConfigured
                 ? '⚠️ SMS Provider Not Configured'
                 : isSmsFailed
@@ -183,8 +212,12 @@ export const NearbyHospitalNavigationModal = ({
           </div>
 
           <p className="text-[11px] leading-relaxed opacity-90">
-            {isSmsSent
-              ? 'Your registered emergency contacts have been notified with your live coordinates and medical profile.'
+            {isSmsDelivered
+              ? 'Your registered emergency contacts have received your live coordinates and medical profile.'
+              : isSmsSent
+              ? 'Emergency SMS was accepted by TextBee and dispatched to carrier queue for delivery.'
+              : isSmsNoContacts
+              ? 'No emergency contacts found in medical profile. Please add contacts in your profile. Hospital navigation remains fully functional.'
               : isSmsNotConfigured
               ? 'SMS gateway credentials are not configured in backend/.env. Hospital navigation remains fully functional.'
               : isSmsFailed
@@ -205,9 +238,20 @@ export const NearbyHospitalNavigationModal = ({
               <span className="text-slate-400">Default Coordinates Active • ({effectiveLat.toFixed(4)}, {effectiveLon.toFixed(4)})</span>
             )}
           </span>
-          <span className="text-[10px] text-slate-400">
-            {hospitals.length} facilities discovered
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] text-slate-400">
+              {hospitals.length} facilities discovered
+            </span>
+            <button
+              type="button"
+              onClick={() => fetchNearby(effectiveLat, effectiveLon)}
+              disabled={loadingHospitals}
+              className="p-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-400 transition-colors cursor-pointer"
+              title="Refresh nearby hospitals"
+            >
+              <RefreshCw className={`w-3 h-3 ${loadingHospitals ? 'animate-spin' : ''}`} />
+            </button>
+          </div>
         </div>
 
         {/* 3. PRIMARY SELECTED HOSPITAL CARD */}

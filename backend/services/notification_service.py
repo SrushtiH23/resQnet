@@ -23,7 +23,7 @@ def calculate_risk_level(confidence_score: float) -> str:
 def normalize_indian_phone(phone: str) -> str:
     if not phone:
         return ""
-    clean = phone.strip().replace(" ", "").replace("-", "")
+    clean = phone.strip().replace(" ", "").replace("-", "").replace("(", "").replace(")", "")
     if clean.startswith("+"):
         return clean
     if clean.startswith("91") and len(clean) == 12:
@@ -31,6 +31,37 @@ def normalize_indian_phone(phone: str) -> str:
     if len(clean) == 10 and clean.isdigit():
         return "+91" + clean
     return clean
+
+def validate_phone_number(phone: str) -> Optional[str]:
+    """
+    Validates phone number and formats into strict E.164 format.
+    Supports Indian numbers (+91XXXXXXXXXX) and standard international E.164 (+1..+999).
+    Returns normalized E.164 string if valid, or None if invalid.
+    """
+    if not phone:
+        return None
+    clean = phone.strip().replace(" ", "").replace("-", "").replace("(", "").replace(")", "")
+    
+    # Check if already in +E.164 format
+    if clean.startswith("+"):
+        digits = clean[1:]
+        if digits.isdigit() and 10 <= len(digits) <= 15:
+            return clean
+        return None
+    
+    # 12-digit Indian number without leading +
+    if clean.startswith("91") and len(clean) == 12 and clean.isdigit():
+        return f"+{clean}"
+        
+    # 11-digit Indian number with leading 0 (e.g. 09876543210)
+    if clean.startswith("0") and len(clean) == 11 and clean.isdigit():
+        return f"+91{clean[1:]}"
+
+    # Standard 10-digit Indian mobile number (typically starts with 6, 7, 8, 9)
+    if len(clean) == 10 and clean.isdigit():
+        return f"+91{clean}"
+        
+    return None
 
 class EmergencyNotificationService:
     """
@@ -53,10 +84,11 @@ class EmergencyNotificationService:
                 NotificationLog.emergency_event_id == emergency.id,
                 NotificationLog.contact_id == contact.id,
                 NotificationLog.channel == "SMS",
-                NotificationLog.status.in_(["SENT", "DELIVERED", "ACKNOWLEDGED"])
+                NotificationLog.status.in_(["SENT", "DELIVERED", "ACKNOWLEDGED", "PENDING"])
             ).first()
 
             if existing_log:
+                print(f"[TextBee DEDUP] SMS already logged for Emergency #{emergency.id} -> Contact #{contact.id} (Status: {existing_log.status}). Skipping duplicate.")
                 return existing_log
 
         provider_mode = os.getenv("SMS_PROVIDER", "textbee").lower()
@@ -66,7 +98,7 @@ class EmergencyNotificationService:
         auth_token = os.getenv("TWILIO_AUTH_TOKEN", "").strip()
         phone_number = os.getenv("TWILIO_PHONE_NUMBER", "").strip()
 
-        dest_phone = normalize_indian_phone(contact.phone)
+        dest_phone = validate_phone_number(contact.phone)
         loc_url = get_location_url(emergency.latitude, emergency.longitude)
         time_str = emergency.created_at.strftime("%Y-%m-%d %H:%M:%S UTC") if emergency.created_at else datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
 
@@ -121,13 +153,25 @@ class EmergencyNotificationService:
         print(f"SOS received")
         print(f"Emergency ID: {emergency.id}")
         print(f"Contact retrieved: {contact.contact_name} ({contact.relationship_type})")
-        print(f"Contact phone: {dest_phone}")
+        print(f"Contact phone raw: {contact.phone}")
+        print(f"Contact phone normalized: {dest_phone}")
+
+        # Validate recipient phone number format
+        if not dest_phone:
+            err_msg = f"Invalid recipient phone number format: '{contact.phone}'. Must be a valid mobile number with country code (e.g. +91XXXXXXXXXX)."
+            print(f"[SMS ERROR]: {err_msg}")
+            notif_log.status = "FAILED"
+            notif_log.error_message = err_msg
+            db.commit()
+            db.refresh(notif_log)
+            print("==================================================")
+            return notif_log
 
         if provider_mode == "textbee" or (textbee_api_key and textbee_device_id):
             if not textbee_api_key or not textbee_device_id:
                 print("TextBee provider not configured. Missing TEXTBEE_API_KEY or TEXTBEE_DEVICE_ID in backend/.env")
                 notif_log.status = "PROVIDER_NOT_CONFIGURED"
-                notif_log.error_message = "SMS provider is not configured."
+                notif_log.error_message = "SMS provider is not configured. Missing TEXTBEE_API_KEY or TEXTBEE_DEVICE_ID."
             else:
                 print("Attempting TextBee SMS Gateway dispatch...")
                 print(f"Device ID: {textbee_device_id[:6]}... (configured)")
@@ -143,24 +187,49 @@ class EmergencyNotificationService:
                         "recipients": [dest_phone],
                         "message": message_body
                     }
-                    resp = requests.post(url, json=payload, headers=headers, timeout=10)
-                    if resp.status_code in [200, 201]:
-                        res_data = resp.json()
-                        data_obj = res_data.get("data", {}) if isinstance(res_data, dict) else {}
-                        msg_id = data_obj.get("smsBatchId") or data_obj.get("_id") or res_data.get("id") or f"TXB_{uuid.uuid4().hex[:8]}"
-                        print(f"TextBee SMS request sent successfully. Message ID / Batch ID: {msg_id}")
-                        notif_log.provider_message_id = msg_id
+                    resp = requests.post(url, json=payload, headers=headers, timeout=12)
+                    res_data = resp.json() if resp.headers.get("content-type", "").startswith("application/json") else {}
+                    data_obj = res_data.get("data", {}) if isinstance(res_data, dict) else {}
+                    
+                    if resp.status_code in [200, 201] and (data_obj.get("success") is True or data_obj.get("smsBatchId") or res_data.get("smsBatchId")):
+                        batch_id = data_obj.get("smsBatchId") or data_obj.get("_id") or res_data.get("id") or res_data.get("smsBatchId") or f"TXB_{uuid.uuid4().hex[:8]}"
+                        print(f"[TextBee SUCCESS] Accepted by gateway! Batch ID: {batch_id}")
+                        notif_log.provider_message_id = str(batch_id)
                         notif_log.status = "SENT"
-                        notif_log.delivered_at = datetime.utcnow()
+                        notif_log.error_message = None
+
+                        # Check batch status on TextBee gateway immediately if processed synchronously
+                        try:
+                            status_url = f"https://api.textbee.dev/api/v1/gateway/devices/{textbee_device_id}/sms-batch/{batch_id}"
+                            s_resp = requests.get(status_url, headers=headers, timeout=5)
+                            if s_resp.status_code == 200:
+                                b_data = s_resp.json().get("data", {}).get("batch", {})
+                                if b_data.get("deliveredCount", 0) > 0:
+                                    notif_log.status = "DELIVERED"
+                                    notif_log.delivered_at = datetime.utcnow()
+                                    print(f"[TextBee DELIVERED] Delivery confirmed for Batch #{batch_id}")
+                                elif b_data.get("failureCount", 0) > 0:
+                                    notif_log.status = "FAILED"
+                                    notif_log.error_message = f"TextBee gateway reported delivery failure for {dest_phone}."
+                                    print(f"[TextBee DELIVERY FAILED] Batch #{batch_id}")
+                        except Exception as s_err:
+                            print(f"[TextBee Batch Status Check Notice]: {s_err}")
                     else:
-                        err_msg = f"TextBee API Error ({resp.status_code}): {resp.text}"
-                        print(err_msg)
+                        err_detail = data_obj.get("message") or res_data.get("message") or resp.text
+                        err_msg = f"TextBee API Error ({resp.status_code}): {err_detail}"
+                        print(f"[TextBee FAILED]: {err_msg}")
                         notif_log.status = "FAILED"
                         notif_log.error_message = err_msg
-                except Exception as err:
-                    print(f"TextBee SMS Exception: {err}")
+                except requests.exceptions.Timeout:
+                    err_msg = "TextBee API request timed out (gateway unreachable)."
+                    print(f"[TextBee TIMEOUT]: {err_msg}")
                     notif_log.status = "FAILED"
-                    notif_log.error_message = str(err)
+                    notif_log.error_message = err_msg
+                except Exception as err:
+                    err_msg = f"TextBee SMS connection failed: {str(err)}"
+                    print(f"[TextBee EXCEPTION]: {err_msg}")
+                    notif_log.status = "FAILED"
+                    notif_log.error_message = err_msg
         elif provider_mode == "twilio" and account_sid and auth_token and phone_number:
             print("Attempting Twilio SMS...")
             try:
@@ -177,7 +246,7 @@ class EmergencyNotificationService:
 
                 notif_log.provider_message_id = msg.sid
                 notif_log.status = "SENT" if msg.status in ["sent", "queued", "delivered"] else msg.status.upper()
-                notif_log.delivered_at = datetime.utcnow()
+                notif_log.delivered_at = datetime.utcnow() if msg.status == "delivered" else None
             except Exception as err:
                 print(f"Twilio SMS Exception: {err}")
                 notif_log.status = "FAILED"
@@ -188,11 +257,9 @@ class EmergencyNotificationService:
             notif_log.error_message = "SMS provider is not configured."
 
         print("==================================================")
-
-        print("==================================================")
-
         db.commit()
         db.refresh(notif_log)
+        return notif_log
         return notif_log
 
     @staticmethod

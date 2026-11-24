@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AlertTriangle, CheckCircle, XCircle, MapPin, ShieldAlert, Eye, X, ExternalLink, Navigation } from 'lucide-react';
+import { AlertTriangle, CheckCircle, XCircle, MapPin, ShieldAlert, Eye, X, ExternalLink, Navigation, Clock } from 'lucide-react';
 import { InteractiveLiveMap } from './InteractiveLiveMap';
 import api from '../services/api';
 
@@ -9,12 +9,73 @@ export const SimpleEmergencyStatusCard = ({ emergency, onStatusChange, gpsData, 
 
   if (!emergency) return null;
 
-  const isSmsSent = emergency.sms_status === 'SENT';
-  const isSmsNotConfigured = emergency.sms_status === 'PROVIDER_NOT_CONFIGURED';
-  const isSmsFailed = emergency.sms_status === 'FAILED' || (!isSmsSent && !isSmsNotConfigured && emergency.sms_error);
+  const smsStatus = emergency.sms_status || 'PENDING';
+  const isSmsDelivered = smsStatus === 'DELIVERED';
+  const isSmsSent = smsStatus === 'SENT';
+  const isSmsPending = smsStatus === 'PENDING';
+  const isSmsNoContacts = smsStatus === 'NO_CONTACTS';
+  const isSmsNotConfigured = smsStatus === 'PROVIDER_NOT_CONFIGURED';
+  const isSmsFailed = smsStatus === 'FAILED' || (!isSmsDelivered && !isSmsSent && !isSmsPending && !isSmsNoContacts && !isSmsNotConfigured);
 
   const confidenceScore = emergency.confidence_score ? Math.round(emergency.confidence_score) : 95;
   const locationUrl = emergency.location_url || (gpsData?.available ? `https://www.google.com/maps?q=${gpsData.latitude},${gpsData.longitude}` : null);
+
+  const getHeaderInfo = () => {
+    if (isSmsDelivered) {
+      return {
+        title: '🚨 EMERGENCY ALERT DELIVERED',
+        subtitle: 'SMS delivery confirmed by cellular network to emergency contacts.',
+        borderColor: 'border-emerald-500',
+        bgColor: 'bg-emerald-950/80 shadow-emerald-950/90',
+        iconColor: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40'
+      };
+    }
+    if (isSmsSent) {
+      return {
+        title: '🚨 EMERGENCY ALERT SENT TO GATEWAY',
+        subtitle: 'TextBee has accepted the SMS request for cellular transmission.',
+        borderColor: 'border-cyan-500',
+        bgColor: 'bg-cyan-950/80 shadow-cyan-950/90',
+        iconColor: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/40'
+      };
+    }
+    if (isSmsPending) {
+      return {
+        title: '⏳ EMERGENCY ALERT PROCESSING',
+        subtitle: 'Initiating SMS notification dispatch to emergency contacts...',
+        borderColor: 'border-amber-500/60',
+        bgColor: 'bg-slate-900/90 shadow-slate-950/90',
+        iconColor: 'bg-amber-500/20 text-amber-400 border-amber-500/40'
+      };
+    }
+    if (isSmsNoContacts) {
+      return {
+        title: '⚠️ NO EMERGENCY CONTACTS CONFIGURED',
+        subtitle: 'No emergency contacts found in your profile. Please add contacts in your Medical Profile.',
+        borderColor: 'border-amber-500',
+        bgColor: 'bg-amber-950/80 shadow-amber-950/90',
+        iconColor: 'bg-amber-500/20 text-amber-400 border-amber-500/40'
+      };
+    }
+    if (isSmsNotConfigured) {
+      return {
+        title: '⚠️ SMS GATEWAY NOT CONFIGURED',
+        subtitle: 'TextBee credentials are not configured in system settings.',
+        borderColor: 'border-amber-500',
+        bgColor: 'bg-amber-950/80 shadow-amber-950/90',
+        iconColor: 'bg-amber-500/20 text-amber-400 border-amber-500/40'
+      };
+    }
+    return {
+      title: '⚠️ EMERGENCY NOTIFICATION FAILED',
+      subtitle: emergency.sms_error || 'SMS provider could not send the notification. Emergency event remains active.',
+      borderColor: 'border-rose-500',
+      bgColor: 'bg-rose-950/80 shadow-rose-950/90',
+      iconColor: 'bg-rose-500/20 text-rose-400 border-rose-500/40'
+    };
+  };
+
+  const headerInfo = getHeaderInfo();
 
   const handleResolveEmergency = async () => {
     if (!window.confirm('Are you sure you want to cancel this emergency alert?')) return;
@@ -36,25 +97,17 @@ export const SimpleEmergencyStatusCard = ({ emergency, onStatusChange, gpsData, 
   return (
     <div className="space-y-4 animate-fade-in">
       {/* SIMPLE EMERGENCY STATUS CARD */}
-      <div className={`p-6 rounded-3xl border-2 space-y-5 shadow-2xl transition-all ${
-        isSmsFailed || isSmsNotConfigured
-          ? 'bg-amber-950/80 border-amber-500 shadow-amber-950/90'
-          : 'bg-rose-950/80 border-rose-500 shadow-rose-950/90'
-      }`}>
+      <div className={`p-6 rounded-3xl border-2 space-y-5 shadow-2xl transition-all ${headerInfo.borderColor} ${headerInfo.bgColor}`}>
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
           <div className="flex items-center gap-3">
-            <div className={`p-3 rounded-2xl border animate-bounce ${
-              isSmsFailed || isSmsNotConfigured
-                ? 'bg-amber-500/20 text-amber-400 border-amber-500/40'
-                : 'bg-rose-500/20 text-rose-400 border-rose-500/40'
-            }`}>
+            <div className={`p-3 rounded-2xl border animate-bounce ${headerInfo.iconColor}`}>
               <ShieldAlert className="w-7 h-7" />
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-xl font-black text-white uppercase tracking-wider flex items-center gap-2">
-                  {isSmsFailed || isSmsNotConfigured ? '⚠️ EMERGENCY ALERT FAILED' : '🚨 EMERGENCY ALERT SENT'}
+                  {headerInfo.title}
                 </h2>
                 {emergency.is_demo && (
                   <span className="px-2.5 py-0.5 bg-purple-500/20 text-purple-300 border border-purple-500/40 text-[10px] font-mono font-extrabold rounded-full uppercase tracking-wider">
@@ -63,9 +116,7 @@ export const SimpleEmergencyStatusCard = ({ emergency, onStatusChange, gpsData, 
                 )}
               </div>
               <p className="text-xs font-semibold text-slate-300 mt-0.5">
-                {isSmsFailed || isSmsNotConfigured
-                  ? 'SMS provider could not send the notification.'
-                  : 'Emergency contacts have been notified.'}
+                {headerInfo.subtitle}
               </p>
             </div>
           </div>
@@ -98,12 +149,12 @@ export const SimpleEmergencyStatusCard = ({ emergency, onStatusChange, gpsData, 
         </div>
 
         {/* Real Provider Error Message Display (If Failed or Not Configured) */}
-        {(isSmsFailed || isSmsNotConfigured) && (
+        {(isSmsFailed || isSmsNotConfigured || isSmsNoContacts) && (
           <div className="p-4 bg-slate-950/90 rounded-2xl border border-amber-500/50 text-amber-300 text-xs space-y-1">
             <span className="font-extrabold uppercase tracking-wider block text-amber-400">
-              Provider Error Details:
+              Notification Status Details:
             </span>
-            <p className="font-mono">{emergency.sms_error || 'SMS provider is not configured.'}</p>
+            <p className="font-mono">{emergency.sms_error || 'SMS provider could not send the notification.'}</p>
           </div>
         )}
 
@@ -112,9 +163,21 @@ export const SimpleEmergencyStatusCard = ({ emergency, onStatusChange, gpsData, 
           {/* SMS Status */}
           <div className="p-3.5 bg-slate-950/80 rounded-2xl border border-slate-800 flex items-center justify-between">
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">SMS:</span>
-            {isSmsSent ? (
+            {isSmsDelivered ? (
               <span className="text-xs font-black text-emerald-400 flex items-center gap-1.5 font-mono">
-                <CheckCircle className="w-4 h-4 text-emerald-400" /> Sent
+                <CheckCircle className="w-4 h-4 text-emerald-400" /> Delivered
+              </span>
+            ) : isSmsSent ? (
+              <span className="text-xs font-black text-cyan-400 flex items-center gap-1.5 font-mono">
+                <CheckCircle className="w-4 h-4 text-cyan-400" /> Sent
+              </span>
+            ) : isSmsPending ? (
+              <span className="text-xs font-black text-amber-400 flex items-center gap-1.5 font-mono animate-pulse">
+                <Clock className="w-4 h-4 text-amber-400" /> Sending...
+              </span>
+            ) : isSmsNoContacts ? (
+              <span className="text-xs font-black text-amber-400 flex items-center gap-1.5 font-mono">
+                <AlertTriangle className="w-4 h-4 text-amber-400" /> No Contacts
               </span>
             ) : isSmsNotConfigured ? (
               <span className="text-xs font-black text-amber-400 flex items-center gap-1.5 font-mono">

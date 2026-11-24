@@ -1068,13 +1068,13 @@ def create_emergency(req: schemas.EmergencyCreate, current_user: User = Depends(
             user_id=current_user.id,
             trigger_source=trigger_type,
             confidence_score=initial_conf,
-            status="Family Notified" if is_manual_sos else ("Asking User" if initial_conf < 60 else "Hospital Dispatched"),
+            status="PENDING",
             latitude=req.latitude,
             longitude=req.longitude,
             speed=req.speed or 0.0,
             battery_level=req.battery_level or 95,
             network_status=req.network_status or "4G",
-            escalation_step=1
+            escalation_step=0
         )
         db.add(emergency)
         db.commit()
@@ -1269,33 +1269,54 @@ def populate_emergency_sms_metadata(db: Session, emergency: EmergencyEvent) -> E
     ).order_by(NotificationLog.created_at.desc()).all()
 
     if logs:
-        sent_log = next((l for l in logs if l.status in ["SENT", "DELIVERED", "ACKNOWLEDGED"]), None)
-        if sent_log:
-            emergency.sms_status = "SENT"
+        # Check if delivery is confirmed by provider
+        delivered_log = next((l for l in logs if l.status == "DELIVERED"), None)
+        if delivered_log:
+            emergency.sms_status = "DELIVERED"
             emergency.sms_error = None
-            emergency.sms_provider = sent_log.provider
+            emergency.sms_provider = delivered_log.provider
         else:
-            latest = logs[0]
-            if latest.status == "PROVIDER_NOT_CONFIGURED" or (latest.error_message and "not configured" in latest.error_message.lower()):
-                emergency.sms_status = "PROVIDER_NOT_CONFIGURED"
-                emergency.sms_error = "SMS provider is not configured."
-                emergency.sms_provider = latest.provider
+            sent_log = next((l for l in logs if l.status in ["SENT", "ACKNOWLEDGED"]), None)
+            if sent_log:
+                emergency.sms_status = "SENT"
+                emergency.sms_error = None
+                emergency.sms_provider = sent_log.provider
             else:
-                emergency.sms_status = "FAILED"
-                emergency.sms_error = latest.error_message or "SMS provider could not send the notification."
-                emergency.sms_provider = latest.provider
+                latest = logs[0]
+                if latest.status == "NO_CONTACTS":
+                    emergency.sms_status = "NO_CONTACTS"
+                    emergency.sms_error = latest.error_message or "No registered emergency contacts found in patient profile."
+                    emergency.sms_provider = latest.provider
+                elif latest.status == "PROVIDER_NOT_CONFIGURED" or (latest.error_message and "not configured" in latest.error_message.lower()):
+                    emergency.sms_status = "PROVIDER_NOT_CONFIGURED"
+                    emergency.sms_error = "SMS provider is not configured. Missing TEXTBEE_API_KEY or TEXTBEE_DEVICE_ID."
+                    emergency.sms_provider = latest.provider
+                elif latest.status == "PENDING":
+                    emergency.sms_status = "PENDING"
+                    emergency.sms_error = None
+                    emergency.sms_provider = latest.provider
+                else:
+                    emergency.sms_status = "FAILED"
+                    emergency.sms_error = latest.error_message or "SMS provider could not send the notification."
+                    emergency.sms_provider = latest.provider
     else:
-        tb_key = os.getenv("TEXTBEE_API_KEY", "").strip()
-        tb_dev = os.getenv("TEXTBEE_DEVICE_ID", "").strip()
-        tw_sid = os.getenv("TWILIO_ACCOUNT_SID", "").strip()
-        if not (tb_key and tb_dev) and not tw_sid:
-            emergency.sms_status = "PROVIDER_NOT_CONFIGURED"
-            emergency.sms_error = "SMS provider is not configured."
+        # Check if patient has any registered contacts
+        contacts_count = db.query(FamilyContact).filter(FamilyContact.user_id == emergency.user_id).count()
+        if contacts_count == 0:
+            emergency.sms_status = "NO_CONTACTS"
+            emergency.sms_error = "No registered emergency contacts found in patient profile. Please add contacts in Medical Profile."
             emergency.sms_provider = "none"
         else:
-            emergency.sms_status = "PENDING"
-            emergency.sms_error = None
-            emergency.sms_provider = "textbee"
+            tb_key = os.getenv("TEXTBEE_API_KEY", "").strip()
+            tb_dev = os.getenv("TEXTBEE_DEVICE_ID", "").strip()
+            if not (tb_key and tb_dev):
+                emergency.sms_status = "PROVIDER_NOT_CONFIGURED"
+                emergency.sms_error = "SMS provider is not configured. Missing TEXTBEE_API_KEY or TEXTBEE_DEVICE_ID."
+                emergency.sms_provider = "none"
+            else:
+                emergency.sms_status = "PENDING"
+                emergency.sms_error = None
+                emergency.sms_provider = "textbee"
 
     if emergency.latitude and emergency.longitude and (emergency.latitude != 0.0 or emergency.longitude != 0.0):
         emergency.location_url = f"https://www.google.com/maps?q={emergency.latitude:.6f},{emergency.longitude:.6f}"

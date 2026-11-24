@@ -55,6 +55,17 @@ class EmergencyEscalationEngine:
             print("No emergency contacts found for user in PostgreSQL.")
             emergency.status = "No emergency contacts configured"
             emergency.escalation_step = 0
+            
+            # Record NotificationLog entry so frontend and metadata accurately reflect NO_CONTACTS
+            no_contact_log = NotificationLog(
+                emergency_event_id=emergency.id,
+                channel="SMS",
+                provider="textbee",
+                status="NO_CONTACTS",
+                error_message="No emergency contacts configured for user. Please add emergency contacts in your Medical Profile.",
+                created_at=datetime.utcnow()
+            )
+            db.add(no_contact_log)
             db.commit()
             print("==================================")
             return {"status": "NO_CONTACTS", "message": "No emergency contacts configured"}

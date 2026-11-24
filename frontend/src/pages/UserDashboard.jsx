@@ -10,6 +10,32 @@ import {
   Navigation, Flame, ShieldAlert, MapPin, RefreshCw, CheckCircle2, AlertTriangle, MessageSquare, X
 } from 'lucide-react';
 
+// Helper functions to ensure the hospital navigation popup is shown strictly ONCE per emergency event
+const hasShownHospitalPopup = (emergencyId) => {
+  if (!emergencyId) return false;
+  try {
+    const raw = sessionStorage.getItem('resqnet_shown_hospital_popups');
+    const shown = raw ? JSON.parse(raw) : [];
+    return Array.isArray(shown) && shown.includes(emergencyId);
+  } catch (e) {
+    return false;
+  }
+};
+
+const markHospitalPopupShown = (emergencyId) => {
+  if (!emergencyId) return;
+  try {
+    const raw = sessionStorage.getItem('resqnet_shown_hospital_popups');
+    const shown = raw ? JSON.parse(raw) : [];
+    if (!shown.includes(emergencyId)) {
+      shown.push(emergencyId);
+      sessionStorage.setItem('resqnet_shown_hospital_popups', JSON.stringify(shown));
+    }
+  } catch (e) {
+    // ignore sessionStorage errors
+  }
+};
+
 export const UserDashboard = () => {
   const { user, role } = useAuth();
   const isUser = role === 'user' || user?.role?.toLowerCase() === 'user';
@@ -142,7 +168,15 @@ export const UserDashboard = () => {
     try {
       const res = await api.get('/emergency/active');
       if (res.data && res.data.length > 0) {
-        setActiveEmergency(res.data[0]);
+        const latest = res.data[0];
+        setActiveEmergency(latest);
+        // Automatically open hospital navigation popup strictly ONCE per emergency event across sessions
+        if (!hasShownHospitalPopup(latest.id) && handledEmergencyIdRef.current !== latest.id) {
+          handledEmergencyIdRef.current = latest.id;
+          markHospitalPopupShown(latest.id);
+          setHospitalNavEmergency(latest);
+          setShowHospitalNavModal(true);
+        }
       } else {
         setActiveEmergency(null);
       }
@@ -174,9 +208,10 @@ export const UserDashboard = () => {
     setActiveEmergency(current);
     setHospitalNavEmergency(current);
 
-    // Automatically open hospital navigation popup (prevent duplicate popups for same emergency)
-    if (handledEmergencyIdRef.current !== current.id) {
+    // Automatically open hospital navigation popup strictly ONCE per emergency event
+    if (!hasShownHospitalPopup(current.id) && handledEmergencyIdRef.current !== current.id) {
       handledEmergencyIdRef.current = current.id;
+      markHospitalPopupShown(current.id);
       setShowHospitalNavModal(true);
     }
   }, []);
