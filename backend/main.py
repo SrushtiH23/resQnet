@@ -1001,9 +1001,6 @@ def analyze_sensor_frames(req: schemas.FallSimulationRequest, db: Session = Depe
     samples = sliding_buffer.get_samples()
     result = IntelligentFallDetector.analyze_window(samples)
 
-    if result.get("is_fall"):
-        sliding_buffer.clear()
-
     return {
         "is_fall_detected": result["is_fall"],
         "status_label": result.get("status_label", "NORMAL"),
@@ -1012,8 +1009,11 @@ def analyze_sensor_frames(req: schemas.FallSimulationRequest, db: Session = Depe
         "impact": result["impact"],
         "rotation": result["rotation"],
         "stillness": result["stillness"],
+        "tilt_change": result.get("tilt_change", False),
+        "recovered": result.get("recovered", False),
         "confidence_delta": result["confidence_boost"],
-        "explanation": result["details"]
+        "explanation": result["details"],
+        "diagnostics": result.get("diagnostics", {})
     }
 
 @app.post("/api/sensor/telemetry")

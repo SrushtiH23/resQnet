@@ -90,11 +90,11 @@ export const useAccelerometer = () => {
 
   useEffect(() => {
     if (isSupported && permissionGranted) {
-      window.addEventListener('devicemotion', handleMotion, true);
+      window.addEventListener('devicemotion', handleMotion, false);
     }
     return () => {
       if (isSupported) {
-        window.removeEventListener('devicemotion', handleMotion, true);
+        window.removeEventListener('devicemotion', handleMotion, false);
       }
     };
   }, [isSupported, permissionGranted, handleMotion]);

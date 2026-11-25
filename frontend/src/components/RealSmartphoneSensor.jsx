@@ -5,7 +5,7 @@ import api from '../services/api';
 import { EmergencyScreenModal } from './EmergencyScreenModal';
 import {
   Smartphone, Radio, Zap, ShieldCheck, Activity, Compass,
-  AlertTriangle, CheckCircle2, ShieldAlert
+  AlertTriangle, CheckCircle2, ShieldAlert, Bug, ChevronDown, ChevronUp
 } from 'lucide-react';
 
 export const RealSmartphoneSensor = ({ userId = 1, onFallDetected, userLat = null, userLon = null, showNativeBanner = true }) => {
@@ -19,6 +19,8 @@ export const RealSmartphoneSensor = ({ userId = 1, onFallDetected, userLat = nul
   const [streamError, setStreamError] = useState(null);
 
   const [lastAnalysis, setLastAnalysis] = useState(null);
+  const [showDiagnostics, setShowDiagnostics] = useState(false);
+  const [diagnosticHistory, setDiagnosticHistory] = useState([]);
 
   // In-Browser Emergency Modal State (For Active Web Session)
   const [showFallModal, setShowFallModal] = useState(false);
@@ -101,7 +103,7 @@ export const RealSmartphoneSensor = ({ userId = 1, onFallDetected, userLat = nul
     setTimeout(() => {
       activeFallLockRef.current = false;
       hasDispatchedEmergencyRef.current = false;
-    }, 10000);
+    }, 15000);
   };
 
   // Auto-start streaming as soon as hardware motion sensors emit active telemetry
@@ -195,11 +197,19 @@ export const RealSmartphoneSensor = ({ userId = 1, onFallDetected, userLat = nul
           });
 
           setFrameCount((prev) => prev + framesToSend.length);
-          setLastStreamTime(new Date().toLocaleTimeString());
+          const timeStr = new Date().toLocaleTimeString();
+          setLastStreamTime(timeStr);
           setStreamStatus('CONNECTED');
           setStreamError(null);
+
           if (res.data) {
             setLastAnalysis(res.data);
+            if (res.data.diagnostics) {
+              setDiagnosticHistory((prev) => [
+                { time: timeStr, stage: res.data.detected_stage, ...res.data.diagnostics },
+                ...prev.slice(0, 19),
+              ]);
+            }
           }
 
           if (res.data?.is_fall_detected && !activeFallLockRef.current) {
@@ -285,6 +295,20 @@ export const RealSmartphoneSensor = ({ userId = 1, onFallDetected, userLat = nul
           </div>
 
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowDiagnostics(!showDiagnostics)}
+              className={`px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 border transition-all cursor-pointer ${
+                showDiagnostics
+                  ? 'bg-cyan-950/80 text-cyan-300 border-cyan-500/50'
+                  : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
+              }`}
+              title="Toggle Diagnostic Telemetry Inspector"
+            >
+              <Bug className="w-3.5 h-3.5" />
+              <span>Diagnostics</span>
+              {showDiagnostics ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+            </button>
+
             {(!accel.permissionGranted || !gyro.permissionGranted) && (accel.isSupported || gyro.isSupported) && (
               <button
                 onClick={async () => {
@@ -408,6 +432,74 @@ export const RealSmartphoneSensor = ({ userId = 1, onFallDetected, userLat = nul
           </div>
         </div>
 
+        {/* DIAGNOSTIC MODE INSPECTOR PANEL */}
+        {showDiagnostics && (
+          <div className="p-4 bg-slate-950 rounded-2xl border border-cyan-500/30 space-y-3 font-mono text-xs animate-fade-in">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+              <span className="text-cyan-400 font-bold flex items-center gap-1.5 uppercase tracking-wider text-[11px]">
+                <Bug className="w-3.5 h-3.5" /> Fall Kinematic Diagnostic Telemetry
+              </span>
+              <span className="text-slate-400 text-[10px]">
+                Sampling Interval: <strong className="text-cyan-300">{lastAnalysis?.diagnostics?.sampling_interval_ms || 20} ms</strong> (~50Hz)
+              </span>
+            </div>
+
+            {lastAnalysis?.diagnostics && (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-[11px]">
+                <div className="p-2 bg-slate-900 rounded-lg border border-slate-800">
+                  <span className="text-slate-400 text-[10px] block">Min Accel (Descent)</span>
+                  <span className="text-white font-bold">{lastAnalysis.diagnostics.min_accel ?? '--'} m/s²</span>
+                </div>
+                <div className="p-2 bg-slate-900 rounded-lg border border-slate-800">
+                  <span className="text-slate-400 text-[10px] block">Max Accel (Impact)</span>
+                  <span className="text-white font-bold">{lastAnalysis.diagnostics.max_accel ?? '--'} m/s²</span>
+                </div>
+                <div className="p-2 bg-slate-900 rounded-lg border border-slate-800">
+                  <span className="text-slate-400 text-[10px] block">Max Gyro (Rotation)</span>
+                  <span className="text-white font-bold">{lastAnalysis.diagnostics.max_gyro ?? '--'} °/s</span>
+                </div>
+                <div className="p-2 bg-slate-900 rounded-lg border border-slate-800">
+                  <span className="text-slate-400 text-[10px] block">Tail Variance (Stillness)</span>
+                  <span className="text-white font-bold">{lastAnalysis.diagnostics.accel_variance ?? '--'} m/s²</span>
+                </div>
+              </div>
+            )}
+
+            {lastAnalysis?.diagnostics?.transition_reason && (
+              <div className="p-2.5 bg-slate-900/90 rounded-lg border border-slate-800 text-[11px] text-slate-300">
+                <span className="text-cyan-400 font-bold">State Transition Reason: </span>
+                {lastAnalysis.diagnostics.transition_reason}
+              </div>
+            )}
+
+            {lastAnalysis?.diagnostics?.rejection_reason && (
+              <div className="p-2.5 bg-rose-950/40 rounded-lg border border-rose-500/30 text-[11px] text-rose-300">
+                <span className="text-rose-400 font-bold">Fall Rejection Cause: </span>
+                {lastAnalysis.diagnostics.rejection_reason}
+              </div>
+            )}
+
+            {diagnosticHistory.length > 0 && (
+              <div className="space-y-1 pt-1">
+                <span className="text-slate-400 text-[10px] block uppercase font-bold">Recent Telemetry Event Log (Last {diagnosticHistory.length})</span>
+                <div className="max-h-28 overflow-y-auto space-y-1 text-[10px] text-slate-400 pr-1">
+                  {diagnosticHistory.map((item, i) => (
+                    <div key={i} className="p-1.5 bg-slate-900/60 rounded border border-slate-800/80 flex items-center justify-between">
+                      <span className="text-cyan-400">[{item.time}]</span>
+                      <span className="text-slate-300">{item.stage}</span>
+                      <span>MaxA: {item.max_accel || '--'}</span>
+                      <span>Var: {item.accel_variance || '--'}</span>
+                      <span className={item.rejection_reason ? 'text-amber-400' : 'text-emerald-400'}>
+                        {item.rejection_reason ? `REJECT: ${item.rejection_reason}` : 'PASS'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Stream Metrics Badge */}
         <div className="p-3.5 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-between flex-wrap gap-2 text-xs text-slate-400">
           <span className="flex items-center gap-2">
@@ -430,7 +522,7 @@ export const RealSmartphoneSensor = ({ userId = 1, onFallDetected, userLat = nul
         isOpen={showFallModal}
         initialCountdown={10}
         confidenceScore={lastAnalysis?.confidence_score || lastAnalysis?.confidence || 95}
-        stageLabel={lastAnalysis?.detected_stage || 'Stage 5: Stillness & Freefall Verified'}
+        stageLabel={lastAnalysis?.detected_stage || 'Stage 5: User Confirmation'}
         onCancel={handleUserSaysOkay}
         onConfirm={() => executeEmergencyDispatch(lastAnalysis)}
       />

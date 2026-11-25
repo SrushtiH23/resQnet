@@ -19,6 +19,7 @@ import android.net.NetworkInfo;
 import android.os.BatteryManager;
 import android.os.Build;
 import android.os.Handler;
+import android.os.HandlerThread;
 import android.os.IBinder;
 import android.os.Looper;
 import android.os.PowerManager;
@@ -29,39 +30,42 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
  * FallDetectionService
  * Native Android 24/7 Background Motion Sentinel
  * 
- * Features:
- * - Accelerometer + Gyroscope + Rotation Vector sensor fusion with IIR low-pass filtering.
- * - Rolling 100-sample sliding window buffer (~3-5 seconds of continuous motion history).
- * - Multi-stage kinematic verification:
- *     Stage 1: Descent / Free Fall (< 6.5 m/s²)
- *     Stage 2: High Impact Shock (> 18.0 m/s²)
- *     Stage 3: Angular Rotation (> 80.0 °/s)
- *     Stage 4: Post-Impact Stillness (variance < 3.0 m/s²)
- *     Stage 5: Posture Tilt Angle Change (> 30°)
- *     Stage 6: Movement Recovery Check (cancels if active movement resumes post-impact)
- * - Temporal correlation: verifies free fall precedes impact peak.
- * - Debounce lockout (30s) preventing duplicate alerts for the same event.
- * - 10-Second confirmation countdown via SystemFallAlertActivity before backend dispatch.
- * - WakeLock and foreground notification service for background stability.
+ * Required Stages:
+ * 1. NORMAL                     : Baseline continuous motion monitoring.
+ * 2. POTENTIAL_FALL             : Free-fall dip (< 6.8 m/s²), descent unweighting, or stumble precursor.
+ * 3. IMPACT_DETECTED            : High deceleration shock peak (>= 16.5 m/s²).
+ * 4. POST_IMPACT_MONITORING     : Post-impact settling window, posture tilt change (>= 30°), stillness vs recovery.
+ * 5. FALL_CONFIDENCE_EVALUATION : Multi-factor sensor fusion confidence score calculation.
+ * 6. USER_CONFIRMATION          : High-confidence fall verified; triggers 10-second countdown activity.
+ * 7. EMERGENCY_ESCALATION       : Countdown expires or user taps SOS; alert and SMS dispatched.
+ * (RECOVERY                     : Active movement resumed post-impact; cancels alert to avoid false positives).
+ * 
+ * Key Reliability Features:
+ * - Runs sensor listeners on a dedicated background HandlerThread to prevent UI thread frame drops.
+ * - 200-sample rolling buffer (~4 seconds of history) preserving descent, impact, and stillness.
+ * - Comprehensive diagnostic mode recording sensor values, sampling intervals, and rejection reasons.
+ * - Lockout debounce (30s) preventing duplicate alert storms.
  */
 public class FallDetectionService extends Service implements SensorEventListener {
     private static final String TAG = "FallDetectionService";
+    private static final String DIAG_TAG = "ResQNetFallDiagnostic";
     private static final String CHANNEL_ID = "resqnet_fall_service";
 
-    // Calibrated Kinematic Thresholds
-    private static final float FREEFALL_THRESHOLD = 6.5f;     // m/s² (~0.65g downward descent)
-    private static final float IMPACT_THRESHOLD = 18.0f;      // m/s² (~1.84g deceleration shock)
-    private static final float ROTATION_THRESHOLD = 80.0f;    // °/s (body rotation angular velocity)
-    private static final float STILLNESS_VARIANCE = 3.0f;     // m/s² (post-impact resting stillness)
-    private static final float TILT_CHANGE_THRESHOLD = 30.0f; // degrees (posture tilt change)
-    private static final float RECOVERY_VARIANCE = 5.5f;      // m/s² (active recovery threshold)
-    private static final int BUFFER_CAPACITY = 100;
+    // Calibrated Kinematic Thresholds (MobiAct Benchmark & Real Device Telemetry)
+    private static final float FREEFALL_THRESHOLD = 6.8f;     // m/s² (~0.69g downward descent or unweighting)
+    private static final float IMPACT_THRESHOLD = 16.5f;      // m/s² (~1.68g deceleration shock peak)
+    private static final float ROTATION_THRESHOLD = 80.0f;    // °/s (body toppling angular velocity)
+    private static final float STILLNESS_VARIANCE = 2.6f;     // m/s² (post-impact resting stillness)
+    private static final float TILT_CHANGE_THRESHOLD = 30.0f; // degrees (pre vs post posture orientation change)
+    private static final float RECOVERY_VARIANCE = 4.2f;      // m/s² (active movement resumption)
+    private static final int BUFFER_CAPACITY = 200;           // ~4 seconds of continuous history at 50Hz
     private static final long DEBOUNCE_LOCKOUT_MS = 30000;    // 30s lockout after alert
 
     private SensorManager sensorManager;
@@ -70,20 +74,27 @@ public class FallDetectionService extends Service implements SensorEventListener
     private Sensor rotationVectorSensor;
     private PowerManager.WakeLock wakeLock;
 
-    // Truthful sensor availability flags
+    // Dedicated Background HandlerThread for continuous sensor sampling without UI thread drops
+    private HandlerThread sensorThread;
+    private Handler sensorHandler;
+
+    // Sensor availability flags
     private boolean isAccelAvailable = false;
     private boolean isGyroAvailable = false;
     private boolean isRotationAvailable = false;
 
     // Sensor Sample Representation
-    private static class MotionSample {
-        long timestamp;
-        float ax, ay, az;
-        float totalAccel;
-        float gx, gy, gz;
-        float totalGyro;
+    public static class MotionSample {
+        public long timestamp;
+        public float ax, ay, az;
+        public float totalAccel;
+        public float gx, gy, gz;
+        public float totalGyro;
+        public float azimuth, pitch, roll;
 
-        MotionSample(long ts, float ax, float ay, float az, float totalAccel, float gx, float gy, float gz, float totalGyro) {
+        public MotionSample(long ts, float ax, float ay, float az, float totalAccel,
+                            float gx, float gy, float gz, float totalGyro,
+                            float azimuth, float pitch, float roll) {
             this.timestamp = ts;
             this.ax = ax;
             this.ay = ay;
@@ -93,11 +104,48 @@ public class FallDetectionService extends Service implements SensorEventListener
             this.gy = gy;
             this.gz = gz;
             this.totalGyro = totalGyro;
+            this.azimuth = azimuth;
+            this.pitch = pitch;
+            this.roll = roll;
+        }
+    }
+
+    // Diagnostic Log Entry Representation
+    public static class DiagnosticEntry {
+        public long timestamp;
+        public float ax, ay, az, totalAccel;
+        public float gx, gy, gz, totalGyro;
+        public float azimuth, pitch, roll;
+        public float samplingIntervalMs;
+        public String currentStage;
+        public boolean freeFall;
+        public boolean impact;
+        public boolean rotation;
+        public boolean stillness;
+        public boolean tiltChange;
+        public boolean recovered;
+        public float confidenceScore;
+        public String transitionReason;
+        public String rejectionReason;
+
+        @Override
+        public String toString() {
+            return String.format(
+                    "[%s] Accel: (%.1f, %.1f, %.1f | Tot: %.1f) | Gyro: (%.1f, %.1f, %.1f | Tot: %.1f) | Tilt: (Az: %.1f, P: %.1f, R: %.1f) | Int: %.1fms | FF: %b, Imp: %b, Rot: %b, Still: %b, Rec: %b | Conf: %.0f | %s%s",
+                    currentStage, ax, ay, az, totalAccel, gx, gy, gz, totalGyro, azimuth, pitch, roll, samplingIntervalMs,
+                    freeFall, impact, rotation, stillness, recovered, confidenceScore,
+                    transitionReason != null ? transitionReason : "",
+                    rejectionReason != null ? (" [REJECT: " + rejectionReason + "]") : ""
+            );
         }
     }
 
     // Sliding Window Rolling Buffer
     private final List<MotionSample> windowBuffer = new ArrayList<>();
+
+    // Diagnostic Log Ring Buffer (Last 100 entries for inspection)
+    private static final int MAX_DIAGNOSTIC_ENTRIES = 100;
+    private final LinkedList<DiagnosticEntry> diagnosticLog = new LinkedList<>();
 
     // Latest Gyroscope Readings (rad/s converted to deg/s)
     private float currentGx = 0f;
@@ -117,9 +165,11 @@ public class FallDetectionService extends Service implements SensorEventListener
     private boolean isFilterInitialized = false;
     private static final float ALPHA = 0.82f; // Low-pass filter smoothing coefficient
 
-    // Fall Alert State
+    // Fall Alert & State Machine Tracking
+    private String currentStage = "NORMAL";
     private boolean isFallAlertActive = false;
     private long lastAlertTimestamp = 0;
+    private long lastSampleTimestamp = 0;
 
     private Handler timerHandler = new Handler(Looper.getMainLooper());
     private Runnable alertTimeoutRunnable;
@@ -132,6 +182,11 @@ public class FallDetectionService extends Service implements SensorEventListener
         startForegroundServiceNotification();
         acquirePartialWakeLock();
 
+        // Initialize dedicated background thread for sensor event processing
+        sensorThread = new HandlerThread("ResQNetSensorSentinelThread");
+        sensorThread.start();
+        sensorHandler = new Handler(sensorThread.getLooper());
+
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         if (sensorManager != null) {
             accelSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
@@ -139,25 +194,25 @@ public class FallDetectionService extends Service implements SensorEventListener
             rotationVectorSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);
 
             if (accelSensor != null) {
-                sensorManager.registerListener(this, accelSensor, SensorManager.SENSOR_DELAY_GAME);
+                sensorManager.registerListener(this, accelSensor, SensorManager.SENSOR_DELAY_GAME, sensorHandler);
                 isAccelAvailable = true;
-                Log.i(TAG, "Accelerometer registered with SENSOR_DELAY_GAME.");
+                Log.i(TAG, "Accelerometer registered on background HandlerThread (SENSOR_DELAY_GAME).");
             } else {
                 Log.w(TAG, "Accelerometer not available on device.");
             }
 
             if (gyroSensor != null) {
-                sensorManager.registerListener(this, gyroSensor, SensorManager.SENSOR_DELAY_GAME);
+                sensorManager.registerListener(this, gyroSensor, SensorManager.SENSOR_DELAY_GAME, sensorHandler);
                 isGyroAvailable = true;
-                Log.i(TAG, "Gyroscope registered with SENSOR_DELAY_GAME.");
+                Log.i(TAG, "Gyroscope registered on background HandlerThread (SENSOR_DELAY_GAME).");
             } else {
-                Log.w(TAG, "Gyroscope not available on device (will use accelerometer tilt fallback).");
+                Log.w(TAG, "Gyroscope not available on device (will use accelerometer posture tilt fallback).");
             }
 
             if (rotationVectorSensor != null) {
-                sensorManager.registerListener(this, rotationVectorSensor, SensorManager.SENSOR_DELAY_GAME);
+                sensorManager.registerListener(this, rotationVectorSensor, SensorManager.SENSOR_DELAY_GAME, sensorHandler);
                 isRotationAvailable = true;
-                Log.i(TAG, "Rotation Vector sensor registered with SENSOR_DELAY_GAME.");
+                Log.i(TAG, "Rotation Vector sensor registered on background HandlerThread (SENSOR_DELAY_GAME).");
             } else {
                 Log.w(TAG, "Rotation Vector sensor not available on device.");
             }
@@ -252,30 +307,33 @@ public class FallDetectionService extends Service implements SensorEventListener
             }
 
             float totalAccel = (float) Math.sqrt(filteredAx * filteredAx + filteredAy * filteredAy + filteredAz * filteredAz);
+            float samplingIntervalMs = (lastSampleTimestamp > 0) ? (now - lastSampleTimestamp) : 20.0f;
+            lastSampleTimestamp = now;
 
             // Add sample to sliding window buffer
             synchronized (windowBuffer) {
                 windowBuffer.add(new MotionSample(
                         now,
                         filteredAx, filteredAy, filteredAz, totalAccel,
-                        currentGx, currentGy, currentGz, currentGyroMag
+                        currentGx, currentGy, currentGz, currentGyroMag,
+                        currentAzimuth, currentPitch, currentRoll
                 ));
                 if (windowBuffer.size() > BUFFER_CAPACITY) {
                     windowBuffer.remove(0);
                 }
 
-                // Minimum window history before evaluating multi-stage kinematics (~1.5s = 30 samples)
-                if (windowBuffer.size() >= 30) {
-                    evaluateKinematicWindowLocked(now);
+                // Minimum window history before evaluating multi-stage kinematics (~1.0s = 20 samples)
+                if (windowBuffer.size() >= 20) {
+                    evaluateKinematicWindowLocked(now, samplingIntervalMs);
                 }
             }
         }
     }
 
     /**
-     * Multi-Stage Kinematic Evaluation across sliding window buffer
+     * 7-Stage Multi-Sensor Kinematic Evaluation across sliding window buffer
      */
-    private void evaluateKinematicWindowLocked(long now) {
+    private void evaluateKinematicWindowLocked(long now, float samplingIntervalMs) {
         // Enforce 30s lockout after recent alert
         if (now - lastAlertTimestamp < DEBOUNCE_LOCKOUT_MS) {
             return;
@@ -314,8 +372,8 @@ public class FallDetectionService extends Service implements SensorEventListener
         }
         float accelVariance = tailMax - tailMin;
 
-        // Posture tilt calculation: pre-impact (head 8 samples) vs post-impact (tail 8 samples)
-        int preCount = Math.min(8, count);
+        // Posture tilt calculation: pre-impact (head 10 samples) vs post-impact (tail 10 samples)
+        int preCount = Math.min(10, count);
         float preSumX = 0f, preSumY = 0f, preSumZ = 0f;
         for (int i = 0; i < preCount; i++) {
             MotionSample s = windowBuffer.get(i);
@@ -336,43 +394,107 @@ public class FallDetectionService extends Service implements SensorEventListener
             tiltDeg = (float) (Math.acos(dot) * (180.0 / Math.PI));
         }
 
-        // Kinematic signature flags
+        // Kinematic Conditions
         boolean hasFreeFall = minAccel < FREEFALL_THRESHOLD;
-        boolean hasImpact = maxAccel > IMPACT_THRESHOLD;
-        boolean hasRotation = maxGyro > ROTATION_THRESHOLD;
+        boolean hasImpact = maxAccel >= IMPACT_THRESHOLD;
+        boolean hasRotation = maxGyro >= ROTATION_THRESHOLD;
         boolean hasStillness = accelVariance < STILLNESS_VARIANCE;
-        boolean hasTiltChange = tiltDeg > TILT_CHANGE_THRESHOLD;
-        boolean hasRecovered = accelVariance > RECOVERY_VARIANCE && maxAccel > 16.0f;
+        boolean hasTiltChange = tiltDeg >= TILT_CHANGE_THRESHOLD;
+        boolean hasRecovered = accelVariance > RECOVERY_VARIANCE && maxAccel > 15.0f;
         boolean temporalValid = (iMax >= iMin) || (Math.abs(iMax - iMin) <= 15);
 
-        // Immediate cancellation if user recovers motion post-impact
+        // Stage & Diagnostics Determination
+        String nextStage = "NORMAL";
+        float confidenceScore = 0f;
+        String transitionReason = "Normal baseline locomotion";
+        String rejectionReason = null;
+
         if (hasRecovered) {
-            return;
+            nextStage = "RECOVERY";
+            confidenceScore = 0f;
+            transitionReason = String.format("Active movement resumed post-impact (var: %.1f m/s²). Alert standby.", accelVariance);
+            rejectionReason = "RECOVERY_MOVEMENT_DETECTED";
+        } else if (hasImpact && hasStillness && temporalValid) {
+            if (!hasRotation && !hasTiltChange) {
+                nextStage = "IMPACT_DETECTED";
+                confidenceScore = 30f;
+                transitionReason = "Flat device drop rejected (impact without rotation or posture change).";
+                rejectionReason = "FLAT_DEVICE_DROP_NO_ROTATION_OR_TILT";
+            } else if (hasRotation && (hasTiltChange || hasFreeFall)) {
+                nextStage = "USER_CONFIRMATION";
+                confidenceScore = hasFreeFall ? 95f : 85f;
+                transitionReason = String.format("Full kinematic signature verified: Impact (%.1f), Rot (%.1f), Tilt (%.1f°), Stillness (%.2f).",
+                        maxAccel, maxGyro, tiltDeg, accelVariance);
+            } else if (hasTiltChange && (hasFreeFall || maxAccel >= 18.0f)) {
+                nextStage = "USER_CONFIRMATION";
+                confidenceScore = 80f;
+                transitionReason = String.format("Posture collapse verified via tilt (%.1f°) and stillness (%.2f).", tiltDeg, accelVariance);
+            } else if (!isGyroAvailable && hasTiltChange && maxAccel >= IMPACT_THRESHOLD) {
+                nextStage = "USER_CONFIRMATION";
+                confidenceScore = 75f;
+                transitionReason = String.format("Fallback verification without gyroscope: Tilt (%.1f°), Stillness (%.2f).", tiltDeg, accelVariance);
+            } else {
+                nextStage = "FALL_CONFIDENCE_EVALUATION";
+                confidenceScore = 50f;
+                transitionReason = "Borderline dynamics; awaiting further stillness verification.";
+                rejectionReason = "INSUFFICIENT_ROTATION_OR_TILT_FOR_CONFIRMATION";
+            }
+        } else if (hasImpact && !hasStillness) {
+            nextStage = "POST_IMPACT_MONITORING";
+            confidenceScore = 35f;
+            transitionReason = String.format("Impact shock peak (%.1f m/s²) registered. Monitoring post-impact stillness.", maxAccel);
+            rejectionReason = "POST_IMPACT_STILLNESS_NOT_YET_SATISFIED";
+        } else if (hasImpact) {
+            nextStage = "IMPACT_DETECTED";
+            confidenceScore = 25f;
+            transitionReason = String.format("Impact shock peak (%.1f m/s²) registered.", maxAccel);
+            rejectionReason = "AWAITING_POST_IMPACT_MONITORING";
+        } else if (hasFreeFall) {
+            nextStage = "POTENTIAL_FALL";
+            confidenceScore = 20f;
+            transitionReason = String.format("Descent dip (%.1f m/s² < %.1f) detected. Tracking potential impact shock.", minAccel, FREEFALL_THRESHOLD);
+            rejectionReason = "AWAITING_IMPACT_SHOCK";
         }
 
-        // Multi-stage verification condition
-        boolean isConfirmedFall = false;
-        if (hasImpact && hasRotation && hasStillness && hasFreeFall && temporalValid) {
-            // Stage 5: High Confidence Critical Fall
-            isConfirmedFall = true;
-        } else if (hasImpact && hasRotation && (hasStillness || hasTiltChange) && temporalValid) {
-            // Stage 4: Verified Rotational Fall
-            isConfirmedFall = true;
-        } else if (hasImpact && hasFreeFall && hasStillness && temporalValid) {
-            // Stage 4: Impact with Confirmed Stillness
-            isConfirmedFall = true;
-        } else if (hasImpact && hasTiltChange && hasStillness) {
-            // Stage 4: Posture Change with Resting Stillness
-            isConfirmedFall = true;
+        // Record Diagnostic Entry
+        DiagnosticEntry diag = new DiagnosticEntry();
+        diag.timestamp = now;
+        MotionSample latest = windowBuffer.get(count - 1);
+        diag.ax = latest.ax; diag.ay = latest.ay; diag.az = latest.az; diag.totalAccel = latest.totalAccel;
+        diag.gx = latest.gx; diag.gy = latest.gy; diag.gz = latest.gz; diag.totalGyro = latest.totalGyro;
+        diag.azimuth = latest.azimuth; diag.pitch = latest.pitch; diag.roll = latest.roll;
+        diag.samplingIntervalMs = samplingIntervalMs;
+        diag.currentStage = nextStage;
+        diag.freeFall = hasFreeFall;
+        diag.impact = hasImpact;
+        diag.rotation = hasRotation;
+        diag.stillness = hasStillness;
+        diag.tiltChange = hasTiltChange;
+        diag.recovered = hasRecovered;
+        diag.confidenceScore = confidenceScore;
+        diag.transitionReason = transitionReason;
+        diag.rejectionReason = rejectionReason;
+
+        synchronized (diagnosticLog) {
+            diagnosticLog.add(diag);
+            if (diagnosticLog.size() > MAX_DIAGNOSTIC_ENTRIES) {
+                diagnosticLog.removeFirst();
+            }
         }
 
-        if (isConfirmedFall) {
+        if (!"NORMAL".equals(nextStage)) {
+            Log.d(DIAG_TAG, diag.toString());
+        }
+
+        this.currentStage = nextStage;
+
+        // Trigger confirmation countdown when USER_CONFIRMATION criteria are satisfied
+        if ("USER_CONFIRMATION".equals(nextStage) && !isFallAlertActive) {
             Log.w(TAG, String.format(
-                    "🚨 VERIFIED FALL DETECTED BY MULTI-STAGE SENSORS! Impact: %.1f m/s², Gyro: %.1f °/s, MinA: %.1f m/s², PostVar: %.1f m/s², Tilt: %.1f°",
+                    "🚨 VERIFIED FALL DETECTED! Triggering USER_CONFIRMATION countdown. Impact: %.1f m/s², Gyro: %.1f °/s, MinA: %.1f m/s², PostVar: %.1f m/s², Tilt: %.1f°",
                     maxAccel, maxGyro, minAccel, accelVariance, tiltDeg
             ));
             lastAlertTimestamp = now;
-            windowBuffer.clear();
             triggerSystemFallAlert();
         }
     }
@@ -380,6 +502,7 @@ public class FallDetectionService extends Service implements SensorEventListener
     public void triggerSystemFallAlert() {
         if (isFallAlertActive) return;
         isFallAlertActive = true;
+        this.currentStage = "USER_CONFIRMATION";
 
         // Launch System Full-Screen Alert Activity over Home Screen / Lock Screen / WhatsApp
         Intent dialogIntent = new Intent(this, SystemFallAlertActivity.class);
@@ -390,7 +513,8 @@ public class FallDetectionService extends Service implements SensorEventListener
         alertTimeoutRunnable = new Runnable() {
             @Override
             public void run() {
-                Log.w(TAG, "10-Second Countdown Expired with no user response. Dispatching Emergency POST...");
+                Log.w(TAG, "10-Second Countdown Expired with no user response. Transitioning to EMERGENCY_ESCALATION...");
+                currentStage = "EMERGENCY_ESCALATION";
                 dispatchEmergencyToBackend();
                 isFallAlertActive = false;
             }
@@ -399,7 +523,8 @@ public class FallDetectionService extends Service implements SensorEventListener
     }
 
     public void cancelFallAlert() {
-        Log.i(TAG, "User marked 'I'M OKAY'. Cancelling emergency dispatch.");
+        Log.i(TAG, "User marked 'I'M OKAY'. Cancelling emergency dispatch. Transitioning to RECOVERY.");
+        this.currentStage = "RECOVERY";
         if (alertTimeoutRunnable != null) {
             timerHandler.removeCallbacks(alertTimeoutRunnable);
         }
@@ -410,7 +535,8 @@ public class FallDetectionService extends Service implements SensorEventListener
     }
 
     public void executeImmediateEmergencyDispatch() {
-        Log.w(TAG, "User clicked 'NEED HELP NOW'. Dispatching immediate emergency POST...");
+        Log.w(TAG, "User clicked 'NEED HELP NOW'. Dispatching immediate emergency escalation...");
+        this.currentStage = "EMERGENCY_ESCALATION";
         if (alertTimeoutRunnable != null) {
             timerHandler.removeCallbacks(alertTimeoutRunnable);
         }
@@ -553,10 +679,13 @@ public class FallDetectionService extends Service implements SensorEventListener
         if (sensorManager != null) {
             sensorManager.unregisterListener(this);
         }
+        if (sensorThread != null) {
+            sensorThread.quitSafely();
+        }
         if (wakeLock != null && wakeLock.isHeld()) {
             wakeLock.release();
         }
-        Log.i(TAG, "FallDetectionService destroyed and sensor listeners unregistered.");
+        Log.i(TAG, "FallDetectionService destroyed, HandlerThread stopped and sensor listeners unregistered.");
     }
 
     @Override

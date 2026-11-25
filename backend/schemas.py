@@ -175,8 +175,11 @@ class FallDetectionResult(BaseModel):
     impact: bool
     rotation: bool
     stillness: bool
+    tilt_change: Optional[bool] = False
+    recovered: Optional[bool] = False
     confidence_delta: float
     explanation: str
+    diagnostics: Optional[Dict[str, Any]] = None
 
 # --- Confidence Scoring Request ---
 class ConfidenceRequest(BaseModel):
