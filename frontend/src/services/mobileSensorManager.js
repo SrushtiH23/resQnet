@@ -2,10 +2,15 @@
  * MobileSensorManager
  * Features:
  * - DeviceMotionEvent (Accelerometer & Gyroscope rotation rate)
- * - DeviceOrientationEvent (Device orientation fallback)
+ * - DeviceOrientationEvent (Device orientation Euler angles)
  * - Geolocation API (GPS watchPosition with high accuracy)
  * - Screen Wake Lock API (keeps background active during monitoring)
  * - 20Hz Rolling Sliding Window Queue (100 samples capacity = 5 seconds)
+ * 
+ * Strict Telemetry Separation:
+ * - Gyroscope angular velocity (gx, gy, gz in °/s) is strictly separated from
+ *   Orientation Euler angles (alpha, beta, gamma in °). Orientation angles are
+ *   never assigned to gyroscope velocity.
  */
 
 export class MobileSensorManager {
@@ -19,7 +24,8 @@ export class MobileSensorManager {
 
     // Latest Telemetry
     this.latestAccel = { ax: 0, ay: 9.8, az: 0, total: 9.8 };
-    this.latestGyro = { gx: 0, gy: 0, gz: 0, total: 0 };
+    this.latestGyro = { gx: null, gy: null, gz: null, total: null, available: false };
+    this.latestOrientation = { alpha: null, beta: null, gamma: null, available: false };
     this.latestGps = { latitude: 0, longitude: 0, speed: 0, accuracy: 0, altitude: 0 };
 
     // Event Callbacks
@@ -37,9 +43,10 @@ export class MobileSensorManager {
 
   async requestPermissions() {
     let motionAllowed = false;
+    let orientAllowed = false;
     let gpsAllowed = false;
 
-    // iOS 13+ / Mobile permission request
+    // DeviceMotionEvent permission (iOS 13+ / mobile)
     if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
       try {
         const response = await DeviceMotionEvent.requestPermission();
@@ -49,8 +56,20 @@ export class MobileSensorManager {
         motionAllowed = false;
       }
     } else {
-      // Standard Android / Chrome
-      motionAllowed = 'DeviceMotionEvent' in window;
+      motionAllowed = typeof window !== 'undefined' && 'DeviceMotionEvent' in window;
+    }
+
+    // DeviceOrientationEvent permission
+    if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+      try {
+        const response = await DeviceOrientationEvent.requestPermission();
+        orientAllowed = response === 'granted';
+      } catch (err) {
+        console.warn('DeviceOrientationEvent permission error:', err);
+        orientAllowed = false;
+      }
+    } else {
+      orientAllowed = typeof window !== 'undefined' && 'DeviceOrientationEvent' in window;
     }
 
     // Geolocation permission request
@@ -78,8 +97,8 @@ export class MobileSensorManager {
       }
     }
 
-    this.hasPermission = motionAllowed;
-    return { motionAllowed, gpsAllowed };
+    this.hasPermission = motionAllowed || orientAllowed;
+    return { motionAllowed, orientAllowed, gpsAllowed };
   }
 
   async requestWakeLock() {
@@ -110,10 +129,11 @@ export class MobileSensorManager {
 
     this.isMonitoring = true;
 
-    // Attach sensor motion listener
+    // Attach sensor motion listeners (using standard bubbling for broad mobile browser compatibility)
     if (typeof window !== 'undefined') {
-      window.addEventListener('devicemotion', this.handleMotion, true);
-      window.addEventListener('deviceorientation', this.handleOrientation, true);
+      window.addEventListener('devicemotion', this.handleMotion, false);
+      window.addEventListener('deviceorientation', this.handleOrientation, false);
+      window.addEventListener('deviceorientationabsolute', this.handleOrientation, false);
     }
 
     // Attach GPS listener
@@ -150,8 +170,9 @@ export class MobileSensorManager {
     this.isMonitoring = false;
 
     if (typeof window !== 'undefined') {
-      window.removeEventListener('devicemotion', this.handleMotion, true);
-      window.removeEventListener('deviceorientation', this.handleOrientation, true);
+      window.removeEventListener('devicemotion', this.handleMotion, false);
+      window.removeEventListener('deviceorientation', this.handleOrientation, false);
+      window.removeEventListener('deviceorientationabsolute', this.handleOrientation, false);
     }
 
     if (this.watchId !== null && 'geolocation' in navigator) {
@@ -172,23 +193,47 @@ export class MobileSensorManager {
     const acc = event.accelerationIncludingGravity || event.acceleration;
     const rot = event.rotationRate;
 
-    const ax = acc && acc.x !== null ? acc.x : 0;
-    const ay = acc && acc.y !== null ? acc.y : 9.8;
-    const az = acc && acc.z !== null ? acc.z : 0;
+    const ax = acc && acc.x !== null && acc.x !== undefined ? Number(acc.x) : 0;
+    const ay = acc && acc.y !== null && acc.y !== undefined ? Number(acc.y) : 9.81;
+    const az = acc && acc.z !== null && acc.z !== undefined ? Number(acc.z) : 0;
     const total_accel = Math.sqrt(ax * ax + ay * ay + az * az);
 
-    const gx = rot && rot.alpha !== null ? rot.alpha : 0;
-    const gy = rot && rot.beta !== null ? rot.beta : 0;
-    const gz = rot && rot.gamma !== null ? rot.gamma : 0;
-    const total_gyro = Math.sqrt(gx * gx + gy * gy + gz * gz);
+    const hasGyro = rot && (
+      (rot.alpha !== null && rot.alpha !== undefined) ||
+      (rot.beta !== null && rot.beta !== undefined) ||
+      (rot.gamma !== null && rot.gamma !== undefined)
+    );
+
+    let gx = null;
+    let gy = null;
+    let gz = null;
+    let total_gyro = null;
+
+    if (hasGyro) {
+      gx = rot.alpha !== null && rot.alpha !== undefined ? Number(rot.alpha) : 0.0;
+      gy = rot.beta !== null && rot.beta !== undefined ? Number(rot.beta) : 0.0;
+      gz = rot.gamma !== null && rot.gamma !== undefined ? Number(rot.gamma) : 0.0;
+      total_gyro = Math.sqrt(gx * gx + gy * gy + gz * gz);
+      this.latestGyro = { gx, gy, gz, total: total_gyro, available: true };
+    }
 
     this.latestAccel = { ax, ay, az, total: total_accel };
-    this.latestGyro = { gx, gy, gz, total: total_gyro };
 
     const sample = {
       timestamp: Date.now(),
-      ax, ay, az, total_accel,
-      gx, gy, gz, total_gyro
+      ax: +ax.toFixed(2),
+      ay: +ay.toFixed(2),
+      az: +az.toFixed(2),
+      total_accel: +total_accel.toFixed(2),
+      gx: gx !== null ? +gx.toFixed(2) : null,
+      gy: gy !== null ? +gy.toFixed(2) : null,
+      gz: gz !== null ? +gz.toFixed(2) : null,
+      total_gyro: total_gyro !== null ? +total_gyro.toFixed(2) : null,
+      alpha: this.latestOrientation.alpha,
+      beta: this.latestOrientation.beta,
+      gamma: this.latestOrientation.gamma,
+      gyro_available: hasGyro,
+      orientation_available: this.latestOrientation.available,
     };
 
     // Push into sliding window queue
@@ -203,13 +248,17 @@ export class MobileSensorManager {
   }
 
   handleOrientation(event) {
-    if (!this.isMonitoring || this.latestGyro.total > 0) return;
-    // Fallback if rotationRate is not available
-    const gx = event.alpha || 0;
-    const gy = event.beta || 0;
-    const gz = event.gamma || 0;
-    const total_gyro = Math.sqrt(gx * gx + gy * gy + gz * gz);
-    this.latestGyro = { gx, gy, gz, total: total_gyro };
+    if (!this.isMonitoring) return;
+    if (event.alpha !== null && event.alpha !== undefined &&
+        event.beta !== null && event.beta !== undefined &&
+        event.gamma !== null && event.gamma !== undefined) {
+      this.latestOrientation = {
+        alpha: +Number(event.alpha).toFixed(1),
+        beta: +Number(event.beta).toFixed(1),
+        gamma: +Number(event.gamma).toFixed(1),
+        available: true,
+      };
+    }
   }
 
   getBuffer() {
@@ -220,6 +269,7 @@ export class MobileSensorManager {
     return {
       accel: this.latestAccel,
       gyro: this.latestGyro,
+      orientation: this.latestOrientation,
       gps: this.latestGps,
       isMonitoring: this.isMonitoring,
       bufferSize: this.buffer.length,

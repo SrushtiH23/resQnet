@@ -7,7 +7,8 @@ load_dotenv()
 from fastapi import FastAPI, Depends, HTTPException, status, WebSocket, WebSocketDisconnect, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
-from datetime import datetime
+from sqlalchemy import or_, and_
+from datetime import datetime, timedelta
 import math
 from typing import List, Optional
 from pydantic import BaseModel
@@ -17,7 +18,7 @@ from models import User, MedicalProfile, FamilyContact, Hospital, Ambulance, Eme
 import schemas
 from auth import (
     get_password_hash, verify_password, create_access_token,
-    get_current_user, require_role
+    get_current_user, require_role, get_current_user_optional
 )
 from services.fall_detection import IntelligentFallDetector, SlidingWindowBuffer
 from services.confidence_engine import ConfidenceScoringEngine
@@ -975,16 +976,22 @@ def analyze_sensor_frames(req: schemas.FallSimulationRequest, db: Session = Depe
     print(f"Timestamp: {datetime.utcnow().isoformat()}")
     print(f"Frames Received Count: {len(req.frames)}")
     for idx, f in enumerate(req.frames[:5]):
-        print(f"  Frame #{idx+1}: Accel(x={f.ax:.2f}, y={f.ay:.2f}, z={f.az:.2f}) | Gyro(gx={f.gx:.2f}, gy={f.gy:.2f}, gz={f.gz:.2f})")
+        gx_str = f"{f.gx:.2f}" if f.gx is not None else "N/A"
+        gy_str = f"{f.gy:.2f}" if f.gy is not None else "N/A"
+        gz_str = f"{f.gz:.2f}" if f.gz is not None else "N/A"
+        print(f"  Frame #{idx+1}: Accel(x={f.ax:.2f}, y={f.ay:.2f}, z={f.az:.2f}) | Gyro(gx={gx_str}, gy={gy_str}, gz={gz_str})")
     print("=====================================================")
 
     for f in req.frames:
-        sample = sliding_buffer.push(f.ax, f.ay, f.az, f.gx, f.gy, f.gz)
+        gx_val = f.gx if f.gx is not None else 0.0
+        gy_val = f.gy if f.gy is not None else 0.0
+        gz_val = f.gz if f.gz is not None else 0.0
+        sample = sliding_buffer.push(f.ax, f.ay, f.az, gx_val, gy_val, gz_val)
         # Store summarized event sample
         se = SensorEvent(
             user_id=req.user_id,
             ax=f.ax, ay=f.ay, az=f.az,
-            gx=f.gx, gy=f.gy, gz=f.gz,
+            gx=gx_val, gy=gy_val, gz=gz_val,
             total_accel=sample["total_accel"],
             total_gyro=sample["total_gyro"]
         )
@@ -1011,12 +1018,15 @@ def analyze_sensor_frames(req: schemas.FallSimulationRequest, db: Session = Depe
 
 @app.post("/api/sensor/telemetry")
 def record_sensor_telemetry(req: schemas.SensorFrame, user_id: int = Query(...), detected_stage: Optional[str] = None, db: Session = Depends(get_db)):
+    gx_val = req.gx if req.gx is not None else 0.0
+    gy_val = req.gy if req.gy is not None else 0.0
+    gz_val = req.gz if req.gz is not None else 0.0
     total_accel = math.sqrt(req.ax**2 + req.ay**2 + req.az**2)
-    total_gyro = math.sqrt(req.gx**2 + req.gy**2 + req.gz**2)
+    total_gyro = math.sqrt(gx_val**2 + gy_val**2 + gz_val**2)
     se = SensorEvent(
         user_id=user_id,
         ax=req.ax, ay=req.ay, az=req.az,
-        gx=req.gx, gy=req.gy, gz=req.gz,
+        gx=gx_val, gy=gy_val, gz=gz_val,
         total_accel=total_accel,
         total_gyro=total_gyro,
         detected_stage=detected_stage
@@ -1056,21 +1066,34 @@ def compute_confidence(req: schemas.ConfidenceRequest):
 # ==========================================
 @app.post("/api/emergency/create", response_model=schemas.EmergencyResponse)
 @app.post("/emergency/create", response_model=schemas.EmergencyResponse)
-def create_emergency(req: schemas.EmergencyCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def create_emergency(req: schemas.EmergencyCreate, current_user: Optional[User] = Depends(get_current_user_optional), db: Session = Depends(get_db)):
+    effective_user = current_user
+    if effective_user is None:
+        target_uid = req.user_id if req.user_id is not None else 1
+        effective_user = db.query(User).filter(User.id == target_uid).first()
+        if not effective_user:
+            effective_user = db.query(User).first()
+            if not effective_user:
+                raise HTTPException(status_code=400, detail="No registered users found for emergency dispatch.")
+
     print("========== SOS API HIT ==========")
-    print(f"Request User ID: {current_user.id} ({current_user.full_name})")
+    print(f"Request User ID: {effective_user.id} ({effective_user.full_name})")
     print(f"Request Trigger Source: {req.trigger_source}")
     print(f"Request Coordinates: ({req.latitude}, {req.longitude})")
 
     try:
-        # Deduplication: Check if user already has an active emergency event
+        # Deduplication / Idempotency: Check if user already has an active emergency or one created within last 45s
+        cutoff_45s = datetime.utcnow() - timedelta(seconds=45)
         existing_active = db.query(EmergencyEvent).filter(
-            EmergencyEvent.user_id == current_user.id,
-            EmergencyEvent.status.in_(["Family Notified", "Hospital Dispatched", "Ambulance En-Route", "En-Route", "PENDING", "ACTIVE", "DISPATCHED"])
+            EmergencyEvent.user_id == effective_user.id,
+            or_(
+                EmergencyEvent.created_at >= cutoff_45s,
+                EmergencyEvent.status.in_(["Family Notified", "Hospital Dispatched", "Ambulance En-Route", "En-Route", "PENDING", "ACTIVE", "DISPATCHED"])
+            )
         ).order_by(EmergencyEvent.created_at.desc()).first()
 
         if existing_active:
-            print(f"[SOS DEDUPLICATION] Active emergency #{existing_active.id} already active for User #{current_user.id}. Preventing duplicate SMS dispatch.")
+            print(f"[SOS DEDUPLICATION] Emergency #{existing_active.id} already active or recently created ({existing_active.created_at}) for User #{effective_user.id}. Preventing duplicate emergency and duplicate SMS dispatch.")
             return populate_emergency_sms_metadata(db, existing_active)
 
         is_manual_sos = req.trigger_source in ["MANUAL_SOS", "SOS Button"]
@@ -1078,7 +1101,7 @@ def create_emergency(req: schemas.EmergencyCreate, current_user: User = Depends(
         initial_conf = 95.0 if is_manual_sos else (85.0 if req.trigger_source == "Fall Detection" else 50.0)
 
         emergency = EmergencyEvent(
-            user_id=current_user.id,
+            user_id=effective_user.id,
             trigger_source=trigger_type,
             confidence_score=initial_conf,
             status="PENDING",
@@ -1096,11 +1119,11 @@ def create_emergency(req: schemas.EmergencyCreate, current_user: User = Depends(
         print("Emergency created")
         print(f"Emergency ID: {emergency.id}")
 
-        contacts_count = db.query(FamilyContact).filter(FamilyContact.user_id == current_user.id).count()
+        contacts_count = db.query(FamilyContact).filter(FamilyContact.user_id == effective_user.id).count()
         print(f"Contacts retrieved: {contacts_count}")
 
         NotificationAndAuditService.log_timeline_event(db, emergency.id, "Emergency Created", f"Triggered via {trigger_type} at ({req.latitude:.4f}, {req.longitude:.4f})")
-        NotificationAndAuditService.record_audit(db, current_user.id, "EMERGENCY_CREATED", f"Emergency #{emergency.id} created")
+        NotificationAndAuditService.record_audit(db, effective_user.id, "EMERGENCY_CREATED", f"Emergency #{emergency.id} created")
 
         # Broadcast WebSocket update for EMERGENCY_CREATED
         print("Sending WebSocket update for EMERGENCY_CREATED...")

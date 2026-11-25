@@ -12,12 +12,15 @@ class SlidingWindowBuffer:
         self.capacity = capacity
         self.buffer = deque(maxlen=capacity)
 
-    def push(self, ax: float, ay: float, az: float, gx: float, gy: float, gz: float) -> Dict[str, float]:
+    def push(self, ax: float, ay: float, az: float, gx: float = 0.0, gy: float = 0.0, gz: float = 0.0) -> Dict[str, float]:
+        gx_val = float(gx) if gx is not None else 0.0
+        gy_val = float(gy) if gy is not None else 0.0
+        gz_val = float(gz) if gz is not None else 0.0
         total_accel = math.sqrt(ax**2 + ay**2 + az**2)
-        total_gyro = math.sqrt(gx**2 + gy**2 + gz**2)
+        total_gyro = math.sqrt(gx_val**2 + gy_val**2 + gz_val**2)
         sample = {
             "ax": ax, "ay": ay, "az": az,
-            "gx": gx, "gy": gy, "gz": gz,
+            "gx": gx_val, "gy": gy_val, "gz": gz_val,
             "total_accel": total_accel,
             "total_gyro": total_gyro
         }

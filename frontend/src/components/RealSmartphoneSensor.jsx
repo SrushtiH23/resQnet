@@ -69,6 +69,7 @@ export const RealSmartphoneSensor = ({ userId = 1, onFallDetected, userLat = nul
     // Dispatch single emergency alert on confirmed fall and notify dashboard
     try {
       const res = await api.post('/emergency/create', {
+        user_id: userId,
         trigger_source: 'Fall Detection',
         latitude: lat,
         longitude: lon,
@@ -125,26 +126,65 @@ export const RealSmartphoneSensor = ({ userId = 1, onFallDetected, userLat = nul
           return;
         }
 
-        // Retrieve all high-frequency frames accumulated during the 200ms interval
-        const bufferedSamples = a.getAndClearBuffer ? a.getAndClearBuffer() : [];
+        // Retrieve buffered high-frequency samples accumulated during the 200ms interval
+        const bufferedAccel = a.getAndClearBuffer ? a.getAndClearBuffer() : [];
+        const bufferedGyro = g.getAndClearBuffer ? g.getAndClearBuffer() : [];
 
-        const framesToSend = bufferedSamples.length > 0
-          ? bufferedSamples.map((s) => ({
-              ax: s.ax, ay: s.ay, az: s.az,
-              gx: g.gx !== null ? g.gx : 0.0,
-              gy: g.gy !== null ? g.gy : 0.0,
-              gz: g.gz !== null ? g.gz : 0.0,
-              timestamp: s.timestamp,
-            }))
-          : [{
-              ax: a.ax !== null ? a.ax : 0.0,
-              ay: a.ay !== null ? a.ay : 0.0,
-              az: a.az !== null ? a.az : 0.0,
-              gx: g.gx !== null ? g.gx : 0.0,
-              gy: g.gy !== null ? g.gy : 0.0,
-              gz: g.gz !== null ? g.gz : 0.0,
-              timestamp: Date.now(),
-            }];
+        // Synchronize frames by timestamp
+        let framesToSend = [];
+
+        if (bufferedAccel.length > 0) {
+          framesToSend = bufferedAccel.map((accelSample) => {
+            // Find closest gyro sample in time within 100ms
+            let closestGyro = null;
+            let minDt = Infinity;
+            if (bufferedGyro.length > 0) {
+              for (const gs of bufferedGyro) {
+                const dt = Math.abs(gs.timestamp - accelSample.timestamp);
+                if (dt < minDt && dt <= 100) {
+                  minDt = dt;
+                  closestGyro = gs;
+                }
+              }
+            }
+
+            const hasG = g.hasEmittedGyro;
+            const gx = closestGyro ? closestGyro.gx : (hasG && g.gx !== null ? g.gx : null);
+            const gy = closestGyro ? closestGyro.gy : (hasG && g.gy !== null ? g.gy : null);
+            const gz = closestGyro ? closestGyro.gz : (hasG && g.gz !== null ? g.gz : null);
+
+            return {
+              ax: accelSample.ax,
+              ay: accelSample.ay,
+              az: accelSample.az,
+              gx: gx,
+              gy: gy,
+              gz: gz,
+              alpha: g.hasEmittedOrientation ? g.alpha : null,
+              beta: g.hasEmittedOrientation ? g.beta : null,
+              gamma: g.hasEmittedOrientation ? g.gamma : null,
+              timestamp: accelSample.timestamp,
+              gyro_available: hasG,
+              orientation_available: g.hasEmittedOrientation,
+            };
+          });
+        } else {
+          const hasG = g.hasEmittedGyro;
+          framesToSend = [{
+            ax: a.ax !== null ? a.ax : 0.0,
+            ay: a.ay !== null ? a.ay : 9.81,
+            az: a.az !== null ? a.az : 0.0,
+            gx: hasG && g.gx !== null ? g.gx : null,
+            gy: hasG && g.gy !== null ? g.gy : null,
+            gz: hasG && g.gz !== null ? g.gz : null,
+            alpha: g.hasEmittedOrientation ? g.alpha : null,
+            beta: g.hasEmittedOrientation ? g.beta : null,
+            gamma: g.hasEmittedOrientation ? g.gamma : null,
+            timestamp: Date.now(),
+            gyro_available: hasG,
+            orientation_available: g.hasEmittedOrientation,
+          }];
+        }
 
         try {
           const res = await api.post('/sensor/sliding-window-analyze', {
@@ -181,12 +221,9 @@ export const RealSmartphoneSensor = ({ userId = 1, onFallDetected, userLat = nul
 
   const handleStartStream = async () => {
     setStreamError(null);
-    if (!accel.permissionGranted) {
-      const granted = await accel.requestPermission();
-      if (!granted) {
-        setStreamError('Motion sensor permission required.');
-        return;
-      }
+    if (!accel.permissionGranted || !gyro.permissionGranted) {
+      if (accel.requestPermission) await accel.requestPermission();
+      if (gyro.requestPermission) await gyro.requestPermission();
     }
 
     if (!accel.hasEmittedData) {
@@ -248,9 +285,12 @@ export const RealSmartphoneSensor = ({ userId = 1, onFallDetected, userLat = nul
           </div>
 
           <div className="flex items-center gap-2">
-            {!accel.permissionGranted && accel.isSupported && (
+            {(!accel.permissionGranted || !gyro.permissionGranted) && (accel.isSupported || gyro.isSupported) && (
               <button
-                onClick={() => accel.requestPermission()}
+                onClick={async () => {
+                  if (accel.requestPermission) await accel.requestPermission();
+                  if (gyro.requestPermission) await gyro.requestPermission();
+                }}
                 className="px-4 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs rounded-xl shadow-md cursor-pointer"
               >
                 Request Permission
@@ -340,13 +380,13 @@ export const RealSmartphoneSensor = ({ userId = 1, onFallDetected, userLat = nul
                 <Zap className="w-4 h-4" /> Gyroscope Rotation
               </span>
               <span className="font-mono text-white text-base font-black">
-                {gyro.total_gyro !== null ? `${gyro.total_gyro} °/s` : '--'}
+                {gyro.hasEmittedGyro && gyro.total_gyro !== null ? `${gyro.total_gyro} °/s` : (gyro.sensorState === 'NOT_AVAILABLE' ? 'Unavailable' : '--')}
               </span>
             </div>
             <div className="grid grid-cols-3 gap-1 font-mono text-slate-300 text-center pt-1">
-              <div className="p-1.5 bg-slate-950 rounded-lg">gX: {gyro.gx !== null ? gyro.gx : '--'}</div>
-              <div className="p-1.5 bg-slate-950 rounded-lg">gY: {gyro.gy !== null ? gyro.gy : '--'}</div>
-              <div className="p-1.5 bg-slate-950 rounded-lg">gZ: {gyro.gz !== null ? gyro.gz : '--'}</div>
+              <div className="p-1.5 bg-slate-950 rounded-lg">gX: {gyro.hasEmittedGyro && gyro.gx !== null ? gyro.gx : '--'}</div>
+              <div className="p-1.5 bg-slate-950 rounded-lg">gY: {gyro.hasEmittedGyro && gyro.gy !== null ? gyro.gy : '--'}</div>
+              <div className="p-1.5 bg-slate-950 rounded-lg">gZ: {gyro.hasEmittedGyro && gyro.gz !== null ? gyro.gz : '--'}</div>
             </div>
           </div>
 
@@ -357,13 +397,13 @@ export const RealSmartphoneSensor = ({ userId = 1, onFallDetected, userLat = nul
                 <Compass className="w-4 h-4" /> Device Orientation
               </span>
               <span className="font-mono text-emerald-300 text-xs font-bold">
-                {gyro.sensorState === 'ACTIVE' ? 'Live Angles' : '--'}
+                {gyro.hasEmittedOrientation ? 'Live Angles' : (gyro.sensorState === 'NOT_AVAILABLE' ? 'Unavailable' : '--')}
               </span>
             </div>
             <div className="grid grid-cols-3 gap-1 font-mono text-slate-300 text-center pt-1">
-              <div className="p-1.5 bg-slate-950 rounded-lg">α: {gyro.alpha !== null ? `${gyro.alpha}°` : '--'}</div>
-              <div className="p-1.5 bg-slate-950 rounded-lg">β: {gyro.beta !== null ? `${gyro.beta}°` : '--'}</div>
-              <div className="p-1.5 bg-slate-950 rounded-lg">γ: {gyro.gamma !== null ? `${gyro.gamma}°` : '--'}</div>
+              <div className="p-1.5 bg-slate-950 rounded-lg">α: {gyro.hasEmittedOrientation && gyro.alpha !== null ? `${gyro.alpha}°` : '--'}</div>
+              <div className="p-1.5 bg-slate-950 rounded-lg">β: {gyro.hasEmittedOrientation && gyro.beta !== null ? `${gyro.beta}°` : '--'}</div>
+              <div className="p-1.5 bg-slate-950 rounded-lg">γ: {gyro.hasEmittedOrientation && gyro.gamma !== null ? `${gyro.gamma}°` : '--'}</div>
             </div>
           </div>
         </div>

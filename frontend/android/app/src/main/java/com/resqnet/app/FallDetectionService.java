@@ -36,7 +36,7 @@ import java.util.List;
  * Native Android 24/7 Background Motion Sentinel
  * 
  * Features:
- * - Accelerometer + Gyroscope sensor fusion with IIR low-pass filtering.
+ * - Accelerometer + Gyroscope + Rotation Vector sensor fusion with IIR low-pass filtering.
  * - Rolling 100-sample sliding window buffer (~3-5 seconds of continuous motion history).
  * - Multi-stage kinematic verification:
  *     Stage 1: Descent / Free Fall (< 6.5 m/s²)
@@ -67,7 +67,13 @@ public class FallDetectionService extends Service implements SensorEventListener
     private SensorManager sensorManager;
     private Sensor accelSensor;
     private Sensor gyroSensor;
+    private Sensor rotationVectorSensor;
     private PowerManager.WakeLock wakeLock;
+
+    // Truthful sensor availability flags
+    private boolean isAccelAvailable = false;
+    private boolean isGyroAvailable = false;
+    private boolean isRotationAvailable = false;
 
     // Sensor Sample Representation
     private static class MotionSample {
@@ -99,6 +105,11 @@ public class FallDetectionService extends Service implements SensorEventListener
     private float currentGz = 0f;
     private float currentGyroMag = 0f;
 
+    // Latest Device Orientation Angles from Rotation Vector (degrees)
+    private float currentAzimuth = 0f;
+    private float currentPitch = 0f;
+    private float currentRoll = 0f;
+
     // Low-Pass Filter State for Accelerometer
     private float filteredAx = 0f;
     private float filteredAy = 9.81f;
@@ -125,9 +136,11 @@ public class FallDetectionService extends Service implements SensorEventListener
         if (sensorManager != null) {
             accelSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
             gyroSensor = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
+            rotationVectorSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);
 
             if (accelSensor != null) {
                 sensorManager.registerListener(this, accelSensor, SensorManager.SENSOR_DELAY_GAME);
+                isAccelAvailable = true;
                 Log.i(TAG, "Accelerometer registered with SENSOR_DELAY_GAME.");
             } else {
                 Log.w(TAG, "Accelerometer not available on device.");
@@ -135,9 +148,18 @@ public class FallDetectionService extends Service implements SensorEventListener
 
             if (gyroSensor != null) {
                 sensorManager.registerListener(this, gyroSensor, SensorManager.SENSOR_DELAY_GAME);
+                isGyroAvailable = true;
                 Log.i(TAG, "Gyroscope registered with SENSOR_DELAY_GAME.");
             } else {
                 Log.w(TAG, "Gyroscope not available on device (will use accelerometer tilt fallback).");
+            }
+
+            if (rotationVectorSensor != null) {
+                sensorManager.registerListener(this, rotationVectorSensor, SensorManager.SENSOR_DELAY_GAME);
+                isRotationAvailable = true;
+                Log.i(TAG, "Rotation Vector sensor registered with SENSOR_DELAY_GAME.");
+            } else {
+                Log.w(TAG, "Rotation Vector sensor not available on device.");
             }
         }
     }
@@ -188,6 +210,17 @@ public class FallDetectionService extends Service implements SensorEventListener
         if (event == null || isFallAlertActive) return;
 
         long now = System.currentTimeMillis();
+
+        if (event.sensor.getType() == Sensor.TYPE_ROTATION_VECTOR) {
+            float[] rotationMatrix = new float[9];
+            float[] orientationValues = new float[3];
+            SensorManager.getRotationMatrixFromVector(rotationMatrix, event.values);
+            SensorManager.getOrientation(rotationMatrix, orientationValues);
+            currentAzimuth = (float) Math.toDegrees(orientationValues[0]);
+            currentPitch = (float) Math.toDegrees(orientationValues[1]);
+            currentRoll = (float) Math.toDegrees(orientationValues[2]);
+            return;
+        }
 
         if (event.sensor.getType() == Sensor.TYPE_GYROSCOPE) {
             // Android gyroscope reports in radians/sec; convert to degrees/sec
@@ -447,9 +480,11 @@ public class FallDetectionService extends Service implements SensorEventListener
                     Log.w(TAG, "Could not determine network status:", e);
                 }
 
-                // Read backend URL from SharedPreferences or use endpoints
+                // Read backend URL and authentication from SharedPreferences
                 SharedPreferences prefs = getSharedPreferences("ResQNetPrefs", Context.MODE_PRIVATE);
                 String configuredBase = prefs.getString("backend_url", "http://10.0.2.2:8000");
+                String authToken = prefs.getString("auth_token", null);
+                int userId = prefs.getInt("user_id", 1);
 
                 String[] candidateUrls = new String[] {
                         configuredBase + "/emergency/create",
@@ -464,13 +499,16 @@ public class FallDetectionService extends Service implements SensorEventListener
                         conn.setRequestMethod("POST");
                         conn.setRequestProperty("Content-Type", "application/json; utf-8");
                         conn.setRequestProperty("Accept", "application/json");
+                        if (authToken != null && !authToken.trim().isEmpty()) {
+                            conn.setRequestProperty("Authorization", "Bearer " + authToken.trim());
+                        }
                         conn.setConnectTimeout(6000);
                         conn.setReadTimeout(6000);
                         conn.setDoOutput(true);
 
                         String jsonInputString = String.format(
-                                "{\"user_id\":1,\"trigger_source\":\"Android Native Background Fall Sentinel\",\"latitude\":%.6f,\"longitude\":%.6f,\"speed\":0.0,\"battery_level\":%d,\"network_status\":\"%s\"}",
-                                lat, lon, batteryLevel, networkStatus
+                                "{\"user_id\":%d,\"trigger_source\":\"Android Native Background Fall Sentinel\",\"latitude\":%.6f,\"longitude\":%.6f,\"speed\":0.0,\"battery_level\":%d,\"network_status\":\"%s\"}",
+                                userId, lat, lon, batteryLevel, networkStatus
                         );
 
                         try (OutputStream os = conn.getOutputStream()) {

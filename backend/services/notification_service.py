@@ -84,7 +84,7 @@ class EmergencyNotificationService:
                 NotificationLog.emergency_event_id == emergency.id,
                 NotificationLog.contact_id == contact.id,
                 NotificationLog.channel == "SMS",
-                NotificationLog.status.in_(["SENT", "DELIVERED", "ACKNOWLEDGED", "PENDING"])
+                NotificationLog.status.in_(["SENT", "DELIVERED", "ACKNOWLEDGED", "PENDING", "FAILED"])
             ).first()
 
             if existing_log:

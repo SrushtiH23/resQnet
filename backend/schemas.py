@@ -151,9 +151,15 @@ class SensorFrame(BaseModel):
     ax: float
     ay: float
     az: float
-    gx: float
-    gy: float
-    gz: float
+    gx: Optional[float] = 0.0
+    gy: Optional[float] = 0.0
+    gz: Optional[float] = 0.0
+    timestamp: Optional[float] = None
+    alpha: Optional[float] = None
+    beta: Optional[float] = None
+    gamma: Optional[float] = None
+    gyro_available: Optional[bool] = None
+    orientation_available: Optional[bool] = None
 
 class FallSimulationRequest(BaseModel):
     frames: List[SensorFrame]
@@ -207,6 +213,7 @@ class EmergencyCreate(BaseModel):
     speed: Optional[float] = 0.0
     battery_level: Optional[int] = 100
     network_status: Optional[str] = "4G"
+    user_id: Optional[int] = None
 
 class LocationUpdateRequest(BaseModel):
     emergency_id: int
